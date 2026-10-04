@@ -17,6 +17,6 @@ spell:mana(350)
 spell:soul(3)
 spell:isSelfTarget(true)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:register()

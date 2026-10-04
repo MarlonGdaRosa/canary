@@ -21,6 +21,6 @@ spell:level(80)
 spell:mana(40)
 spell:isSelfTarget(true)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:register()

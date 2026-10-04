@@ -25,7 +25,7 @@ spell:castSound(SOUND_EFFECT_TYPE_SPELL_HELL_SCORE)
 spell:level(60)
 spell:mana(1100)
 spell:isSelfTarget(true)
-spell:isPremium(true)
+spell:isPremium(false)
 spell:cooldown(40 * 1000)
 spell:groupCooldown(4 * 1000, 40 * 1000)
 

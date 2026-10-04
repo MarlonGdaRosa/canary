@@ -53159,8 +53159,6 @@ hands of its owner. Granted by TibiaRoyal.com"/>
 		</attribute>
 	</item>
 	<item id="28479" article="a" name="wand of destruction TEST">
-		<attribute key="weaponType" value="wand"/>
-		<attribute key="elementenergy" value="50"/>
 		<attribute key="script" value="moveevent;weapon">
 			<attribute key="weaponType" value="wand"/>
 			<attribute key="slot" value="hand"/>

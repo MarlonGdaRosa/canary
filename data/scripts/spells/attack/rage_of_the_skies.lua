@@ -25,7 +25,7 @@ spell:castSound(SOUND_EFFECT_TYPE_SPELL_RAGE_OF_THE_SKIES)
 spell:level(55)
 spell:mana(600)
 spell:isSelfTarget(true)
-spell:isPremium(true)
+spell:isPremium(false)
 spell:cooldown(40 * 1000)
 spell:groupCooldown(4 * 1000, 40 * 1000)
 

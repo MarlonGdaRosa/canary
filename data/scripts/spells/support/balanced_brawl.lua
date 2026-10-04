@@ -33,6 +33,6 @@ spell:needTarget(false)
 spell:needDirection(true)
 spell:blockWalls(true)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:register()

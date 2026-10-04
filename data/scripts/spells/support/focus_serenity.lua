@@ -25,6 +25,6 @@ spell:groupCooldown(2 * 1000)
 spell:level(150)
 spell:mana(500)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:register()

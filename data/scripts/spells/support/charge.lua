@@ -39,7 +39,7 @@ spell:level(25)
 spell:mana(100)
 spell:isSelfTarget(true)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:castSound(SOUND_EFFECT_TYPE_SPELL_CHARGE)
 spell:register()

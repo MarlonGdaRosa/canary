@@ -60,7 +60,7 @@ spell:cooldown(8 * 1000)
 spell:groupCooldown(1 * 1000)
 spell:level(150)
 spell:mana(250)
-spell:isPremium(true)
+spell:isPremium(false)
 spell:isAggressive(false)
 
 spell:monkSpellType(MonkSpell_Spender)

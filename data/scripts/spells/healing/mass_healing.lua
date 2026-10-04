@@ -58,7 +58,7 @@ spell:cooldown(2 * 1000)
 spell:groupCooldown(1 * 1000)
 spell:level(36)
 spell:mana(150)
-spell:isPremium(true)
+spell:isPremium(false)
 spell:isAggressive(false)
 
 spell:castSound(SOUND_EFFECT_TYPE_SPELL_MASS_HEALING)

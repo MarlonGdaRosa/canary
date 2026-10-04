@@ -82,6 +82,6 @@ spell:level(32)
 spell:mana(baseMana)
 spell:isSelfTarget(true)
 spell:isAggressive(false)
-spell:isPremium(true)
+spell:isPremium(false)
 
 spell:register()
