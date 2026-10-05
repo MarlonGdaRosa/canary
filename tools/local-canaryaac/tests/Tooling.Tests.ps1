@@ -2,6 +2,54 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $toolRoot = Split-Path -Parent $here
 Import-Module (Join-Path $toolRoot 'CanaryAAC.Local.psm1') -Force
 
+function New-CanaryAACInstallerFixture {
+    param([string] $Root)
+    $fixtureTools = Join-Path $Root 'tools\local-canaryaac'
+    $runtime = Join-Path $Root '.tools'
+    $checkout = Join-Path $runtime 'canaryaac'
+    $downloads = Join-Path $runtime 'downloads'
+    $php = Join-Path $runtime 'php'
+    New-Item -ItemType Directory -Path (Join-Path $fixtureTools 'config'), $checkout, $downloads, $php -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $toolRoot 'Install-CanaryAAC.ps1'), (Join-Path $toolRoot 'CanaryAAC.Local.psm1') -Destination $fixtureTools
+    Copy-Item -LiteralPath (Join-Path $toolRoot 'config\php.ini'), (Join-Path $toolRoot 'config\router.php') -Destination (Join-Path $fixtureTools 'config')
+    & git -C $checkout init --quiet
+    & git -C $checkout config core.autocrlf false
+    [IO.File]::WriteAllText((Join-Path $checkout '.gitignore'), "*items`n")
+    [IO.File]::WriteAllText((Join-Path $checkout 'composer.lock'), 'fixture-lock')
+    & git -C $checkout add .
+    & git -C $checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m base
+    $lock = Get-Content -LiteralPath (Join-Path $toolRoot 'runtime.lock.json') -Raw | ConvertFrom-Json
+    $lock.canaryaac.commit = (& git -C $checkout rev-parse HEAD)
+    & git -C $checkout remote add origin $lock.canaryaac.repository
+    [IO.File]::WriteAllText((Join-Path $checkout '.git\info\exclude'), "/router.php`n/.local-install.json`n")
+    Copy-Item -LiteralPath (Join-Path $fixtureTools 'config\router.php') -Destination (Join-Path $checkout 'router.php')
+    $manifestPath = Join-Path $checkout '.local-install.json'
+    [pscustomobject] [ordered] @{
+        BaseCommit = $lock.canaryaac.commit; Patches = @()
+        PhpVersion = $lock.php.version; ComposerVersion = $lock.composer.version
+        ComposerLockSha256 = (Get-FileHash -LiteralPath (Join-Path $checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+        VendorInventory = @()
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+    # Tiny approved fixture artifacts let a bad PHP installation be rejected
+    # without downloading anything or ever executing this fake executable.
+    $archiveSource = Join-Path $Root 'archive-source'
+    New-Item -ItemType Directory -Path $archiveSource | Out-Null
+    [IO.File]::WriteAllText((Join-Path $archiveSource 'php.exe'), 'approved fixture bytes')
+    $archive = Join-Path $downloads 'php-fixture.zip'
+    Compress-Archive -Path (Join-Path $archiveSource '*') -DestinationPath $archive
+    $lock.php.url = 'https://example.invalid/php-fixture.zip'
+    $lock.php.sha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+    [IO.File]::WriteAllText((Join-Path $php 'php.exe'), 'unapproved fixture bytes')
+    $composerArchive = Join-Path $downloads 'composer-2.10.3.phar'
+    [IO.File]::WriteAllText($composerArchive, 'fixture composer bytes')
+    $lock.composer.sha256 = (Get-FileHash -LiteralPath $composerArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+    $lock | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $fixtureTools 'runtime.lock.json') -Encoding UTF8
+    [pscustomobject] @{
+        Script = Join-Path $fixtureTools 'Install-CanaryAAC.ps1'
+        Runtime = $runtime; Checkout = $checkout; ManifestPath = $manifestPath
+    }
+}
+
 Describe 'CanaryAAC local tooling' {
     It 'plans a pinned install without writing runtime state' {
         $plan = & (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | ConvertFrom-Json
@@ -136,6 +184,185 @@ Describe 'CanaryAAC local tooling' {
     }
 }
 
+Describe 'CanaryAAC installer hardening' {
+    BeforeEach {
+        . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
+    }
+
+    It 'confines Composer and temporary state and restores caller variables on failure' {
+        $runtime = Join-Path $TestDrive 'environment'
+        New-Item -ItemType Directory -Path $runtime | Out-Null
+        $names = @('COMPOSER_HOME', 'COMPOSER_CACHE_DIR', 'TEMP', 'TMP', 'COMPOSER', 'COMPOSER_VENDOR_DIR', 'COMPOSER_BIN_DIR')
+        $before = @{}
+        foreach ($name in $names) { $before[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
+        try {
+            Invoke-CanaryAACComposerEnvironment -RuntimeRoot $runtime -Checkout (Join-Path $runtime 'checkout') -TempRoot (Join-Path $runtime 'temp') -Action {
+                foreach ($name in $names) {
+                    [Environment]::GetEnvironmentVariable($name, 'Process').StartsWith($runtime + '\') | Should Be $true
+                }
+            }
+            { Invoke-CanaryAACComposerEnvironment -RuntimeRoot $runtime -Checkout (Join-Path $runtime 'checkout') -TempRoot (Join-Path $runtime 'temp') -Action { throw 'controlled failure' } } | Should Throw 'controlled failure'
+            foreach ($name in $names) { [Environment]::GetEnvironmentVariable($name, 'Process') | Should Be $before[$name] }
+        } finally {
+            foreach ($name in $names) { [Environment]::SetEnvironmentVariable($name, $before[$name], 'Process') }
+        }
+    }
+
+    It 'refuses ignored router and vendor mutations before overwriting or accepting them' {
+        $checkout = Join-Path $TestDrive 'ignored-checkout'
+        New-Item -ItemType Directory -Path (Join-Path $checkout 'vendor') -Force | Out-Null
+        & git -C $checkout init --quiet
+        & git -C $checkout config core.autocrlf false
+        [IO.File]::WriteAllText((Join-Path $checkout '.gitignore'), "*items`n")
+        [IO.File]::WriteAllText((Join-Path $checkout '.git\info\exclude'), "/router.php`n/.local-install.json`n")
+        & git -C $checkout add .
+        & git -C $checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m base
+        $source = Join-Path $TestDrive 'router-source.php'
+        [IO.File]::WriteAllText($source, '<?php echo 1;')
+        Copy-Item -LiteralPath $source -Destination (Join-Path $checkout 'router.php')
+        { Assert-CanaryAACIgnoredPaths -Checkout $checkout -RouterSource $source -RecordedVendor @() } | Should Not Throw
+        [IO.File]::WriteAllText((Join-Path $checkout 'router.php'), '<?php echo 2;')
+        { Assert-CanaryAACIgnoredPaths -Checkout $checkout -RouterSource $source -RecordedVendor @() } | Should Throw 'router'
+        Copy-Item -LiteralPath $source -Destination (Join-Path $checkout 'router.php')
+        [IO.File]::WriteAllText((Join-Path $checkout 'vendor\unrecordeditems'), 'unaccounted')
+        $inventory = @(Get-CanaryAACVendorInventory -Checkout $checkout)
+        $inventory.Count | Should Be 1
+        $inventory[0].Status | Should Be '!!'
+        { Assert-CanaryAACIgnoredPaths -Checkout $checkout -RouterSource $source -RecordedVendor @() } | Should Throw 'vendor'
+    }
+
+    It 'permits only the authorized root junction and refuses descendant reparse points' {
+        $target = Join-Path $TestDrive 'physical-root'
+        $outside = Join-Path $TestDrive 'outside'
+        $runtime = Join-Path $TestDrive 'runtime-link'
+        New-Item -ItemType Directory -Path $target, $outside | Out-Null
+        [IO.File]::WriteAllText((Join-Path $outside 'sentinel.txt'), 'preserve')
+        New-Item -ItemType Junction -Path $runtime -Target $target | Out-Null
+        $child = Join-Path $runtime 'php'
+        try {
+            { Assert-CanaryAACSafePath -Root $runtime -Path (Join-Path $runtime 'safe.txt') -AllowedRootTarget $target } | Should Not Throw
+            New-Item -ItemType Junction -Path $child -Target $outside | Out-Null
+            { Assert-CanaryAACSafePath -Root $runtime -Path (Join-Path $child 'sentinel.txt') -AllowedRootTarget $target } | Should Throw 'reparse'
+            (Get-Content -LiteralPath (Join-Path $outside 'sentinel.txt')) | Should Be 'preserve'
+            { Assert-CanaryAACSafePath -Root $runtime -Path $outside -AllowedRootTarget $target } | Should Throw 'outside'
+        } finally {
+            if (Test-Path -LiteralPath $child) { [IO.Directory]::Delete($child) }
+            [IO.Directory]::Delete($runtime)
+        }
+    }
+
+    It 'authenticates all PHP bytes before execution and rejects changed missing and extra binaries' {
+        $source = Join-Path $TestDrive 'zip-source'
+        $installed = Join-Path $TestDrive 'php-auth'
+        New-Item -ItemType Directory -Path (Join-Path $source 'ext'), $installed -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $source 'php.exe'), 'approved-executable')
+        [IO.File]::WriteAllText((Join-Path $source 'ext\php_curl.dll'), 'approved-library')
+        $archive = Join-Path $TestDrive 'php-fixture.zip'
+        Compress-Archive -Path (Join-Path $source '*') -DestinationPath $archive
+        Expand-Archive -LiteralPath $archive -DestinationPath $installed
+        $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+        { Assert-CanaryAACPhpInstallation -RuntimeRoot $TestDrive -PhpRoot $installed -Archive $archive -ArchiveSha256 $hash } | Should Not Throw
+        [IO.File]::WriteAllText((Join-Path $installed 'php.exe'), 'tampered-executable')
+        { Assert-CanaryAACPhpInstallation -RuntimeRoot $TestDrive -PhpRoot $installed -Archive $archive -ArchiveSha256 $hash } | Should Throw 'mismatch'
+        Copy-Item -LiteralPath (Join-Path $source 'php.exe') -Destination (Join-Path $installed 'php.exe')
+        [IO.File]::WriteAllText((Join-Path $installed 'extra.dll'), 'unapproved')
+        { Assert-CanaryAACPhpInstallation -RuntimeRoot $TestDrive -PhpRoot $installed -Archive $archive -ArchiveSha256 $hash } | Should Throw 'Unexpected PHP file'
+        Remove-Item -LiteralPath (Join-Path $installed 'extra.dll')
+        Remove-Item -LiteralPath (Join-Path $installed 'ext\php_curl.dll')
+        { Assert-CanaryAACPhpInstallation -RuntimeRoot $TestDrive -PhpRoot $installed -Archive $archive -ArchiveSha256 $hash } | Should Throw 'missing'
+    }
+
+    It 'uses one immutable patch snapshot when the tracked source changes' {
+        $checkout = Join-Path $TestDrive 'snapshot-checkout'
+        New-Item -ItemType Directory -Path $checkout | Out-Null
+        & git -C $checkout init --quiet
+        & git -C $checkout config core.autocrlf false
+        [IO.File]::WriteAllText((Join-Path $checkout 'sample.php'), "<?php echo 'base';`n")
+        & git -C $checkout add .
+        & git -C $checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m base
+        $source = Join-Path $TestDrive '001-source.patch'
+        [IO.File]::WriteAllText($source, "diff --git a/sample.php b/sample.php`n--- a/sample.php`n+++ b/sample.php`n@@ -1 +1 @@`n-<?php echo 'base';`n+<?php echo 'snapshot';`n")
+        $hashBefore = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+        $snapshotRoot = Join-Path $TestDrive 'patch-snapshots'
+        $snapshots = @()
+        try {
+            $snapshots = @(New-CanaryAACPatchSnapshots -RuntimeRoot $TestDrive -SourcePaths @($source) -DestinationRoot $snapshotRoot)
+            $snapshots[0].Sha256 | Should Be $hashBefore
+            [IO.File]::WriteAllText($source, 'changed-after-snapshot')
+            Invoke-CanaryAACPatch -Checkout $checkout -PatchPath $snapshots[0].FullName
+            (Get-Content -LiteralPath (Join-Path $checkout 'sample.php')) | Should Be "<?php echo 'snapshot';"
+            { [IO.File]::WriteAllText($snapshots[0].FullName, 'tampered-snapshot') } | Should Throw
+            (Get-FileHash -LiteralPath $snapshots[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() | Should Be $hashBefore
+        } finally { foreach ($snapshot in $snapshots) { $snapshot.ReadLock.Dispose() } }
+    }
+
+    It 'requires a complete pinned manifest and permits only append-only patch transitions' {
+        $checkout = Join-Path $TestDrive 'manifest-checkout'
+        New-Item -ItemType Directory -Path $checkout | Out-Null
+        [IO.File]::WriteAllText((Join-Path $checkout 'composer.lock'), 'pinned-lock')
+        $lock = Get-Content (Join-Path $toolRoot 'runtime.lock.json') -Raw | ConvertFrom-Json
+        $manifest = [pscustomobject] @{
+            BaseCommit = $lock.canaryaac.commit; PhpVersion = $lock.php.version; ComposerVersion = $lock.composer.version
+            ComposerLockSha256 = (Get-FileHash -LiteralPath (Join-Path $checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+            Patches = @(); VendorInventory = @()
+        }
+        { Assert-CanaryAACInstallManifest -Manifest $manifest -Lock $lock -Checkout $checkout -Snapshots @() } | Should Not Throw
+        $append = @([pscustomobject] @{ Name = '001-new.patch'; Sha256 = ('a' * 64) })
+        { Assert-CanaryAACInstallManifest -Manifest $manifest -Lock $lock -Checkout $checkout -Snapshots $append } | Should Not Throw
+        foreach ($property in @('ComposerVersion', 'ComposerLockSha256', 'Patches', 'VendorInventory')) {
+            $bad = $manifest | ConvertTo-Json -Depth 5 | ConvertFrom-Json
+            $bad.PSObject.Properties.Remove($property)
+            { Assert-CanaryAACInstallManifest -Manifest $bad -Lock $lock -Checkout $checkout -Snapshots @() } | Should Throw 'manifest'
+        }
+        $manifest.ComposerVersion = '0.0.0'
+        { Assert-CanaryAACInstallManifest -Manifest $manifest -Lock $lock -Checkout $checkout -Snapshots @() } | Should Throw 'manifest'
+        $manifest.ComposerVersion = $lock.composer.version
+        $manifest.ComposerLockSha256 = '0' * 64
+        { Assert-CanaryAACInstallManifest -Manifest $manifest -Lock $lock -Checkout $checkout -Snapshots @() } | Should Throw 'manifest'
+        $manifest.ComposerLockSha256 = (Get-FileHash -LiteralPath (Join-Path $checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+        $manifest.Patches = @([pscustomobject] @{ Name = '001-original.patch'; Sha256 = ('b' * 64) })
+        { Assert-CanaryAACInstallManifest -Manifest $manifest -Lock $lock -Checkout $checkout -Snapshots $append } | Should Throw 'append-only'
+    }
+
+    It 'enforces manifest and ignored-path gates in the real installer before PHP execution' {
+        $fixture = New-CanaryAACInstallerFixture -Root (Join-Path $TestDrive 'full-gates')
+        $originalManifest = Get-Content -LiteralPath $fixture.ManifestPath -Raw
+        $bad = $originalManifest | ConvertFrom-Json
+        $bad.ComposerVersion = '0.0.0'
+        $bad | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $fixture.ManifestPath -Encoding UTF8
+        { & $fixture.Script } | Should Throw 'manifest runtime/source provenance'
+        Set-Content -LiteralPath $fixture.ManifestPath -Value $originalManifest -Encoding UTF8
+        $router = Join-Path $fixture.Checkout 'router.php'
+        $originalRouter = [IO.File]::ReadAllBytes($router)
+        [IO.File]::WriteAllText($router, 'unaccounted router')
+        { & $fixture.Script } | Should Throw 'router content mismatch'
+        (Get-Content -LiteralPath $router) | Should Be 'unaccounted router'
+        [IO.File]::WriteAllBytes($router, $originalRouter)
+        New-Item -ItemType Directory -Path (Join-Path $fixture.Checkout 'vendor') | Out-Null
+        [IO.File]::WriteAllText((Join-Path $fixture.Checkout 'vendor\unrecordeditems'), 'ignored vendor')
+        { & $fixture.Script } | Should Throw 'Unrecorded vendor'
+        Remove-Item -LiteralPath (Join-Path $fixture.Checkout 'vendor\unrecordeditems')
+        [IO.File]::WriteAllText((Join-Path $fixture.Checkout 'hiddenitems'), 'ignored non-vendor')
+        { & $fixture.Script } | Should Throw 'Unaccounted ignored'
+        @(Get-ChildItem -LiteralPath $fixture.Runtime -Directory -Filter 'canaryaac-install-*').Count | Should Be 0
+    }
+
+    It 'rejects unauthenticated PHP in the real installer and cleans only its failed session' {
+        $fixture = New-CanaryAACInstallerFixture -Root (Join-Path $TestDrive 'full-php')
+        $sentinel = Join-Path $fixture.Runtime 'preserve.partial'
+        [IO.File]::WriteAllText($sentinel, 'unrelated')
+        $names = @('COMPOSER_HOME', 'COMPOSER_CACHE_DIR', 'TEMP', 'TMP', 'COMPOSER', 'COMPOSER_VENDOR_DIR', 'COMPOSER_BIN_DIR')
+        $before = @{}
+        foreach ($name in $names) { $before[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
+        $manifestBefore = (Get-FileHash -LiteralPath $fixture.ManifestPath -Algorithm SHA256).Hash
+        { & $fixture.Script } | Should Throw 'SHA-256 mismatch'
+        foreach ($name in $names) { [Environment]::GetEnvironmentVariable($name, 'Process') | Should Be $before[$name] }
+        (Get-FileHash -LiteralPath $fixture.ManifestPath -Algorithm SHA256).Hash | Should Be $manifestBefore
+        (Get-Content -LiteralPath $sentinel) | Should Be 'unrelated'
+        @(Get-ChildItem -LiteralPath $fixture.Runtime -Directory -Filter 'canaryaac-install-*').Count | Should Be 0
+    }
+}
+
 Describe 'CanaryAAC installer safety' {
     It 'applies an absent numbered patch and recognizes it on rerun' {
         . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
@@ -175,9 +402,16 @@ Describe 'CanaryAAC installer safety' {
     }
 
     It 'recognizes XML capabilities built into the pinned Windows runtime' {
+        . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
         $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
         $php = Join-Path $repo '.tools\php\php.exe'
         if (-not (Test-Path -LiteralPath $php)) { Set-TestInconclusive 'Pinned PHP is not installed yet.'; return }
+        $lock = Get-Content -LiteralPath (Join-Path $toolRoot 'runtime.lock.json') -Raw | ConvertFrom-Json
+        $runtime = Join-Path $repo '.tools'
+        $commonGit = & git -C $repo rev-parse --path-format=absolute --git-common-dir
+        $rootTarget = Join-Path (Split-Path -Parent $commonGit) '.tools'
+        $iniHash = (Get-FileHash -LiteralPath (Join-Path $toolRoot 'config\php.ini') -Algorithm SHA256).Hash
+        Assert-CanaryAACPhpInstallation -RuntimeRoot $runtime -PhpRoot (Join-Path $runtime 'php') -Archive (Join-Path $runtime 'downloads\php-8.3.35-nts-Win32-vs16-x64.zip') -ArchiveSha256 $lock.php.sha256 -AllowedRootTarget $rootTarget -IniSha256 $iniHash
         $start = New-Object System.Diagnostics.ProcessStartInfo
         $start.FileName = $php
         $start.Arguments = '-c "' + (Join-Path $toolRoot 'config\php.ini') + '" -m'
