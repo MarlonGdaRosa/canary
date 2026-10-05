@@ -57,10 +57,39 @@ function Test-CanaryAACProcess {
         return $false
     }
 
-    # Bound arguments so another port or a router with a matching prefix is rejected.
-    $listenerPattern = '(?:^|\s)-S\s+127\.0\.0\.1:8080(?=\s|$)'
-    $routerPattern = '(?:^|\s)"?' + [regex]::Escape($resolvedRouter) + '"?(?=\s|$)'
-    return ($process.CommandLine -match $listenerPattern -and $process.CommandLine -match $routerPattern)
+    # The local launcher uses whole quoted or unquoted arguments. Reject malformed
+    # or mixed quoting rather than interpreting a substring as process identity.
+    $argumentPattern = '"[^"\r\n]*"|[^\s"]+'
+    if ($process.CommandLine -notmatch ('^\s*(?:' + $argumentPattern + ')(?:\s+(?:' + $argumentPattern + '))*\s*$')) {
+        return $false
+    }
+    $arguments = @([regex]::Matches($process.CommandLine, $argumentPattern) | ForEach-Object {
+        $_.Value.Trim('"')
+    })
+    if ($arguments.Count -lt 4 -or
+        -not [string]::Equals($arguments[-1], $resolvedRouter, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+
+    # Parse the supported PHP launcher options before the final router argument.
+    # Consume option values so a value such as "-S" is never an actual option.
+    $hasListener = $false
+    for ($index = 1; $index -lt $arguments.Count - 1; $index++) {
+        switch -CaseSensitive ($arguments[$index]) {
+            '-n' { continue }
+            { $_ -cin @('-c', '-d', '-t', '-S') } {
+                $option = $arguments[$index]
+                $index++
+                if ($index -ge $arguments.Count - 1) { return $false }
+                if ($option -ceq '-S') {
+                    if ($hasListener -or $arguments[$index] -cne '127.0.0.1:8080') { return $false }
+                    $hasListener = $true
+                }
+            }
+            default { return $false }
+        }
+    }
+    return $hasListener
 }
 
 function Wait-CanaryAACHttp {

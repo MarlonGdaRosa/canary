@@ -51,7 +51,7 @@ Describe 'CanaryAAC local tooling' {
             [pscustomobject] @{
                 ProcessId = 123
                 ExecutablePath = 'C:\repo\.tools\php\php.exe'
-                CommandLine = '"C:\repo\.tools\php\php.exe" -S 127.0.0.1:8080 "C:\repo\.tools\canaryaac\router.php"'
+                CommandLine = '"C:\repo\.tools\php\php.exe" -c "C:\repo\.tools\php\php.ini" -S 127.0.0.1:8080 -t "C:\repo\.tools\canaryaac" "C:\repo\.tools\canaryaac\router.php"'
             }
         }
         Test-CanaryAACProcess -ProcessId 123 -PhpPath 'C:\repo\.tools\php\php.exe' -RouterPath 'C:\repo\.tools\canaryaac\router.php' | Should Be $true
@@ -74,6 +74,28 @@ Describe 'CanaryAAC local tooling' {
                 ProcessId = 123
                 ExecutablePath = 'C:\repo\.tools\php\php.exe'
                 CommandLine = 'php.exe -S 0.0.0.0:8080 "C:\repo\.tools\canaryaac\router.php"'
+            }
+        }
+        Test-CanaryAACProcess -ProcessId 123 -PhpPath 'C:\repo\.tools\php\php.exe' -RouterPath 'C:\repo\.tools\canaryaac\router.php' | Should Be $false
+    }
+
+    It 'rejects a quoted router argument with a suffix inside its quotes' {
+        Mock Get-CimInstance -ModuleName CanaryAAC.Local {
+            [pscustomobject] @{
+                ProcessId = 123
+                ExecutablePath = 'C:\repo\.tools\php\php.exe'
+                CommandLine = 'php.exe -S 127.0.0.1:8080 "C:\repo\.tools\canaryaac\router.php other"'
+            }
+        }
+        Test-CanaryAACProcess -ProcessId 123 -PhpPath 'C:\repo\.tools\php\php.exe' -RouterPath 'C:\repo\.tools\canaryaac\router.php' | Should Be $false
+    }
+
+    It 'rejects listener text embedded inside a quoted script argument' {
+        Mock Get-CimInstance -ModuleName CanaryAAC.Local {
+            [pscustomobject] @{
+                ProcessId = 123
+                ExecutablePath = 'C:\repo\.tools\php\php.exe'
+                CommandLine = 'php.exe "script -S 127.0.0.1:8080 payload.php" "C:\repo\.tools\canaryaac\router.php"'
             }
         }
         Test-CanaryAACProcess -ProcessId 123 -PhpPath 'C:\repo\.tools\php\php.exe' -RouterPath 'C:\repo\.tools\canaryaac\router.php' | Should Be $false
