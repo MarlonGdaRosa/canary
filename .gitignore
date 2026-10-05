@@ -405,6 +405,7 @@ canary.old
 
 # VCPKG
 .tools/
+.worktrees/
 vcpkg_installed
 
 # Cppcheck Cache
