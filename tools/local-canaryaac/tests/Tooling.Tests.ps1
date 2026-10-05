@@ -368,6 +368,51 @@ Describe 'CanaryAAC installer recovery' {
         . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
     }
 
+    It 'accepts managed tracked dotenv bytes while rejecting every other tracked mutation' {
+        $tokens = $null; $errors = $null
+        $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $toolRoot 'Install-CanaryAAC.ps1'), [ref] $tokens, [ref] $errors)
+        foreach ($definition in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Invoke-CheckoutGit', 'Assert-PatchedCheckout') }, $false)) {
+            . ([scriptblock]::Create($definition.Extent.Text))
+        }
+        $fixture = New-CanaryAACInstallerFixture -Root (Join-Path $TestDrive 'managed-env')
+        $envFile = Join-Path $fixture.Checkout '.env'
+        $other = Join-Path $fixture.Checkout 'other.env'
+        [IO.File]::WriteAllText($envFile, 'DB_PASS=upstream-fixture')
+        [IO.File]::WriteAllText($other, 'ordinary tracked fixture')
+        & git -C $fixture.Checkout add -- .env other.env
+        & git -C $fixture.Checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m env-fixture
+        $tree = & git -C $fixture.Checkout rev-parse HEAD
+        $layout = Get-CanaryAACLayout -RepositoryRoot (Split-Path -Parent $fixture.Runtime)
+        $session = [pscustomobject] @{ Root = Join-Path $fixture.Runtime 'test-session' }
+        New-Item -ItemType Directory -Path $session.Root | Out-Null
+        [IO.File]::WriteAllText($envFile, 'DB_PASS=local-fixture')
+        $before = [IO.File]::ReadAllBytes($envFile)
+        { Assert-PatchedCheckout -ExpectedTree $tree -AllowedPaths @() } | Should Not Throw
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes($envFile)) | Should Be ([Convert]::ToBase64String($before))
+        [IO.File]::WriteAllText($other, 'unaccounted change')
+        { Assert-PatchedCheckout -ExpectedTree $tree -AllowedPaths @() } | Should Throw
+        [IO.File]::WriteAllText($other, 'ordinary tracked fixture')
+        Remove-Item -LiteralPath $envFile
+        { Assert-PatchedCheckout -ExpectedTree $tree -AllowedPaths @() } | Should Throw
+    }
+
+    It 'refuses managed dotenv directories and redirects before accepting local configuration' {
+        $checkout = Join-Path $TestDrive 'env-redirect-checkout'
+        $outside = Join-Path $TestDrive 'env-redirect-outside'
+        New-Item -ItemType Directory -Path $checkout, $outside | Out-Null
+        & git -C $checkout init --quiet
+        $envFile = Join-Path $checkout '.env'
+        [IO.File]::WriteAllText($envFile, 'DB_PASS=fixture')
+        { Assert-CanaryAACManagedEnv -Checkout $checkout } | Should Not Throw
+        Remove-Item -LiteralPath $envFile
+        New-Item -ItemType Directory -Path $envFile | Out-Null
+        { Assert-CanaryAACManagedEnv -Checkout $checkout } | Should Throw
+        [IO.Directory]::Delete($envFile)
+        New-Item -ItemType Junction -Path $envFile -Target $outside | Out-Null
+        try { { Assert-CanaryAACManagedEnv -Checkout $checkout } | Should Throw }
+        finally { [IO.Directory]::Delete($envFile) }
+    }
+
     It 'excludes a hostile external INI scan on success and failure and restores its value' {
         $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
         $php = Join-Path $repo '.tools\php\php.exe'

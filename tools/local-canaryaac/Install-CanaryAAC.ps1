@@ -208,8 +208,25 @@ function Assert-CanaryAACInstallManifest {
     }
 }
 
+function Assert-CanaryAACManagedEnv {
+    param([string] $Checkout, [switch] $KeepReadLock)
+    $envFile = Join-Path $Checkout '.env'
+    $item = Get-Item -LiteralPath $envFile -Force -ErrorAction SilentlyContinue
+    if ($null -eq $item) {
+        $tracked = & git -C $Checkout ls-files -- .env
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect managed dotenv identity.' }
+        if ($tracked -ceq '.env') { throw 'Tracked managed dotenv file is missing.' }
+        return
+    }
+    if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Managed dotenv must be a regular file without a reparse point.' }
+    # Hold existing local credentials read-only through checkout and Composer.
+    # They are never hashed, recorded in the manifest, or printed.
+    if ($KeepReadLock) { return [IO.File]::Open($envFile, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read) }
+}
+
 function Assert-CanaryAACIgnoredPaths {
     param([string] $Checkout, [string] $RouterSource, [object[]] $RecordedVendor)
+    Assert-CanaryAACManagedEnv -Checkout $Checkout
     $router = Join-Path $Checkout 'router.php'
     if (Test-Path -LiteralPath $router) {
         $expected = (Get-FileHash -LiteralPath $RouterSource -Algorithm SHA256).Hash
@@ -219,7 +236,7 @@ function Assert-CanaryAACIgnoredPaths {
     $ignored = & git -C $Checkout ls-files --others --ignored --exclude-standard -z
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect ignored checkout paths.' }
     foreach ($path in @(($ignored -join '') -split [char] 0 | Where-Object { $_.Length -gt 0 })) {
-        if ($path -cin @('router.php', '.local-install.json') -or $path.StartsWith('vendor/')) { continue }
+        if ($path -cin @('.env', 'router.php', '.local-install.json') -or $path.StartsWith('vendor/')) { continue }
         throw "Unaccounted ignored checkout path: $path"
     }
 }
@@ -311,19 +328,20 @@ function Get-VerifiedDownload {
 function Assert-PatchedCheckout {
     param([string] $ExpectedTree, [string[]] $AllowedPaths)
     Assert-CanaryAACRealIndex -Checkout $layout.Checkout
+    Assert-CanaryAACManagedEnv -Checkout $layout.Checkout
     $checkIndex = Join-Path $session.Root "check-$([guid]::NewGuid().ToString('N')).index"
     $previousIndex = $env:GIT_INDEX_FILE
     try {
         $env:GIT_INDEX_FILE = $checkIndex
         Invoke-CheckoutGit @('read-tree', $ExpectedTree)
-        Invoke-CheckoutGit @('diff', '--quiet', '--', '.', ':(exclude)vendor/')
+        Invoke-CheckoutGit @('diff', '--quiet', '--', '.', ':(exclude)vendor/', ':(top,exclude).env')
     } finally {
         $env:GIT_INDEX_FILE = $previousIndex
         if (Test-Path -LiteralPath $checkIndex) { Remove-Item -LiteralPath $checkIndex }
     }
     $untracked = @(Invoke-CheckoutGit @('-c', 'core.quotepath=false', 'ls-files', '--others', '--exclude-standard'))
     foreach ($path in $untracked) {
-        if ($path.StartsWith('vendor/')) { continue }
+        if ($path -ceq '.env' -or $path.StartsWith('vendor/')) { continue }
         if ($path -cnotin $AllowedPaths) { throw "Refusing unaccounted CanaryAAC file: $path" }
         $actualBlob = Invoke-CheckoutGit @('hash-object', '--', $path)
         $expectedBlob = Invoke-CheckoutGit @('rev-parse', "${ExpectedTree}:$path")
@@ -355,7 +373,7 @@ function Get-CanaryAACTransitionPaths {
     foreach ($patch in $Snapshots) {
         foreach ($stat in @(Invoke-CheckoutGit @('apply', '--numstat', '--', $patch.FullName))) {
             $path = ($stat -split "`t", 3)[2]
-            if ($path.StartsWith('"') -or $path -match '[\r\n]' -or $path -cin @('router.php', '.local-install.json') -or $path.StartsWith('vendor/')) {
+            if ($path.StartsWith('"') -or $path -match '[\r\n]' -or $path -cin @('.env', 'router.php', '.local-install.json') -or $path.StartsWith('vendor/')) {
                 throw "Unsupported, generated or installer-owned patch path: $path"
             }
             Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path (Join-Path $layout.Checkout $path) -AllowedRootTarget $allowedRuntimeTarget
@@ -489,6 +507,10 @@ $session = [pscustomobject] @{
 Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $session.Root -AllowedRootTarget $allowedRuntimeTarget
 New-Item -ItemType Directory -Path $session.Root | Out-Null
 try {
+    if ($existingCheckout) {
+        $envReadLock = Assert-CanaryAACManagedEnv -Checkout $layout.Checkout -KeepReadLock
+        if ($null -ne $envReadLock) { $session.ArtifactLocks += $envReadLock }
+    }
     $journalPath = Join-Path $layout.RuntimeRoot 'canaryaac-transition.dat'
     $journalEntropy = [Text.Encoding]::UTF8.GetBytes("CanaryAAC-transition-v1:$([IO.Path]::GetFullPath($layout.RuntimeRoot))")
     $installerLockPath = Join-Path $layout.RuntimeRoot 'canaryaac-installer.lock'
