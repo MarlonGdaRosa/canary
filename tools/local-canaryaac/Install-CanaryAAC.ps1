@@ -59,7 +59,11 @@ function Assert-CanaryAACSafeTree {
 }
 
 function Invoke-CanaryAACComposerEnvironment {
-    param([string] $RuntimeRoot, [string] $Checkout, [string] $TempRoot, [scriptblock] $Action)
+    param([string] $RuntimeRoot, [string] $Checkout, [string] $TempRoot, [scriptblock] $Action, [string] $AllowedRootTarget)
+    $scanRoot = Join-Path $TempRoot 'php-ini-scan'
+    Assert-CanaryAACSafeTree -Root $RuntimeRoot -Path $scanRoot -AllowedRootTarget $AllowedRootTarget
+    New-Item -ItemType Directory -Path $scanRoot -Force | Out-Null
+    if (@(Get-ChildItem -LiteralPath $scanRoot -Force).Count -ne 0) { throw 'The private PHP INI scan directory must remain empty.' }
     $settings = [ordered] @{
         COMPOSER_HOME = Join-Path $RuntimeRoot 'composer\home'
         COMPOSER_CACHE_DIR = Join-Path $RuntimeRoot 'composer\cache'
@@ -68,6 +72,7 @@ function Invoke-CanaryAACComposerEnvironment {
         COMPOSER = Join-Path $Checkout 'composer.json'
         COMPOSER_VENDOR_DIR = Join-Path $Checkout 'vendor'
         COMPOSER_BIN_DIR = Join-Path $Checkout 'vendor\bin'
+        PHP_INI_SCAN_DIR = $scanRoot
     }
     $saved = @{}
     foreach ($name in $settings.Keys) { $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
@@ -77,6 +82,16 @@ function Invoke-CanaryAACComposerEnvironment {
     } finally {
         foreach ($name in $settings.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') }
     }
+}
+
+function Assert-CanaryAACRealIndex {
+    param([string] $Checkout)
+    $savedIndex = [Environment]::GetEnvironmentVariable('GIT_INDEX_FILE', 'Process')
+    try {
+        $env:GIT_INDEX_FILE = Join-Path $Checkout '.git\index'
+        & git -C $Checkout diff --cached --quiet HEAD --
+        if ($LASTEXITCODE -ne 0) { throw 'Refusing staged changes in the real Git index; the installer never stages patches.' }
+    } finally { [Environment]::SetEnvironmentVariable('GIT_INDEX_FILE', $savedIndex, 'Process') }
 }
 
 function Assert-CanaryAACPhpInstallation {
@@ -153,7 +168,7 @@ function New-CanaryAACPatchSnapshots {
 }
 
 function Assert-CanaryAACInstallManifest {
-    param([object] $Manifest, [object] $Lock, [string] $Checkout, [object[]] $Snapshots)
+    param([object] $Manifest, [object] $Lock, [string] $Checkout, [object[]] $Snapshots, [string] $AuthenticatedPriorLock)
     $required = @('BaseCommit', 'Patches', 'PhpVersion', 'ComposerVersion', 'ComposerLockSha256', 'VendorInventory')
     $properties = @($Manifest.PSObject.Properties.Name)
     if ($properties.Count -ne $required.Count -or @($required | Where-Object { $_ -cnotin $properties }).Count -gt 0) {
@@ -166,6 +181,7 @@ function Assert-CanaryAACInstallManifest {
         throw 'Install manifest hashes and collections have invalid types.'
     }
     $currentLock = (Get-FileHash -LiteralPath (Join-Path $Checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+    if (-not [string]::IsNullOrEmpty($AuthenticatedPriorLock)) { $currentLock = $AuthenticatedPriorLock }
     if ($Manifest.ComposerLockSha256 -cne $currentLock) { throw 'Install manifest composer.lock provenance mismatch before patch transition.' }
     if ($Manifest.Patches.Count -gt $Snapshots.Count) { throw 'Install manifest permits only an append-only patch transition.' }
     for ($index = 0; $index -lt $Manifest.Patches.Count; $index++) {
@@ -294,12 +310,13 @@ function Get-VerifiedDownload {
 
 function Assert-PatchedCheckout {
     param([string] $ExpectedTree, [string[]] $AllowedPaths)
+    Assert-CanaryAACRealIndex -Checkout $layout.Checkout
     $checkIndex = Join-Path $session.Root "check-$([guid]::NewGuid().ToString('N')).index"
     $previousIndex = $env:GIT_INDEX_FILE
     try {
         $env:GIT_INDEX_FILE = $checkIndex
         Invoke-CheckoutGit @('read-tree', $ExpectedTree)
-        Invoke-CheckoutGit @('diff', '--exit-code', '--', '.', ':(exclude)vendor/')
+        Invoke-CheckoutGit @('diff', '--quiet', '--', '.', ':(exclude)vendor/')
     } finally {
         $env:GIT_INDEX_FILE = $previousIndex
         if (Test-Path -LiteralPath $checkIndex) { Remove-Item -LiteralPath $checkIndex }
@@ -333,6 +350,109 @@ function Get-CanaryAACExpectedTree {
     }
 }
 
+function Get-CanaryAACTransitionPaths {
+    param([object[]] $Snapshots)
+    foreach ($patch in $Snapshots) {
+        foreach ($stat in @(Invoke-CheckoutGit @('apply', '--numstat', '--', $patch.FullName))) {
+            $path = ($stat -split "`t", 3)[2]
+            if ($path.StartsWith('"') -or $path -match '[\r\n]' -or $path -cin @('router.php', '.local-install.json') -or $path.StartsWith('vendor/')) {
+                throw "Unsupported, generated or installer-owned patch path: $path"
+            }
+            Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path (Join-Path $layout.Checkout $path) -AllowedRootTarget $allowedRuntimeTarget
+            $path
+        }
+    }
+}
+
+function Get-CanaryAACPrefix {
+    param([int] $Count)
+    if ($Count -gt 0) { return @($session.Snapshots[0..($Count - 1)]) }
+}
+
+function Get-CanaryAACTreeLockHash {
+    param([string] $Tree)
+    $export = Join-Path $session.Root ([guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $export | Out-Null
+    $index = Join-Path $export 'index'
+    $saved = $env:GIT_INDEX_FILE
+    try {
+        $env:GIT_INDEX_FILE = $index
+        Invoke-CheckoutGit @('read-tree', $Tree)
+        Invoke-CheckoutGit @('checkout-index', "--prefix=$($export.Replace('\', '/'))/", '--', 'composer.lock')
+        return (Get-FileHash -LiteralPath (Join-Path $export 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+    } finally { $env:GIT_INDEX_FILE = $saved }
+}
+
+function Get-CanaryAACManifestHash {
+    if (Test-Path -LiteralPath $manifestPath) { return (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant() }
+    return $null
+}
+
+function Publish-CanaryAACFile {
+    param([string] $Source, [string] $Destination)
+    Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $Destination -AllowedRootTarget $allowedRuntimeTarget
+    if (Test-Path -LiteralPath $Destination) { [IO.File]::Replace($Source, $Destination, [System.Management.Automation.Language.NullString]::Value) }
+    else { [IO.File]::Move($Source, $Destination) }
+}
+
+function Read-CanaryAACJournal {
+    Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $journalPath -AllowedRootTarget $allowedRuntimeTarget
+    if (-not (Test-Path -LiteralPath $journalPath)) { return $null }
+    Add-Type -AssemblyName System.Security
+    try {
+        $protected = [IO.File]::ReadAllBytes($journalPath)
+        $plain = [Security.Cryptography.ProtectedData]::Unprotect($protected, $journalEntropy, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+        $journal = [Text.Encoding]::UTF8.GetString($plain) | ConvertFrom-Json
+    } catch { throw "Transition journal authentication failed: $($_.Exception.Message)" }
+    $session.JournalHash = (Get-FileHash -LiteralPath $journalPath -Algorithm SHA256).Hash
+    $fields = @('Schema', 'BaseCommit', 'PhpSha256', 'ComposerSha256', 'Patches', 'PriorManifestHash', 'PriorLock', 'PriorCount', 'Count', 'Tree', 'LockHash', 'Vendor', 'Pending', 'PublishedHash')
+    if (@($journal.PSObject.Properties).Count -ne $fields.Count -or @($fields | Where-Object { $null -eq $journal.PSObject.Properties[$_] }).Count -gt 0 -or
+        $journal.Schema -cne 'CanaryAAC-transition-v1' -or $journal.BaseCommit -cne $lock.canaryaac.commit -or
+        $journal.PhpSha256 -cne $lock.php.sha256 -or $journal.ComposerSha256 -cne $lock.composer.sha256 -or
+        $journal.Patches -isnot [array] -or $journal.Vendor -isnot [array] -or
+        $journal.Count -isnot [int] -or $journal.PriorCount -isnot [int] -or $journal.PriorCount -lt 0 -or
+        $journal.Count -lt $journal.PriorCount -or $journal.Count -gt $session.Snapshots.Count -or
+        $journal.PriorLock -cnotmatch '^[a-f0-9]{64}$' -or $journal.LockHash -cnotmatch '^[a-f0-9]{64}$' -or $journal.Tree -cnotmatch '^[a-f0-9]{40}$' -or
+        ($null -ne $journal.PriorManifestHash -and $journal.PriorManifestHash -cnotmatch '^[a-f0-9]{64}$') -or
+        ($null -ne $journal.PublishedHash -and $journal.PublishedHash -cnotmatch '^[a-f0-9]{64}$') -or
+        (ConvertTo-Json -InputObject @($journal.Patches) -Compress) -cne (ConvertTo-Json -InputObject @($patchRecords) -Compress)) {
+        throw 'Transition journal provenance/schema mismatch.'
+    }
+    if ($null -ne $journal.Pending -and (@($journal.Pending.PSObject.Properties).Count -ne 3 -or
+        $journal.Pending.Count -isnot [int] -or $journal.Pending.Count -ne ($journal.Count + 1) -or $journal.Pending.Count -gt $session.Snapshots.Count -or
+        $journal.Pending.Tree -cnotmatch '^[a-f0-9]{40}$' -or $journal.Pending.LockHash -cnotmatch '^[a-f0-9]{64}$')) {
+        throw 'Transition journal pending prefix is invalid.'
+    }
+    return $journal
+}
+
+function Assert-CanaryAACJournalOwnership {
+    if ($null -ne $session.JournalHash) {
+        Assert-FileSha256 -Path $journalPath -Expected $session.JournalHash
+    } elseif (Test-Path -LiteralPath $journalPath) { throw 'Unexpected transition journal appeared.' }
+}
+
+function Write-CanaryAACJournal {
+    param([object] $Journal)
+    Assert-CanaryAACJournalOwnership
+    Add-Type -AssemblyName System.Security
+    $plain = [Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $Journal -Depth 8 -Compress))
+    $protected = [Security.Cryptography.ProtectedData]::Protect($plain, $journalEntropy, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+    $stage = Join-Path $session.Root 'transition.tmp'
+    [IO.File]::WriteAllBytes($stage, $protected)
+    Publish-CanaryAACFile -Source $stage -Destination $journalPath
+    $session.JournalHash = (Get-FileHash -LiteralPath $journalPath -Algorithm SHA256).Hash
+}
+
+function Assert-CanaryAACCheckpoint {
+    param([object] $Checkpoint)
+    $prefix = @(Get-CanaryAACPrefix -Count $Checkpoint.Count)
+    $tree = Get-CanaryAACExpectedTree -Snapshots $prefix
+    if ($Checkpoint.Tree -cne $tree -or $Checkpoint.LockHash -cne (Get-CanaryAACTreeLockHash -Tree $tree)) { throw 'Transition checkpoint tree/lock provenance mismatch.' }
+    Assert-PatchedCheckout -ExpectedTree $tree -AllowedPaths @(Get-CanaryAACTransitionPaths -Snapshots $prefix)
+    Assert-FileSha256 -Path (Join-Path $layout.Checkout 'composer.lock') -Expected $Checkpoint.LockHash
+}
+
 $allowedRuntimeTarget = $null
 $runtimeItem = Get-Item -LiteralPath $layout.RuntimeRoot -Force -ErrorAction SilentlyContinue
 if ($null -ne $runtimeItem -and ($runtimeItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
@@ -355,6 +475,7 @@ if ($existingCheckout) {
     if ($origin -cne $lock.canaryaac.repository) { throw "CanaryAAC origin mismatch: $origin" }
     $head = Invoke-CheckoutGit @('rev-parse', 'HEAD')
     if ($head -cne $lock.canaryaac.commit) { throw "Existing CanaryAAC HEAD must equal pinned base $($lock.canaryaac.commit); got $head." }
+    Assert-CanaryAACRealIndex -Checkout $layout.Checkout
 }
 
 $session = [pscustomobject] @{
@@ -362,13 +483,20 @@ $session = [pscustomobject] @{
     PhpStage = $null
     Snapshots = @()
     ArtifactLocks = @()
+    JournalHash = $null
+    InstallerLock = $null
 }
 Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $session.Root -AllowedRootTarget $allowedRuntimeTarget
 New-Item -ItemType Directory -Path $session.Root | Out-Null
 try {
+    $journalPath = Join-Path $layout.RuntimeRoot 'canaryaac-transition.dat'
+    $journalEntropy = [Text.Encoding]::UTF8.GetBytes("CanaryAAC-transition-v1:$([IO.Path]::GetFullPath($layout.RuntimeRoot))")
+    $installerLockPath = Join-Path $layout.RuntimeRoot 'canaryaac-installer.lock'
+    Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $installerLockPath -AllowedRootTarget $allowedRuntimeTarget
+    $session.InstallerLock = [IO.File]::Open($installerLockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $tempRoot = Join-Path $session.Root 'temp'
     New-Item -ItemType Directory -Path $tempRoot | Out-Null
-    Invoke-CanaryAACComposerEnvironment -RuntimeRoot $layout.RuntimeRoot -Checkout $layout.Checkout -TempRoot $tempRoot -Action {
+    Invoke-CanaryAACComposerEnvironment -RuntimeRoot $layout.RuntimeRoot -Checkout $layout.Checkout -TempRoot $tempRoot -AllowedRootTarget $allowedRuntimeTarget -Action {
         $patchRoot = Join-Path $PSScriptRoot 'patches'
         $sources = @()
         if (Test-Path -LiteralPath $patchRoot) {
@@ -382,13 +510,44 @@ try {
         $recordedVendor = @()
         $priorPatchCount = 0
         $allowedPaths = @()
+        $journal = Read-CanaryAACJournal
+        if ($null -ne $journal -and -not $existingCheckout) { throw 'Transition journal requires its original existing checkout.' }
 
         if ($existingCheckout) {
+            $authenticatedPriorLock = $null
+            if ($null -ne $journal) {
+                $manifestHash = Get-CanaryAACManifestHash
+                if ($manifestHash -cne $journal.PriorManifestHash -and ($null -eq $journal.PublishedHash -or $manifestHash -cne $journal.PublishedHash)) {
+                    throw 'Transition prior manifest identity mismatch.'
+                }
+                $authenticatedPriorLock = $journal.PriorLock
+                try { Assert-CanaryAACCheckpoint -Checkpoint $journal }
+                catch {
+                    if ($null -eq $journal.Pending) { throw "Transition checkout mismatch: $($_.Exception.Message)" }
+                    try { Assert-CanaryAACCheckpoint -Checkpoint $journal.Pending }
+                    catch { throw "Transition checkout/pending mismatch: $($_.Exception.Message)" }
+                    $journal.Count = $journal.Pending.Count; $journal.Tree = $journal.Pending.Tree; $journal.LockHash = $journal.Pending.LockHash
+                }
+                $journal.Pending = $null
+                Assert-CanaryAACIgnoredPaths -Checkout $layout.Checkout -RouterSource $routerSource -RecordedVendor @($journal.Vendor)
+                # Publication completed but journal cleanup was interrupted.
+                if ($null -ne $journal.PublishedHash -and $manifestHash -ceq $journal.PublishedHash) {
+                    $authenticatedPriorLock = $journal.LockHash
+                    Assert-CanaryAACJournalOwnership
+                    Remove-Item -LiteralPath $journalPath
+                    $session.JournalHash = $null
+                    $journal = $null
+                }
+            }
             if (Test-Path -LiteralPath $manifestPath) {
                 $priorManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-                Assert-CanaryAACInstallManifest -Manifest $priorManifest -Lock $lock -Checkout $layout.Checkout -Snapshots $patches
+                Assert-CanaryAACInstallManifest -Manifest $priorManifest -Lock $lock -Checkout $layout.Checkout -Snapshots $patches -AuthenticatedPriorLock $authenticatedPriorLock
                 $recordedVendor = @($priorManifest.VendorInventory)
                 $priorPatchCount = $priorManifest.Patches.Count
+            }
+            if ($null -ne $journal) {
+                if ($priorPatchCount -ne $journal.PriorCount) { throw 'Transition prior patch prefix mismatch.' }
+                $recordedVendor = @($journal.Vendor)
             }
             Assert-CanaryAACIgnoredPaths -Checkout $layout.Checkout -RouterSource $routerSource -RecordedVendor $recordedVendor
             # A transition starts only from the exact prior patched tree. Newly
@@ -397,11 +556,12 @@ try {
             $priorPatches = @()
             if ($priorPatchCount -gt 0) { $priorPatches = @($patches[0..($priorPatchCount - 1)]) }
             $priorTree = Get-CanaryAACExpectedTree -Snapshots $priorPatches
+            if ($null -ne $journal -and $journal.PriorLock -cne (Get-CanaryAACTreeLockHash -Tree $priorTree)) { throw 'Transition prior lock/prefix provenance mismatch.' }
             $priorPaths = @()
             foreach ($patch in $priorPatches) {
                 foreach ($stat in @(Invoke-CheckoutGit @('apply', '--numstat', '--', $patch.FullName))) { $priorPaths += ($stat -split "`t", 3)[2] }
             }
-            Assert-PatchedCheckout -ExpectedTree $priorTree -AllowedPaths $priorPaths
+            if ($null -eq $journal) { Assert-PatchedCheckout -ExpectedTree $priorTree -AllowedPaths $priorPaths }
         }
 
         New-Item -ItemType Directory -Path $downloadRoot, $composerRoot, (Join-Path $composerRoot 'home'), (Join-Path $composerRoot 'cache') -Force | Out-Null
@@ -458,25 +618,51 @@ try {
             if ($entry -cnotin $excludeLines) { Add-Content -LiteralPath $exclude -Value $entry -Encoding UTF8 }
         }
         $expectedTree = Get-CanaryAACExpectedTree -Snapshots $patches
+        # Validate every patch path before writing the durable transition or
+        # mutating the checkout. The protected journal binds immutable hashes,
+        # the prior manifest, and each independently reconstructed prefix.
+        $allowedPaths = @(Get-CanaryAACTransitionPaths -Snapshots $patches)
+        if ($null -eq $journal) {
+            $prefix = @(Get-CanaryAACPrefix -Count $priorPatchCount)
+            $tree = Get-CanaryAACExpectedTree -Snapshots $prefix
+            $journal = [pscustomobject] [ordered] @{
+                Schema = 'CanaryAAC-transition-v1'; BaseCommit = $lock.canaryaac.commit
+                PhpSha256 = $lock.php.sha256; ComposerSha256 = $lock.composer.sha256
+                Patches = @($patchRecords); PriorManifestHash = Get-CanaryAACManifestHash
+                PriorLock = Get-CanaryAACTreeLockHash -Tree $tree; PriorCount = $priorPatchCount
+                Count = $priorPatchCount; Tree = $tree; LockHash = Get-CanaryAACTreeLockHash -Tree $tree
+                Vendor = @($recordedVendor); Pending = $null; PublishedHash = $null
+            }
+        }
+        Write-CanaryAACJournal -Journal $journal
         for ($index = 0; $index -lt $patches.Count; $index++) {
             $patch = $patches[$index]
-            foreach ($stat in @(Invoke-CheckoutGit @('apply', '--numstat', '--', $patch.FullName))) {
-                $path = ($stat -split "`t", 3)[2]
-                if ($path.StartsWith('"') -or $path -match '[\r\n]' -or $path -cin @('router.php', '.local-install.json') -or $path.StartsWith('vendor/')) {
-                    throw "Unsupported, generated or installer-owned patch path: $path"
-                }
-                Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path (Join-Path $layout.Checkout $path) -AllowedRootTarget $allowedRuntimeTarget
-                $allowedPaths += $path
-            }
-            # The entire prior patch tree was verified above; reruns need not
-            # reverse an older patch whose hunks a later patch has replaced.
-            if ($index -ge $priorPatchCount) { Invoke-CanaryAACPatch -Checkout $layout.Checkout -PatchPath $patch.FullName }
+            if ($index -lt $journal.Count) { continue }
+            $nextTree = Get-CanaryAACExpectedTree -Snapshots @(Get-CanaryAACPrefix -Count ($index + 1))
+            $journal.Pending = [pscustomobject] @{ Count = $index + 1; Tree = $nextTree; LockHash = Get-CanaryAACTreeLockHash -Tree $nextTree }
+            Write-CanaryAACJournal -Journal $journal
+            Invoke-CanaryAACPatch -Checkout $layout.Checkout -PatchPath $patch.FullName
+            Assert-CanaryAACCheckpoint -Checkpoint $journal.Pending
+            $journal.Count = $journal.Pending.Count; $journal.Tree = $journal.Pending.Tree; $journal.LockHash = $journal.Pending.LockHash
+            $journal.Pending = $null
+            Write-CanaryAACJournal -Journal $journal
         }
         Assert-PatchedCheckout -ExpectedTree $expectedTree -AllowedPaths $allowedPaths
         Assert-CanaryAACIgnoredPaths -Checkout $layout.Checkout -RouterSource $routerSource -RecordedVendor $recordedVendor
         Copy-Item -LiteralPath $routerSource -Destination $layout.RouterPath
-        & $layout.PhpPath -c $phpIni $layout.ComposerPath "--working-dir=$($layout.Checkout)" install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
-        if ($LASTEXITCODE -ne 0) { throw "Composer install failed with exit code $LASTEXITCODE." }
+        try {
+            & $layout.PhpPath -c $phpIni $layout.ComposerPath "--working-dir=$($layout.Checkout)" install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
+            if ($LASTEXITCODE -ne 0) { throw "Composer install failed with exit code $LASTEXITCODE." }
+        } finally {
+            # Only this pinned Composer execution may advance generated vendor
+            # state, including a nonzero exit. Non-vendor/index changes never do.
+            Assert-CanaryAACSafeTree -Root $layout.RuntimeRoot -Path $layout.Checkout -AllowedRootTarget $allowedRuntimeTarget
+            Assert-CanaryAACCheckpoint -Checkpoint $journal
+            $observedVendor = @(Get-CanaryAACVendorInventory -Checkout $layout.Checkout)
+            Assert-CanaryAACIgnoredPaths -Checkout $layout.Checkout -RouterSource $routerSource -RecordedVendor $observedVendor
+            $journal.Vendor = @($observedVendor)
+            Write-CanaryAACJournal -Journal $journal
+        }
         & $layout.PhpPath -c $phpIni $layout.ComposerPath "--working-dir=$($layout.Checkout)" validate --strict --no-interaction --no-plugins --no-scripts
         if ($LASTEXITCODE -ne 0) { throw "Composer strict validation failed with exit code $LASTEXITCODE." }
         Assert-CanaryAACSafeTree -Root $layout.RuntimeRoot -Path $layout.Checkout -AllowedRootTarget $allowedRuntimeTarget
@@ -485,7 +671,7 @@ try {
         $composerLockHash = (Get-FileHash -LiteralPath (Join-Path $layout.Checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($null -ne $priorManifest -and $priorPatchCount -eq $patches.Count) {
             if ($composerLockHash -cne $priorManifest.ComposerLockSha256) { throw 'Manifest lock provenance changed without an appended patch.' }
-            Assert-CanaryAACVendorInventory -Checkout $layout.Checkout -Recorded $recordedVendor
+            Assert-CanaryAACVendorInventory -Checkout $layout.Checkout -Recorded @($priorManifest.VendorInventory)
         }
         Assert-CanaryAACIgnoredPaths -Checkout $layout.Checkout -RouterSource $routerSource -RecordedVendor $vendorInventory
         $phpPaths = @($allowedPaths + @($vendorInventory | ForEach-Object { $_.Path }) + 'router.php' | Sort-Object -Unique)
@@ -504,10 +690,18 @@ try {
         $manifestStage = Join-Path $session.Root 'manifest.json'
         $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestStage -Encoding UTF8
         Assert-CanaryAACSafePath -Root $layout.RuntimeRoot -Path $manifestPath -AllowedRootTarget $allowedRuntimeTarget
-        Move-Item -LiteralPath $manifestStage -Destination $manifestPath -Force
+        if ((Get-CanaryAACManifestHash) -cne $journal.PriorManifestHash) { throw 'Transition prior manifest changed during installation.' }
+        $journal.PublishedHash = (Get-FileHash -LiteralPath $manifestStage -Algorithm SHA256).Hash.ToLowerInvariant()
+        Write-CanaryAACJournal -Journal $journal
+        Publish-CanaryAACFile -Source $manifestStage -Destination $manifestPath
+        Assert-FileSha256 -Path $manifestPath -Expected $journal.PublishedHash
+        Assert-CanaryAACJournalOwnership
+        Remove-Item -LiteralPath $journalPath
+        $session.JournalHash = $null
         Write-Host "CanaryAAC installed at $($layout.Checkout) with $($patchRecords.Count) patches."
     }
 } finally {
+    if ($null -ne $session.InstallerLock) { $session.InstallerLock.Dispose() }
     foreach ($snapshot in $session.Snapshots) { $snapshot.ReadLock.Dispose() }
     foreach ($stream in $session.ArtifactLocks) { $stream.Dispose() }
     foreach ($ownedDirectory in @($session.PhpStage, $session.Root)) {

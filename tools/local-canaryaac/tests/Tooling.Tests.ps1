@@ -363,6 +363,144 @@ Describe 'CanaryAAC installer hardening' {
     }
 }
 
+Describe 'CanaryAAC installer recovery' {
+    BeforeEach {
+        . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
+    }
+
+    It 'excludes a hostile external INI scan on success and failure and restores its value' {
+        $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
+        $php = Join-Path $repo '.tools\php\php.exe'
+        if (-not (Test-Path -LiteralPath $php)) { Set-TestInconclusive 'Pinned PHP is not installed yet.'; return }
+        $runtime = Join-Path $TestDrive 'scan-runtime'
+        $outside = Join-Path $TestDrive 'hostile-scan'
+        New-Item -ItemType Directory -Path $runtime, $outside | Out-Null
+        $ini = Join-Path $runtime 'safe.ini'
+        [IO.File]::WriteAllText($ini, 'date.timezone=UTC')
+        [IO.File]::WriteAllText((Join-Path $outside 'hostile.ini'), 'date.timezone=Pacific/Honolulu')
+        $original = [Environment]::GetEnvironmentVariable('PHP_INI_SCAN_DIR', 'Process')
+        try {
+            [Environment]::SetEnvironmentVariable('PHP_INI_SCAN_DIR', $outside, 'Process')
+            Invoke-CanaryAACComposerEnvironment -RuntimeRoot $runtime -Checkout (Join-Path $runtime 'checkout') -TempRoot (Join-Path $runtime 'temp') -Action {
+                (& $php -c $ini -r 'echo date_default_timezone_get();') | Should Be 'UTC'
+                [Environment]::GetEnvironmentVariable('PHP_INI_SCAN_DIR', 'Process').StartsWith($runtime + '\') | Should Be $true
+                @(& $php -c $ini -r 'echo php_ini_scanned_files();').Count | Should Be 0
+            }
+            [Environment]::GetEnvironmentVariable('PHP_INI_SCAN_DIR', 'Process') | Should Be $outside
+            { Invoke-CanaryAACComposerEnvironment -RuntimeRoot $runtime -Checkout (Join-Path $runtime 'checkout') -TempRoot (Join-Path $runtime 'temp') -Action {
+                (& $php -c $ini -r 'echo date_default_timezone_get();') | Should Be 'UTC'
+                throw 'scan controlled failure'
+            } } | Should Throw 'scan controlled failure'
+            [Environment]::GetEnvironmentVariable('PHP_INI_SCAN_DIR', 'Process') | Should Be $outside
+            [Environment]::SetEnvironmentVariable('PHP_INI_SCAN_DIR', $null, 'Process')
+            Invoke-CanaryAACComposerEnvironment -RuntimeRoot $runtime -Checkout (Join-Path $runtime 'checkout') -TempRoot (Join-Path $runtime 'temp') -Action {}
+            [Environment]::GetEnvironmentVariable('PHP_INI_SCAN_DIR', 'Process') | Should Be $null
+        } finally { [Environment]::SetEnvironmentVariable('PHP_INI_SCAN_DIR', $original, 'Process') }
+    }
+
+    It 'rejects hidden staged changes without altering the real Git index' {
+        $fixture = New-CanaryAACInstallerFixture -Root (Join-Path $TestDrive 'staged-checkout')
+        { Assert-CanaryAACRealIndex -Checkout $fixture.Checkout } | Should Not Throw
+        $file = Join-Path $fixture.Checkout 'composer.lock'
+        $base = [IO.File]::ReadAllBytes($file)
+        [IO.File]::WriteAllText($file, 'staged-unaccounted')
+        & git -C $fixture.Checkout add -- composer.lock
+        [IO.File]::WriteAllBytes($file, $base)
+        $index = Join-Path $fixture.Checkout '.git\index'
+        $before = (Get-FileHash -LiteralPath $index -Algorithm SHA256).Hash
+        { Assert-CanaryAACRealIndex -Checkout $fixture.Checkout } | Should Throw 'staged'
+        { & $fixture.Script } | Should Throw 'staged'
+        (Get-FileHash -LiteralPath $index -Algorithm SHA256).Hash | Should Be $before
+        (Get-Content -LiteralPath $file) | Should Be 'fixture-lock'
+    }
+
+    It 'resumes an authenticated post-patch failure and refuses checkout or journal tampering' {
+        $fixture = New-CanaryAACInstallerFixture -Root (Join-Path $TestDrive 'transition-checkout')
+        $fixtureTools = Split-Path -Parent $fixture.Script
+        $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
+        $lockPath = Join-Path $fixtureTools 'runtime.lock.json'
+        $fixtureLock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+        $approved = Get-Content -LiteralPath (Join-Path $toolRoot 'runtime.lock.json') -Raw | ConvertFrom-Json
+        $fixtureLock.php = $approved.php
+        $fixtureLock.canaryaac.repository = $fixture.Checkout
+        & git -C $fixture.Checkout remote set-url origin $fixture.Checkout
+        $phpName = ([uri] $approved.php.url).Segments[-1]
+        Copy-Item -LiteralPath (Join-Path $repo ".tools\downloads\$phpName") -Destination (Join-Path $fixture.Runtime "downloads\$phpName")
+        Remove-Item -LiteralPath (Join-Path $fixture.Runtime 'php\php.exe')
+        [IO.Directory]::Delete((Join-Path $fixture.Runtime 'php'))
+        $composer = @'
+<?php
+$fail = __DIR__ . '/fail-once';
+if (in_array('install', $argv, true) && file_exists($fail)) {
+    unlink($fail);
+    $vendor = getenv('COMPOSER_VENDOR_DIR');
+    if (!is_dir($vendor)) { mkdir($vendor, 0777, true); }
+    file_put_contents($vendor . '/generated.php', "<?php // generated by the pinned fixture\n");
+    fwrite(STDERR, "simulated post-patch Composer failure\n");
+    exit(17);
+}
+echo "fixture Composer validation passed\n";
+'@
+        $composerArchive = Join-Path $fixture.Runtime 'downloads\composer-2.10.3.phar'
+        [IO.File]::WriteAllText($composerArchive, $composer)
+        $fixtureLock.composer.sha256 = (Get-FileHash -LiteralPath $composerArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+        $fixtureLock | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $lockPath -Encoding UTF8
+        New-Item -ItemType Directory -Path (Join-Path $fixture.Runtime 'composer') | Out-Null
+        [IO.File]::WriteAllText((Join-Path $fixture.Runtime 'composer\fail-once'), 'fail')
+        $patchRoot = Join-Path $fixtureTools 'patches'
+        New-Item -ItemType Directory -Path $patchRoot | Out-Null
+        $patch = Join-Path $patchRoot '001-lock.patch'
+        [IO.File]::WriteAllText($patch, "diff --git a/composer.lock b/composer.lock`n--- a/composer.lock`n+++ b/composer.lock`n@@ -1 +1 @@`n-fixture-lock`n\ No newline at end of file`n+fixture-lock-patched`n\ No newline at end of file`n")
+        $manifestBefore = (Get-FileHash -LiteralPath $fixture.ManifestPath -Algorithm SHA256).Hash
+        { & $fixture.Script } | Should Throw 'Composer install failed with exit code 17'
+        (Get-Content -LiteralPath (Join-Path $fixture.Checkout 'composer.lock')) | Should Be 'fixture-lock-patched'
+        (Get-FileHash -LiteralPath $fixture.ManifestPath -Algorithm SHA256).Hash | Should Be $manifestBefore
+        $journal = Join-Path $fixture.Runtime 'canaryaac-transition.dat'
+        Test-Path -LiteralPath $journal | Should Be $true
+        $journalBytes = [IO.File]::ReadAllBytes($journal)
+        $manifestBytes = [IO.File]::ReadAllBytes($fixture.ManifestPath)
+        [IO.File]::WriteAllText($fixture.ManifestPath, '{}')
+        { & $fixture.Script } | Should Throw 'Transition prior manifest identity'
+        [IO.File]::WriteAllBytes($fixture.ManifestPath, $manifestBytes)
+        [IO.File]::WriteAllText((Join-Path $fixture.Checkout 'composer.lock'), 'unaccounted-transition')
+        { & $fixture.Script } | Should Throw 'Transition'
+        [IO.File]::WriteAllText((Join-Path $fixture.Checkout 'composer.lock'), 'fixture-lock-patched')
+        $corrupted = [byte[]] $journalBytes.Clone()
+        $corrupted[20] = $corrupted[20] -bxor 1
+        [IO.File]::WriteAllBytes($journal, $corrupted)
+        { & $fixture.Script } | Should Throw 'journal authentication'
+        [IO.File]::WriteAllBytes($journal, $journalBytes)
+        $generated = Join-Path $fixture.Checkout 'vendor\generated.php'
+        $generatedBytes = [IO.File]::ReadAllBytes($generated)
+        [IO.File]::WriteAllText($generated, '<?php // unrecorded change')
+        { & $fixture.Script } | Should Throw 'Unrecorded vendor'
+        [IO.File]::WriteAllBytes($generated, $generatedBytes)
+        $patchBytes = [IO.File]::ReadAllBytes($patch)
+        [IO.File]::WriteAllText($patch, 'changed-source-patch')
+        { & $fixture.Script } | Should Throw 'Transition journal provenance'
+        [IO.File]::WriteAllBytes($patch, $patchBytes)
+        # Reproduce the signed pending checkpoint immediately before the
+        # completed git apply, so the crash window is exercised independently.
+        $entropy = [Text.Encoding]::UTF8.GetBytes("CanaryAAC-transition-v1:$([IO.Path]::GetFullPath($fixture.Runtime))")
+        $plain = [Security.Cryptography.ProtectedData]::Unprotect($journalBytes, $entropy, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+        $pendingJournal = [Text.Encoding]::UTF8.GetString($plain) | ConvertFrom-Json
+        $pendingJournal.Pending = [pscustomobject] @{ Count = $pendingJournal.Count; Tree = $pendingJournal.Tree; LockHash = $pendingJournal.LockHash }
+        $pendingJournal.Count = 0
+        $pendingJournal.Tree = (& git -C $fixture.Checkout rev-parse 'HEAD^{tree}')
+        $pendingJournal.LockHash = $pendingJournal.PriorLock
+        $pendingPlain = [Text.Encoding]::UTF8.GetBytes(($pendingJournal | ConvertTo-Json -Depth 8 -Compress))
+        [IO.File]::WriteAllBytes($journal, [Security.Cryptography.ProtectedData]::Protect($pendingPlain, $entropy, [Security.Cryptography.DataProtectionScope]::CurrentUser))
+        { & $fixture.Script } | Should Not Throw
+        Test-Path -LiteralPath $journal | Should Be $false
+        $manifest = Get-Content -LiteralPath $fixture.ManifestPath -Raw | ConvertFrom-Json
+        $manifest.Patches.Count | Should Be 1
+        $manifest.VendorInventory.Count | Should Be 1
+        $manifest.VendorInventory[0].Path | Should Be 'vendor/generated.php'
+        $manifest.Patches[0].Sha256 | Should Be (Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash.ToLowerInvariant()
+        $manifest.ComposerLockSha256 | Should Be (Get-FileHash -LiteralPath (Join-Path $fixture.Checkout 'composer.lock') -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+}
+
 Describe 'CanaryAAC installer safety' {
     It 'applies an absent numbered patch and recognizes it on rerun' {
         . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
