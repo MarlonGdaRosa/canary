@@ -89,7 +89,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -196,7 +196,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -303,7 +303,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -412,7 +412,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -521,7 +521,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -630,7 +630,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -739,7 +739,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -848,7 +848,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -1178,7 +1178,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1285,7 +1285,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1392,7 +1392,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1501,7 +1501,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1610,7 +1610,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1719,7 +1719,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 10.0
+            "Value": 10
           }
         ]
       },
@@ -1828,7 +1828,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -1937,7 +1937,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -3310,7 +3310,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3342,7 +3342,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3412,7 +3412,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3444,7 +3444,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3514,7 +3514,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3546,7 +3546,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3616,7 +3616,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3648,7 +3648,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3718,7 +3718,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3750,7 +3750,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3820,7 +3820,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -6.0
+            "Value": -6
           }
         ]
       },
@@ -3852,7 +3852,7 @@
             "AugmentType": 6,
             "SpellId": 62,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -3922,7 +3922,7 @@
             "AugmentType": 6,
             "SpellId": 293,
             "Type": 5,
-            "Value": -4.0
+            "Value": -4
           }
         ]
       },
@@ -3954,7 +3954,7 @@
             "AugmentType": 6,
             "SpellId": 293,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "BestiaryId": 5,
@@ -4062,7 +4062,7 @@
             "AugmentType": 6,
             "SpellId": 258,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 5,
@@ -5636,7 +5636,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -5715,7 +5715,7 @@
             "AugmentType": 6,
             "SpellId": 154,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -5815,7 +5815,7 @@
             "AugmentType": 6,
             "SpellId": 157,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -6603,7 +6603,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -6682,7 +6682,7 @@
             "AugmentType": 6,
             "SpellId": 157,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -6782,7 +6782,7 @@
             "AugmentType": 6,
             "SpellId": 154,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -7540,7 +7540,7 @@
             "AugmentType": 6,
             "SpellId": 154,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -7640,7 +7640,7 @@
             "AugmentType": 6,
             "SpellId": 157,
             "Type": 5,
-            "Value": -8.0
+            "Value": -8
           },
           {
             "AugmentType": 17,
@@ -7770,7 +7770,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -7884,7 +7884,7 @@
           {
             "SkillId": 1,
             "Type": 26,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 11,
@@ -8358,7 +8358,7 @@
           {
             "SkillId": 1,
             "Type": 26,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 11,
@@ -10014,7 +10014,7 @@
         "Perks": [
           {
             "Type": 15,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       }
@@ -10503,7 +10503,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 14,
@@ -10576,7 +10576,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 14,
@@ -10649,7 +10649,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 14,
@@ -10874,7 +10874,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 12,
@@ -10947,7 +10947,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 12,
@@ -11020,7 +11020,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 12,
@@ -11245,7 +11245,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 3,
@@ -11318,7 +11318,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 3,
@@ -11391,7 +11391,7 @@
             "AugmentType": 6,
             "SpellId": 59,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           },
           {
             "BestiaryId": 3,
@@ -11700,7 +11700,7 @@
             "AugmentType": 6,
             "SpellId": 153,
             "Type": 5,
-            "Value": -4.0
+            "Value": -4
           }
         ]
       },
@@ -11912,7 +11912,7 @@
             "AugmentType": 6,
             "SpellId": 150,
             "Type": 5,
-            "Value": -4.0
+            "Value": -4
           }
         ]
       },
@@ -11997,7 +11997,7 @@
           {
             "SkillId": 6,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "SkillId": 1,
@@ -12071,7 +12071,7 @@
           {
             "SkillId": 6,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "SkillId": 1,
@@ -13853,7 +13853,7 @@
           {
             "SkillId": 9,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       }
@@ -14783,7 +14783,7 @@
             "AugmentType": 6,
             "SpellId": 158,
             "Type": 5,
-            "Value": -30.0
+            "Value": -30
           },
           {
             "Type": 2,
@@ -14926,7 +14926,7 @@
             "AugmentType": 6,
             "SpellId": 141,
             "Type": 5,
-            "Value": -10.0
+            "Value": -10
           }
         ]
       }
@@ -15479,7 +15479,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -15898,13 +15898,13 @@
             "AugmentType": 6,
             "SpellId": 266,
             "Type": 5,
-            "Value": -3600.0
+            "Value": -3600
           },
           {
             "AugmentType": 6,
             "SpellId": 267,
             "Type": 5,
-            "Value": -3600.0
+            "Value": -3600
           }
         ]
       },
@@ -15914,19 +15914,19 @@
             "AugmentType": 6,
             "SpellId": 265,
             "Type": 5,
-            "Value": -3600.0
+            "Value": -3600
           },
           {
             "AugmentType": 6,
             "SpellId": 283,
             "Type": 5,
-            "Value": -3600.0
+            "Value": -3600
           },
           {
             "AugmentType": 6,
             "SpellId": 264,
             "Type": 5,
-            "Value": -3600.0
+            "Value": -3600
           }
         ]
       }
@@ -17143,7 +17143,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -18187,7 +18187,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -18289,7 +18289,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -18308,7 +18308,7 @@
           {
             "SkillId": 1,
             "Type": 26,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -18860,7 +18860,7 @@
           },
           {
             "Type": 15,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 18,
@@ -19623,7 +19623,7 @@
             "AugmentType": 6,
             "SpellId": 270,
             "Type": 5,
-            "Value": -4.0
+            "Value": -4
           },
           {
             "Type": 15,
@@ -19637,7 +19637,7 @@
             "AugmentType": 15,
             "SpellId": 270,
             "Type": 5,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "AugmentType": 2,
@@ -20139,7 +20139,7 @@
             "AugmentType": 16,
             "SpellId": 271,
             "Type": 5,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -20289,11 +20289,11 @@
             "AugmentType": 16,
             "SpellId": 271,
             "Type": 5,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 15,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       }
@@ -23081,7 +23081,7 @@
         "Perks": [
           {
             "Type": 23,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -23210,7 +23210,7 @@
             "AugmentType": 6,
             "SpellId": 268,
             "Type": 5,
-            "Value": -4.0
+            "Value": -4
           }
         ]
       },
@@ -23320,7 +23320,7 @@
             "AugmentType": 6,
             "SpellId": 158,
             "Type": 5,
-            "Value": -30.0
+            "Value": -30
           }
         ]
       },
@@ -25511,7 +25511,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -25794,7 +25794,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 2.0
+            "Value": 2
           }
         ]
       },
@@ -26057,7 +26057,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -26158,7 +26158,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -26259,7 +26259,7 @@
             "AugmentType": 6,
             "SpellId": 238,
             "Type": 5,
-            "Value": -2.0
+            "Value": -2
           }
         ]
       },
@@ -26294,7 +26294,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "AugmentType": 14,
@@ -26368,7 +26368,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 7.0
+            "Value": 7
           },
           {
             "Type": 30,
@@ -26411,7 +26411,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "AugmentType": 14,
@@ -26485,7 +26485,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 7.0
+            "Value": 7
           },
           {
             "Type": 30,
@@ -26528,7 +26528,7 @@
           {
             "SkillId": 1,
             "Type": 25,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "AugmentType": 14,
@@ -26602,7 +26602,7 @@
           {
             "SkillId": 1,
             "Type": 27,
-            "Value": 7.0
+            "Value": 7
           },
           {
             "Type": 30,
@@ -26849,7 +26849,7 @@
         "Perks": [
           {
             "Type": 30,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -26952,7 +26952,7 @@
           {
             "ElementId": 1,
             "Type": 13,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 29,
@@ -26971,7 +26971,7 @@
         "Perks": [
           {
             "Type": 30,
-            "Value": 1.0
+            "Value": 1
           }
         ]
       },
@@ -27074,7 +27074,7 @@
           {
             "ElementId": 1,
             "Type": 13,
-            "Value": 1.0
+            "Value": 1
           },
           {
             "Type": 29,
@@ -27086,5 +27086,2482 @@
     "Name": "Crypt 1H Rod",
     "ProficiencyId": 463,
     "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "BestiaryId": 10,
+            "BestiaryName": "Human",
+            "Type": 6,
+            "Value": 0.03
+          },
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 1
+          },
+          {
+            "Type": 12,
+            "Value": 0.06
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 2,
+            "SpellId": 43,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 118,
+            "Type": 5,
+            "Value": 0.05
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 16,
+            "Type": 13,
+            "Value": 0.125
+          },
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 2
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.125
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 17,
+            "SpellId": 43,
+            "Type": 5,
+            "Value": 0.025
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 0.32
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 118,
+            "Type": 5,
+            "Value": 0.025
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 16,
+            "Type": 31,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.12
+          },
+          {
+            "ElementId": 64,
+            "Type": 31,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 29,
+            "Value": 0.06
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 1H Sceptre",
+    "ProficiencyId": 477,
+    "Version": 1
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "BestiaryId": 10,
+            "BestiaryName": "Human",
+            "Type": 6,
+            "Value": 0.03
+          },
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 1
+          },
+          {
+            "Type": 12,
+            "Value": 0.06
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 2,
+            "SpellId": 43,
+            "Type": 5,
+            "Value": 0.08
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 118,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 16,
+            "Type": 13,
+            "Value": 0.125
+          },
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 2
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.125
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 17,
+            "SpellId": 43,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 0.32
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 118,
+            "Type": 5,
+            "Value": 0.05
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 16,
+            "Type": 31,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.12
+          },
+          {
+            "ElementId": 64,
+            "Type": 31,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 29,
+            "Value": 0.06
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 1H Sceptre",
+    "ProficiencyId": 488,
+    "Version": 1
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 10,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.1
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 1H Axe",
+    "ProficiencyId": 475,
+    "Version": 7
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 10,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 1H Axe",
+    "ProficiencyId": 486,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 8,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.1
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 1H Sword",
+    "ProficiencyId": 478,
+    "Version": 7
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 8,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 1H Sword",
+    "ProficiencyId": 489,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Axe",
+    "ProficiencyId": 480,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 10,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Axe",
+    "ProficiencyId": 491,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Sword",
+    "ProficiencyId": 485,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 8,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Sword",
+    "ProficiencyId": 496,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 32,
+            "Type": 13,
+            "Value": 0.1
+          },
+          {
+            "ElementId": 8,
+            "Type": 13,
+            "Value": 0.1
+          },
+          {
+            "Type": 12,
+            "Value": 0.07
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 2,
+            "SpellId": 13,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 24,
+            "Type": 5,
+            "Value": 0.125
+          },
+          {
+            "Type": 7,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 1,
+            "Type": 26,
+            "Value": 0.04
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 24,
+            "Type": 5,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "DamageType": 32,
+            "Type": 4,
+            "Value": 2
+          },
+          {
+            "DamageType": 8,
+            "Type": 4,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 32,
+            "Type": 9,
+            "Value": 0.02
+          },
+          {
+            "ElementId": 8,
+            "Type": 9,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 1H Wand",
+    "ProficiencyId": 479,
+    "Version": 9
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 1,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 32,
+            "Type": 13,
+            "Value": 0.1
+          },
+          {
+            "ElementId": 8,
+            "Type": 13,
+            "Value": 0.1
+          },
+          {
+            "Type": 12,
+            "Value": 0.07
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 2,
+            "SpellId": 13,
+            "Type": 5,
+            "Value": 0.08
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 24,
+            "Type": 5,
+            "Value": 0.25
+          },
+          {
+            "Type": 7,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 1,
+            "Type": 26,
+            "Value": 0.08
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 24,
+            "Type": 5,
+            "Value": 0.06
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "DamageType": 32,
+            "Type": 4,
+            "Value": 2
+          },
+          {
+            "DamageType": 8,
+            "Type": 4,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 32,
+            "Type": 9,
+            "Value": 0.02
+          },
+          {
+            "ElementId": 8,
+            "Type": 9,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 1H Wand",
+    "ProficiencyId": 490,
+    "Version": 9
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 9,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.1
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 1H Club",
+    "ProficiencyId": 476,
+    "Version": 6
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 15,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 9,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "Type": 17,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "Type": 16,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 1H Club",
+    "ProficiencyId": 487,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Club",
+    "ProficiencyId": 482,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 9,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 105,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 10
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Club",
+    "ProficiencyId": 493,
+    "Version": 5
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Fist",
+    "ProficiencyId": 484,
+    "Version": 6
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 25,
+            "Value": 0.05
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 11,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 294,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Fist",
+    "ProficiencyId": 495,
+    "Version": 6
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Range": 3,
+            "Type": 22,
+            "Value": 10
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Bow",
+    "ProficiencyId": 481,
+    "Version": 8
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Range": 3,
+            "Type": 22,
+            "Value": 10
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 7,
+            "Value": 0.03
+          },
+          {
+            "AugmentType": 15,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Bow",
+    "ProficiencyId": 492,
+    "Version": 7
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Range": 3,
+            "Type": 22,
+            "Value": 10
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 15,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.02
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.2
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 7,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.02
+          }
+        ]
+      }
+    ],
+    "Name": "Moonsilver 2H Crossbow",
+    "ProficiencyId": 483,
+    "Version": 2
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 3,
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Range": 3,
+            "Type": 22,
+            "Value": 10
+          },
+          {
+            "AugmentType": 14,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.05
+          },
+          {
+            "Type": 12,
+            "Value": 0.04
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 15,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.04
+          },
+          {
+            "Type": 12,
+            "Value": 0.08
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "AugmentType": 16,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.4
+          },
+          {
+            "AugmentType": 2,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.08
+          },
+          {
+            "Type": 7,
+            "Value": 0.03
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "SkillId": 7,
+            "Type": 26,
+            "Value": 0.1
+          },
+          {
+            "AugmentType": 17,
+            "SpellId": 124,
+            "Type": 5,
+            "Value": 0.03
+          },
+          {
+            "Type": 0,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 12,
+            "Value": 0.1
+          },
+          {
+            "SkillId": 1,
+            "Type": 27,
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "Type": 8,
+            "Value": 0.03
+          }
+        ]
+      }
+    ],
+    "Name": "Stellar Moonsilver 2H Crossbow",
+    "ProficiencyId": 494,
+    "Version": 1
+  },
+  {
+    "Levels": [
+      {
+        "Perks": [
+          {
+            "ElementId": 64,
+            "Type": 9,
+            "Value": 0.005
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 64,
+            "Type": 9,
+            "Value": 0.005
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 64,
+            "Type": 9,
+            "Value": 0.005
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 64,
+            "Type": 9,
+            "Value": 0.005
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.02
+          }
+        ]
+      },
+      {
+        "Perks": [
+          {
+            "ElementId": 64,
+            "Type": 9,
+            "Value": 0.01
+          },
+          {
+            "ElementId": 64,
+            "Type": 13,
+            "Value": 0.04
+          }
+        ]
+      }
+    ],
+    "Name": "Throw - Snowball with Ice Shards",
+    "ProficiencyId": 474,
+    "Version": 1
   }
 ]

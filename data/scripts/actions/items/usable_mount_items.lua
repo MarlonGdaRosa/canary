@@ -4,6 +4,7 @@ local config = {
 	[23685] = { name = "vortexion", mountId = 99, tameMessage = "You receive the permission to ride a vortexion." },
 	[32629] = { name = "haze", mountId = 162, achievement = "Nothing but Hot Air", tameMessage = "You are now versed to ride the haze!" },
 	[50064] = { name = "primal demonosaur", mountId = 232, tameMessage = "Bound by ancient magic, the primal demonic beast bows to the will of the boxes owner ... for now." },
+	[54651] = { name = "radiant nimbus", mountId = 237, achievement = "Radiant Nimbus", tameMessage = "You receive the permission to ride a radiant nimbus." },
 }
 
 local usableItemMounts = Action()

@@ -85285,4 +85285,716 @@ Granted by TibiaGoals.com"/>
 		<attribute key="primarytype" value="extra slot"/>
 		<attribute key="weight" value="75"/>
 	</item>
+	<item id="53221" article="a" name="moonsilver sceptre">
+		<attribute key="primarytype" value="rods"/>
+		<attribute key="weaponType" value="wand"/>
+		<attribute key="shootType" value="ice"/>
+		<attribute key="absorbpercentearth" value="7"/>
+		<attribute key="magiclevelpoints" value="6"/>
+		<attribute key="icemagiclevelpoints" value="1"/>
+		<attribute key="healingmagiclevelpoints" value="2"/>
+		<attribute key="range" value="6"/>
+		<attribute key="weight" value="2800"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost magic level" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="mana" value="20"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="fromDamage" value="103"/>
+			<attribute key="toDamage" value="127"/>
+			<attribute key="weaponType" value="wand"/>
+			<attribute key="wandType" value="ice"/>
+			<attribute key="vocation" value="Druid;true, Elder Druid"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53222" article="a" name="stellar moonsilver sceptre">
+		<attribute key="primarytype" value="rods"/>
+		<attribute key="weaponType" value="wand"/>
+		<attribute key="shootType" value="ice"/>
+		<attribute key="absorbpercentearth" value="7"/>
+		<attribute key="magiclevelpoints" value="6"/>
+		<attribute key="icemagiclevelpoints" value="1"/>
+		<attribute key="healingmagiclevelpoints" value="2"/>
+		<attribute key="range" value="6"/>
+		<attribute key="weight" value="2800"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost magic level" value="3"/>
+		</attribute>
+		<attribute key="augments" value="2">
+			<attribute key="strong ice wave" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+			<attribute key="eternal winter" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="mana" value="20"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="fromDamage" value="103"/>
+			<attribute key="toDamage" value="127"/>
+			<attribute key="weaponType" value="wand"/>
+			<attribute key="wandType" value="ice"/>
+			<attribute key="vocation" value="Druid;true, Elder Druid"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53207" article="a" name="moonsilver epee">
+		<attribute key="primarytype" value="sword weapons"/>
+		<attribute key="weaponType" value="sword"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillsword" value="6"/>
+		<attribute key="weight" value="6200"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost sword" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="sword"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53208" article="a" name="stellar moonsilver epee">
+		<attribute key="primarytype" value="sword weapons"/>
+		<attribute key="weaponType" value="sword"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillsword" value="6"/>
+		<attribute key="weight" value="6200"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost sword" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="fierce berserk" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="sword"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53209" article="a" name="moonsilver claymore">
+		<attribute key="primarytype" value="sword weapons"/>
+		<attribute key="weaponType" value="sword"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementfire" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillsword" value="6"/>
+		<attribute key="weight" value="8700"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost sword" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="sword"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53210" article="a" name="stellar moonsilver claymore">
+		<attribute key="primarytype" value="sword weapons"/>
+		<attribute key="weaponType" value="sword"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementfire" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillsword" value="6"/>
+		<attribute key="weight" value="8900"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost sword" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="groundshaker" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="sword"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53211" article="a" name="moonsilver axe">
+		<attribute key="primarytype" value="axe weapons"/>
+		<attribute key="weaponType" value="axe"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillaxe" value="6"/>
+		<attribute key="weight" value="7500"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost axe" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="axe"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53212" article="a" name="stellar moonsilver axe">
+		<attribute key="primarytype" value="axe weapons"/>
+		<attribute key="weaponType" value="axe"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillaxe" value="6"/>
+		<attribute key="weight" value="7650"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost axe" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="fierce berserk" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="axe"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53213" article="a" name="moonsilver chopper">
+		<attribute key="primarytype" value="axe weapons"/>
+		<attribute key="weaponType" value="axe"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementenergy" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillaxe" value="6"/>
+		<attribute key="weight" value="8900"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost axe" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="axe"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53214" article="a" name="stellar moonsilver chopper">
+		<attribute key="primarytype" value="axe weapons"/>
+		<attribute key="weaponType" value="axe"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementenergy" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillaxe" value="6"/>
+		<attribute key="weight" value="9170"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost axe" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="fierce berserk" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="axe"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53219" article="a" name="moonsilver channeler">
+		<attribute key="primarytype" value="wands"/>
+		<attribute key="weaponType" value="wand"/>
+		<attribute key="shootType" value="energy"/>
+		<attribute key="absorbpercentenergy" value="7"/>
+		<attribute key="magiclevelpoints" value="6"/>
+		<attribute key="deathmagiclevelpoints" value="1"/>
+		<attribute key="range" value="6"/>
+		<attribute key="weight" value="2480"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost magic level" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="mana" value="20"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="fromDamage" value="103"/>
+			<attribute key="toDamage" value="127"/>
+			<attribute key="weaponType" value="wand"/>
+			<attribute key="wandType" value="energy"/>
+			<attribute key="vocation" value="Sorcerer;true, Master Sorcerer"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53220" article="a" name="stellar moonsilver channeler">
+		<attribute key="primarytype" value="wands"/>
+		<attribute key="weaponType" value="wand"/>
+		<attribute key="shootType" value="energy"/>
+		<attribute key="absorbpercentenergy" value="7"/>
+		<attribute key="magiclevelpoints" value="6"/>
+		<attribute key="deathmagiclevelpoints" value="1"/>
+		<attribute key="range" value="6"/>
+		<attribute key="weight" value="2480"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost magic level" value="3"/>
+		</attribute>
+		<attribute key="augments" value="2">
+			<attribute key="hell's core" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+			<attribute key="energy wave" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="mana" value="20"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="fromDamage" value="103"/>
+			<attribute key="toDamage" value="127"/>
+			<attribute key="weaponType" value="wand"/>
+			<attribute key="wandType" value="energy"/>
+			<attribute key="vocation" value="Sorcerer;true, Master Sorcerer"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53215" article="a" name="moonsilver crusher">
+		<attribute key="primarytype" value="club weapons"/>
+		<attribute key="weaponType" value="club"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillclub" value="6"/>
+		<attribute key="weight" value="7050"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost club" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="club"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53216" article="a" name="stellar moonsilver crusher">
+		<attribute key="primarytype" value="club weapons"/>
+		<attribute key="weaponType" value="club"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementearth" value="50"/>
+		<attribute key="defense" value="33"/>
+		<attribute key="extradef" value="3"/>
+		<attribute key="skillclub" value="6"/>
+		<attribute key="weight" value="7050"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost club" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="fierce berserk" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="club"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53217" article="a" name="moonsilver mace">
+		<attribute key="primarytype" value="club weapons"/>
+		<attribute key="weaponType" value="club"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementice" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillclub" value="6"/>
+		<attribute key="weight" value="9500"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost club" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="club"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53218" article="a" name="stellar moonsilver mace">
+		<attribute key="primarytype" value="club weapons"/>
+		<attribute key="weaponType" value="club"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="attack" value="6"/>
+		<attribute key="elementice" value="54"/>
+		<attribute key="defense" value="36"/>
+		<attribute key="skillclub" value="6"/>
+		<attribute key="weight" value="9500"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost club" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="fierce berserk" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="club"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53223" article="a" name="moonsilver katar">
+		<attribute key="primarytype" value="fist weapons"/>
+		<attribute key="weapontype" value="fist"/>
+		<attribute key="attack" value="46"/>
+		<attribute key="defense" value="22"/>
+		<attribute key="skillfist" value="5"/>
+		<attribute key="magiclevelpoints" value="2"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="elementalbond" value="energy"/>
+		<attribute key="slottype" value="dualwielding"/>
+		<attribute key="weight" value="7200"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost fist" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="fist"/>
+			<attribute key="vocation" value="Monk;true, Exalted Monk"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53224" article="a" name="stellar moonsilver katar">
+		<attribute key="primarytype" value="fist weapons"/>
+		<attribute key="weapontype" value="fist"/>
+		<attribute key="attack" value="46"/>
+		<attribute key="defense" value="22"/>
+		<attribute key="skillfist" value="6"/>
+		<attribute key="magiclevelpoints" value="2"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="elementalbond" value="energy"/>
+		<attribute key="slottype" value="dualwielding"/>
+		<attribute key="weight" value="7300"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost fist" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="sweeping takedown" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="fist"/>
+			<attribute key="vocation" value="Monk;true, Exalted Monk"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53225" article="a" name="moonsilver bow">
+		<attribute key="primarytype" value="distance weapons"/>
+		<attribute key="weaponType" value="distance"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="ammotype" value="arrow"/>
+		<attribute key="absorbpercentfire" value="7"/>
+		<attribute key="skilldist" value="5"/>
+		<attribute key="hitchance" value="6"/>
+		<attribute key="range" value="6"/>
+		<attribute key="attack" value="9"/>
+		<attribute key="weight" value="5100"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost distance" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="distance"/>
+			<attribute key="vocation" value="Paladin;true, Royal Paladin"/>
+		</attribute>
+	</item>
+	<item id="53226" article="a" name="stellar moonsilver bow">
+		<attribute key="primarytype" value="distance weapons"/>
+		<attribute key="weaponType" value="distance"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="ammotype" value="arrow"/>
+		<attribute key="absorbpercentfire" value="7"/>
+		<attribute key="skilldist" value="5"/>
+		<attribute key="hitchance" value="6"/>
+		<attribute key="range" value="6"/>
+		<attribute key="attack" value="9"/>
+		<attribute key="weight" value="5200"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost distance" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="divine caldera" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="distance"/>
+			<attribute key="vocation" value="Paladin;true, Royal Paladin"/>
+		</attribute>
+	</item>
+	<item id="53227" article="a" name="moonsilver crossbow">
+		<attribute key="primarytype" value="distance weapons"/>
+		<attribute key="weaponType" value="distance"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="ammotype" value="bolt"/>
+		<attribute key="absorbpercentholy" value="7"/>
+		<attribute key="skilldist" value="5"/>
+		<attribute key="hitchance" value="7"/>
+		<attribute key="range" value="6"/>
+		<attribute key="attack" value="10"/>
+		<attribute key="weight" value="5500"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost distance" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="distance"/>
+			<attribute key="vocation" value="Paladin;true, Royal Paladin"/>
+		</attribute>
+	</item>
+	<item id="53228" article="a" name="stellar moonsilver crossbow">
+		<attribute key="primarytype" value="distance weapons"/>
+		<attribute key="weaponType" value="distance"/>
+		<attribute key="slotType" value="two-handed"/>
+		<attribute key="criticalhitdamage" value="1200"/>
+		<attribute key="criticalhitchance" value="1000"/>
+		<attribute key="ammotype" value="bolt"/>
+		<attribute key="absorbpercentholy" value="7"/>
+		<attribute key="skilldist" value="5"/>
+		<attribute key="hitchance" value="7"/>
+		<attribute key="range" value="6"/>
+		<attribute key="attack" value="10"/>
+		<attribute key="weight" value="5600"/>
+		<attribute key="imbuementslot" value="3">
+			<attribute key="elemental damage" value="3"/>
+			<attribute key="life leech" value="3"/>
+			<attribute key="mana leech" value="3"/>
+			<attribute key="critical hit" value="3"/>
+			<attribute key="skillboost distance" value="3"/>
+		</attribute>
+		<attribute key="augments" value="1">
+			<attribute key="divine caldera" value="base damage">
+				<attribute key="value" value="8"/>
+			</attribute>
+		</attribute>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="level" value="1000"/>
+			<attribute key="unproperly" value="true"/>
+			<attribute key="weaponType" value="distance"/>
+			<attribute key="vocation" value="Paladin;true, Royal Paladin"/>
+		</attribute>
+	</item>
+	<item id="53855" article="a" name="snowball with ice shards">
+		<attribute key="primarytype" value="distance weapons"/>
+		<attribute key="weaponType" value="distance"/>
+		<attribute key="shootType" value="snowball"/>
+		<attribute key="range" value="6"/>
+		<attribute key="attack" value="25"/>
+		<attribute key="weight" value="94"/>
+		<attribute key="stackable" value="true"/>
+		<attribute key="script" value="moveevent;weapon">
+			<attribute key="action" value="removecount"/>
+			<attribute key="weaponType" value="missile"/>
+			<attribute key="slot" value="hand"/>
+		</attribute>
+	</item>
+	<item id="53229" article="a" name="moonsilver battle visor">
+		<attribute key="primarytype" value="helmets"/>
+		<attribute key="armor" value="14"/>
+		<attribute key="absorbpercentphysical" value="8"/>
+		<attribute key="absorbpercentfire" value="10"/>
+		<attribute key="skillsword" value="4"/>
+		<attribute key="skillaxe" value="4"/>
+		<attribute key="skillclub" value="4"/>
+		<attribute key="magiclevelpoints" value="1"/>
+		<attribute key="weight" value="3500"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="skillboost axe" value="3"/>
+			<attribute key="skillboost sword" value="3"/>
+			<attribute key="skillboost club" value="3"/>
+			<attribute key="skillboost shielding" value="3"/>
+		</attribute>
+		<attribute key="script" value="moveevent">
+			<attribute key="level" value="800"/>
+			<attribute key="slot" value="head"/>
+			<attribute key="vocation" value="Knight;true, Elite Knight"/>
+		</attribute>
+	</item>
+	<item id="53230" article="a" name="moonsilver trail hood">
+		<attribute key="primarytype" value="helmets"/>
+		<attribute key="armor" value="12"/>
+		<attribute key="absorbpercentphysical" value="6"/>
+		<attribute key="absorbpercentearth" value="10"/>
+		<attribute key="skilldist" value="4"/>
+		<attribute key="holymagiclevelpoints" value="2"/>
+		<attribute key="weight" value="1200"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="skillboost distance" value="3"/>
+			<attribute key="skillboost magic level" value="2"/>
+		</attribute>
+		<attribute key="script" value="moveevent">
+			<attribute key="level" value="800"/>
+			<attribute key="slot" value="head"/>
+			<attribute key="vocation" value="Paladin;true, Royal Paladin"/>
+		</attribute>
+	</item>
+	<item id="53231" article="a" name="moonsilver nimbus hat">
+		<attribute key="primarytype" value="helmets"/>
+		<attribute key="armor" value="10"/>
+		<attribute key="absorbpercentphysical" value="3"/>
+		<attribute key="absorbpercentice" value="8"/>
+		<attribute key="magiclevelpoints" value="4"/>
+		<attribute key="weight" value="1100"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="skillboost magic level" value="2"/>
+		</attribute>
+		<attribute key="script" value="moveevent">
+			<attribute key="level" value="800"/>
+			<attribute key="slot" value="head"/>
+			<attribute key="vocation" value="Sorcerer;true, Master Sorcerer"/>
+		</attribute>
+	</item>
+	<item id="53232" article="a" name="moonsilver spirit mask">
+		<attribute key="primarytype" value="helmets"/>
+		<attribute key="armor" value="10"/>
+		<attribute key="absorbpercentphysical" value="3"/>
+		<attribute key="absorbpercentenergy" value="8"/>
+		<attribute key="magiclevelpoints" value="4"/>
+		<attribute key="weight" value="1100"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="skillboost magic level" value="2"/>
+		</attribute>
+		<attribute key="script" value="moveevent">
+			<attribute key="level" value="800"/>
+			<attribute key="slot" value="head"/>
+			<attribute key="vocation" value="Druid;true, Elder Druid"/>
+		</attribute>
+	</item>
+	<item id="53233" article="a" name="moonsilver strike helm">
+		<attribute key="primarytype" value="helmets"/>
+		<attribute key="armor" value="10"/>
+		<attribute key="absorbpercentphysical" value="3"/>
+		<attribute key="absorbpercentice" value="8"/>
+		<attribute key="skillfist" value="4"/>
+		<attribute key="magiclevelpoints" value="4"/>
+		<attribute key="weight" value="1300"/>
+		<attribute key="imbuementslot" value="2">
+			<attribute key="mana leech" value="3"/>
+			<attribute key="skillboost fist" value="3"/>
+			<attribute key="skillboost magic level" value="2"/>
+		</attribute>
+		<attribute key="script" value="moveevent">
+			<attribute key="level" value="800"/>
+			<attribute key="slot" value="head"/>
+			<attribute key="vocation" value="Monk;true, Exalted Monk"/>
+		</attribute>
+	</item>
+	<item id="54651" article="a" name="cloud in a bottle">
+		<attribute key="primarytype" value="taming items"/>
+		<attribute key="weight" value="45"/>
+	</item>
 </items>
