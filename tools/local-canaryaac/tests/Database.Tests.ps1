@@ -13,6 +13,231 @@ if (Test-Path -LiteralPath $initializerPath) {
     }
 }
 
+Describe 'CanaryAAC effective grants' {
+    It 'allows only the inherited permissions already in the canary contract' {
+        $records = @("SCHEMA`t1`tcanary`t*`t*`tSELECT`tNO", "TABLE`t1`tcanary`taccounts`t*`tINSERT`tNO", "COLUMN`t1`tcanary`tplayers`tname`tSELECT`tNO", "SCHEMA`t0`ttest\\_%`t*`t*`tDELETE`tNO")
+        { Assert-CanaryAACPublicPrivileges -Records $records } | Should Not Throw
+        foreach ($unsafe in @("GLOBAL`t1`t*`t*`t*`tSELECT`tNO", "SCHEMA`t1`tcan%`t*`t*`tUPDATE`tNO", "TABLE`t1`tcanary`tcanary_samples`t*`tINSERT`tNO", "COLUMN`t1`tcanary`taccounts`tname`tUPDATE`tNO", "ROUTINE`t1`tcanary`tunsafe_proc`tPROCEDURE`tExecute`tNO", "SCHEMA`t1`tcanary`t*`t*`tSELECT`tYES", "ROLEADMIN`t1`t*`twriter`t*`tADMIN`tYES")) {
+            { Assert-CanaryAACPublicPrivileges -Records @($unsafe) } | Should Throw
+        }
+    }
+
+    It 'audits nested PUBLIC roles and refuses their effective unsafe privileges' {
+        Mock Get-CanaryAACSqlLines {
+            if ($Sql -match 'mysql.roles_mapping' -and $Sql -match "User='PUBLIC'") { return "726561646572`tN" }
+            if ($Sql -match 'mysql.roles_mapping' -and $Sql -match "User='reader'") { return "777269746572`tN" }
+            if ($Sql -match 'mysql.roles_mapping' -and $Sql -match "User='writer'") { return "5055424C4943`tN" }
+            return @()
+        }
+        Mock Get-CanaryAACRolePrivileges {
+            if ($Role -eq 'reader') { return "SCHEMA`t1`tcanary`t*`t*`tSELECT`tNO" }
+            if ($Role -eq 'writer') { return "TABLE`t1`tcanary`tplayers`t*`tDELETE`tNO" }
+            return @()
+        }
+        { Get-CanaryAACPublicAudit } | Should Throw
+    }
+
+    It 'queries every MariaDB privilege scope and treats schema wildcard grants as applicable' {
+        $capturedQueries = [Collections.Generic.List[string]]::new()
+        Mock Get-CanaryAACSqlLines { $capturedQueries.Add($Sql); return @() }
+        # Pester 3 keeps the preceding role fixture mock for this Describe;
+        # execute the production body directly while capturing SQL calls.
+        $realPrivileges = [scriptblock]::Create($ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-CanaryAACRolePrivileges' }, $false).Body.Extent.Text.Trim('{', '}'))
+        $null = & $realPrivileges -Role "odd'role"
+        $capturedQueries.Count | Should Be 6
+        foreach ($scope in @('USER_PRIVILEGES','SCHEMA_PRIVILEGES','TABLE_PRIVILEGES','COLUMN_PRIVILEGES','mysql.procs_priv','mysql.proxies_priv')) {
+            @($capturedQueries | Where-Object { $_.Contains($scope) }).Count | Should Be 1
+        }
+        @($capturedQueries | Where-Object { $_.Contains("IF('canary' LIKE TABLE_SCHEMA,1,0)") }).Count | Should Be 1
+        foreach ($query in $capturedQueries) { $query | Should Match "odd''role" }
+        $capturedQueries[5] | Should Match "BINARY User='odd''role' AND Host=''"
+    }
+
+    It 'escapes every proxied identity while revoking only the exact runtime grantee' {
+        $sql = New-CanaryAACProxyRevocations @([pscustomobject] @{ User = "odd'user"; Host = '127.0.0.2' })
+        $sql | Should Be "REVOKE PROXY ON 'odd''user'@'127.0.0.2' FROM 'canaryaac_local'@'127.0.0.1';"
+    }
+
+    It 'refuses residual runtime roles, proxy grants and routine privileges' {
+        Mock Get-CanaryAACSqlLines { if ($Sql -match 'mysql.proxies_priv') { return "726F6F74`t6C6F63616C686F7374" }; return @() }
+        { Assert-CanaryAACNoIndirectRuntimeGrants } | Should Throw
+        Mock Get-CanaryAACSqlLines { if ($Sql -match 'mysql.roles_mapping') { return 'writer' }; return @() }
+        { Assert-CanaryAACNoIndirectRuntimeGrants } | Should Throw
+        Mock Get-CanaryAACSqlLines { if ($Sql -match 'mysql.procs_priv') { return 'Execute' }; return @() }
+        { Assert-CanaryAACNoIndirectRuntimeGrants } | Should Throw
+        Mock Get-CanaryAACSqlLines { return @() }
+        { Assert-CanaryAACNoIndirectRuntimeGrants } | Should Not Throw
+    }
+}
+
+Describe 'CanaryAAC private permanent artifacts' {
+    It 'replaces broad inherited and explicit read grants on directories and files' {
+        $root = Join-Path $TestDrive 'private-artifacts'
+        New-Item -ItemType Directory -Path $root | Out-Null
+        $file = Join-Path $root 'backup.sql'
+        [IO.File]::WriteAllText($file, 'fixture-data')
+        $unsafeAcl = Get-Acl -LiteralPath $file
+        foreach ($sid in @('S-1-1-0', 'S-1-5-11', 'S-1-5-32-545')) {
+            $unsafeAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new($sid), 'Read', 'Allow'))
+        }
+        $sandbox = [Security.Principal.NTAccount]::new($env:COMPUTERNAME, 'CodexSandboxUsers').Translate([Security.Principal.SecurityIdentifier])
+        $unsafeAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($sandbox, 'Read', 'Allow'))
+        Set-Acl -LiteralPath $file -AclObject $unsafeAcl
+        { Assert-CanaryAACPrivateAcl -Path $file } | Should Throw
+        Set-CanaryAACPrivateAcl -Root $TestDrive -Path $root
+        Set-CanaryAACPrivateAcl -Root $root -Path $file
+        $saved = $ErrorActionPreference
+        $ErrorActionPreference = 'Stop'
+        try { Set-CanaryAACPrivateAcl -Root $TestDrive -Path $root; Set-CanaryAACPrivateAcl -Root $root -Path $file }
+        finally { $ErrorActionPreference = $saved }
+        foreach ($path in @($root, $file)) {
+            { Assert-CanaryAACPrivateAcl -Path $path } | Should Not Throw
+            $acl = Get-Acl -LiteralPath $path
+            $acl.AreAccessRulesProtected | Should Be $true
+            $allowed = @([Security.Principal.WindowsIdentity]::GetCurrent().User.Value, 'S-1-5-18', 'S-1-5-32-544')
+            foreach ($rule in $acl.Access) {
+                if ($rule.AccessControlType -eq 'Allow') { $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -in $allowed | Should Be $true }
+            }
+        }
+        [IO.File]::ReadAllText($file) | Should Be 'fixture-data'
+    }
+
+    It 'protects existing backup descendants without following a redirect' {
+        $root = Join-Path $TestDrive 'backup-acl-tree'
+        $sub = Join-Path $root 'session'
+        New-Item -ItemType Directory -Path $sub -Force | Out-Null
+        $file = Join-Path $sub 'evidence.json'
+        [IO.File]::WriteAllText($file, 'fixture')
+        Protect-CanaryAACBackupTree -Root $root
+        { Assert-CanaryAACPrivateAcl -Path $file } | Should Not Throw
+        $outside = Join-Path $TestDrive 'acl-outside'
+        New-Item -ItemType Directory -Path $outside | Out-Null
+        $redirect = Join-Path $root 'redirect'
+        New-Item -ItemType Junction -Path $redirect -Target $outside | Out-Null
+        try { { Protect-CanaryAACBackupTree -Root $root } | Should Throw }
+        finally { [IO.Directory]::Delete($redirect) }
+    }
+}
+
+Describe 'CanaryAAC atomic dotenv publication' {
+    BeforeEach {
+        $realPublication = [scriptblock]::Create($ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-CanaryAACAtomicFilePublication' }, $false).Body.Extent.Text.Trim('{', '}'))
+        Mock Invoke-CanaryAACAtomicFilePublication { & $realPublication -Source $Source -Destination $Destination }
+        $realPrivateWriter = [scriptblock]::Create($ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Write-CanaryAACPrivateText' }, $false).Body.Extent.Text.Trim('{', '}'))
+        Mock Write-CanaryAACPrivateText { & $realPrivateWriter -Root $Root -Path $Path -Text $Text }
+        $runtimeRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $sessionRoot = Join-Path $runtimeRoot 'private-stage'
+        New-Item -ItemType Directory -Path $sessionRoot -Force | Out-Null
+        $destination = Join-Path $runtimeRoot '.env'
+        $values = [ordered] @{ URL = 'http://127.0.0.1:8080'; DB_PASS = 'fixture new#value' }
+    }
+
+    It 'keeps prior dotenv bytes intact when publication fails after staging' {
+        [IO.File]::WriteAllText($destination, 'DB_PASS=fixture-old')
+        $before = [IO.File]::ReadAllBytes($destination)
+        Mock Invoke-CanaryAACAtomicFilePublication { throw 'controlled pre-publication failure' }
+        { Publish-CanaryAACDotEnv -Root $runtimeRoot -SessionRoot $sessionRoot -Destination $destination -Values $values } | Should Throw 'controlled pre-publication failure'
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes($destination)) | Should Be ([Convert]::ToBase64String($before))
+        @(Get-ChildItem -LiteralPath $sessionRoot -Force).Count | Should Be 0
+    }
+
+    It 'rejects changed raw staging bytes before publishing even when all keys still parse' {
+        [IO.File]::WriteAllText($destination, 'DB_PASS=fixture-old')
+        $before = [Convert]::ToBase64String([IO.File]::ReadAllBytes($destination))
+        Mock Write-CanaryAACPrivateText {
+            Initialize-CanaryAACPrivateFile -Root $Root -Path $Path
+            [IO.File]::WriteAllText($Path, $Text, [Text.UTF8Encoding]::new($true))
+        }
+        { Publish-CanaryAACDotEnv -Root $runtimeRoot -SessionRoot $sessionRoot -Destination $destination -Values $values } | Should Throw
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes($destination)) | Should Be $before
+        @(Get-ChildItem -LiteralPath $sessionRoot -Force).Count | Should Be 0
+    }
+
+    It 'replaces an existing dotenv atomically and verifies its bytes and private ACL' {
+        [IO.File]::WriteAllText($destination, 'DB_PASS=fixture-old')
+        Publish-CanaryAACDotEnv -Root $runtimeRoot -SessionRoot $sessionRoot -Destination $destination -Values $values
+        [IO.File]::ReadAllText($destination) | Should Be "URL='http://127.0.0.1:8080'`nDB_PASS='fixture new#value'`n"
+        { Assert-CanaryAACPrivateAcl -Path $destination } | Should Not Throw
+        @(Get-ChildItem -LiteralPath $sessionRoot -Force).Count | Should Be 0
+    }
+
+    It 'moves a new dotenv from private staging and rejects incomplete or duplicate keys' {
+        Publish-CanaryAACDotEnv -Root $runtimeRoot -SessionRoot $sessionRoot -Destination $destination -Values $values
+        { Assert-CanaryAACDotEnvDocument -Text ([IO.File]::ReadAllText($destination)) -Values $values } | Should Not Throw
+        { Assert-CanaryAACDotEnvDocument -Text "DB_PASS='fixture new#value'`n" -Values $values } | Should Throw
+        { Assert-CanaryAACDotEnvDocument -Text "URL='http://127.0.0.1:8080'`nURL='http://127.0.0.1:8080'`nDB_PASS='fixture new#value'`n" -Values $values } | Should Throw
+    }
+}
+
+Describe 'CanaryAAC restoration byte parity' {
+    It 'aborts when restored values differ despite unchanged row counts' {
+        $before = Join-Path $TestDrive 'live-before.tsv'
+        $restored = Join-Path $TestDrive 'restored.tsv'
+        [IO.File]::WriteAllText($before, "31`t4142`n")
+        [IO.File]::WriteAllText($restored, "31`t4143`n")
+        Mock Invoke-CanaryAACSql { $restored }
+        $baseline = @([pscustomobject] @{ Table = 'accounts'; Columns = @('id','name'); ExportPath = $before })
+        { Assert-CanaryAACRestoredRows -RestoreDatabase 'canaryaac_restore_20261005123456_a0b1c2d3' -Baselines $baseline } | Should Throw
+        [IO.File]::WriteAllText($restored, "31`t4142`n")
+        { Assert-CanaryAACRestoredRows -RestoreDatabase 'canaryaac_restore_20261005123456_a0b1c2d3' -Baselines $baseline } | Should Not Throw
+    }
+}
+
+Describe 'CanaryAAC native process deadlines' {
+    It 'captures controlled process output and errors before returning' {
+        $runtimeRoot = Join-Path $TestDrive 'native-success'
+        $sessionRoot = Join-Path $runtimeRoot 'session'
+        New-Item -ItemType Directory -Path $sessionRoot -Force | Out-Null
+        $script = Join-Path $runtimeRoot 'success.ps1'
+        [IO.File]::WriteAllText($script, "[Console]::WriteLine('fixture-out'); [Console]::Error.WriteLine('fixture-error')")
+        $shell = Join-Path $PSHOME 'powershell.exe'
+        $output = Invoke-CanaryAACDatabaseProcess -Executable $shell -Arguments @('-NoProfile','-NonInteractive','-File',$script) -TimeoutSeconds 5
+        [IO.File]::ReadAllText($output).Trim() | Should Be 'fixture-out'
+        $errorFile = @(Get-ChildItem -LiteralPath $sessionRoot -Filter '*.err')[0]
+        [IO.File]::ReadAllText($errorFile.FullName).Trim() | Should Be 'fixture-error'
+    }
+
+    It 'terminates only its timed-out process tree and waits before stdin cleanup' {
+        $runtimeRoot = Join-Path $TestDrive 'native-timeout'
+        $sessionRoot = Join-Path $runtimeRoot 'session'
+        New-Item -ItemType Directory -Path $sessionRoot -Force | Out-Null
+        $script = Join-Path $runtimeRoot 'timeout.ps1'
+        $marker = Join-Path $runtimeRoot 'identities.json'
+        $inputFile = Join-Path $runtimeRoot 'stdin.txt'
+        [IO.File]::WriteAllText($inputFile, 'fixture-input')
+        $shell = Join-Path $PSHOME 'powershell.exe'
+        $program = @'
+param([string] $Marker)
+$child = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 30"' -WindowStyle Hidden -PassThru
+[pscustomobject] @{ RootId=$PID; RootTicks=(Get-Process -Id $PID).StartTime.ToUniversalTime().Ticks; ChildId=$child.Id; ChildTicks=$child.StartTime.ToUniversalTime().Ticks } | ConvertTo-Json | Set-Content -LiteralPath $Marker
+Start-Sleep -Seconds 4
+'@
+        [IO.File]::WriteAllText($script, $program)
+        $unrelated = Start-Process -FilePath $shell -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 30"' -WindowStyle Hidden -PassThru
+        $identities = $null
+        try {
+            $timer = [Diagnostics.Stopwatch]::StartNew()
+            { Invoke-CanaryAACDatabaseProcess -Executable $shell -Arguments @('-NoProfile','-NonInteractive','-File',$script,'-Marker',$marker) -InputPath $inputFile -TimeoutSeconds 2 } | Should Throw 'timed out'
+            $timer.Elapsed.TotalSeconds | Should BeLessThan 10
+            $identities = [IO.File]::ReadAllText($marker) | ConvertFrom-Json
+            foreach ($identity in @(@($identities.RootId,$identities.RootTicks), @($identities.ChildId,$identities.ChildTicks))) {
+                $current = Get-Process -Id $identity[0] -ErrorAction SilentlyContinue
+                ($null -eq $current -or $current.StartTime.ToUniversalTime().Ticks -ne $identity[1]) | Should Be $true
+            }
+            $unrelated.HasExited | Should Be $false
+            Test-Path -LiteralPath $inputFile | Should Be $true
+        } finally {
+            if (Test-Path -LiteralPath $marker) { $identities = [IO.File]::ReadAllText($marker) | ConvertFrom-Json }
+            if ($null -ne $identities) {
+                $child = Get-Process -Id $identities.ChildId -ErrorAction SilentlyContinue
+                if ($null -ne $child -and $child.StartTime.ToUniversalTime().Ticks -eq $identities.ChildTicks) { $child.Kill(); $null=$child.WaitForExit(5000); $child.Dispose() }
+            }
+            if (-not $unrelated.HasExited) { $unrelated.Kill(); $null=$unrelated.WaitForExit(5000) }
+            $unrelated.Dispose()
+        }
+    }
+}
+
 Describe 'CanaryAAC database migration' {
     It 'has a separately reviewable adapted migration' {
         Test-Path -LiteralPath $migrationPath -PathType Leaf | Should Be $true
@@ -53,6 +278,23 @@ Describe 'CanaryAAC database migration' {
 }
 
 Describe 'CanaryAAC database safety boundaries' {
+    It 'wires effective grants, private publication and restored-byte gates into the live workflow' {
+        $source = [IO.File]::ReadAllText($initializerPath)
+        $main = $source.Substring($source.IndexOf('$repositoryRoot ='))
+        $main | Should Match 'Protect-CanaryAACBackupTree -Root \$backupRoot'
+        [regex]::Matches($main, 'Get-CanaryAACPublicAudit').Count | Should Be 2
+        $main | Should Match 'Assert-CanaryAACRestoredRows -RestoreDatabase \$restoreName -Baselines \$baselines'
+        $main | Should Match 'New-CanaryAACGrantSql -Password \$runtimePassword -Roles \$roles -Proxies \$proxies'
+        $main | Should Match 'Assert-CanaryAACNoIndirectRuntimeGrants'
+        $main | Should Match "PRIVILEGE_TYPE <> 'USAGE' OR IS_GRANTABLE <> 'NO'"
+        $main | Should Match 'Publish-CanaryAACDotEnv -Root \$runtimeRoot'
+        $main | Should Not Match '\[IO.File\]::WriteAllText\(\$envPath'
+        $main | Should Not Match '\[IO.File\]::WriteAllText\(\$evidencePath'
+        $main | Should Not Match 'restoreCreated -and'
+        ($main.IndexOf('Protect-CanaryAACBackupTree') -lt $main.IndexOf('$null = Invoke-CanaryAACDatabaseProcess')) | Should Be $true
+        ($main.IndexOf('Assert-CanaryAACRestoredRows') -lt $main.IndexOf('for ($pass =')) | Should Be $true
+    }
+
     It 'returns plain SQL result strings without provider metadata in evidence' {
         $output = Join-Path $TestDrive 'plain-results.tsv'
         [IO.File]::WriteAllText($output, "id`nname`n")
