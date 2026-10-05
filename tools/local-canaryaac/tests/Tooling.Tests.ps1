@@ -3,6 +3,14 @@ $toolRoot = Split-Path -Parent $here
 Import-Module (Join-Path $toolRoot 'CanaryAAC.Local.psm1') -Force
 
 Describe 'CanaryAAC local tooling' {
+    It 'plans a pinned install without writing runtime state' {
+        $plan = & (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | ConvertFrom-Json
+        $plan.PhpVersion | Should Be '8.3.35'
+        $plan.ComposerVersion | Should Be '2.10.3'
+        $plan.CanaryAACCommit | Should Be 'd9333dcf33d3f55cee476e9ee8ebfe3f28113c19'
+        $plan.Checkout | Should Match '\\.tools\\canaryaac$'
+    }
+
     It 'maps all generated state below .tools' {
         $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
         $layout = Get-CanaryAACLayout -RepositoryRoot $repo
@@ -11,6 +19,7 @@ Describe 'CanaryAAC local tooling' {
         $layout.PidFile | Should Be (Join-Path $repo '.tools\canaryaac.pid')
         $layout.PhpPath | Should Be (Join-Path $repo '.tools\php\php.exe')
         $layout.RouterPath | Should Be (Join-Path $repo '.tools\canaryaac\router.php')
+        $layout.ComposerPath | Should Be (Join-Path $repo '.tools\composer\composer.phar')
     }
 
     It 'rejects a relative repository root' {
@@ -124,5 +133,91 @@ Describe 'CanaryAAC local tooling' {
         $timer = [System.Diagnostics.Stopwatch]::StartNew()
         { Wait-CanaryAACHttp -Uri 'http://127.0.0.1:8080/' -TimeoutSeconds 1 } | Should Throw
         $timer.Elapsed.TotalSeconds | Should BeLessThan 3
+    }
+}
+
+Describe 'CanaryAAC installer safety' {
+    It 'applies an absent numbered patch and recognizes it on rerun' {
+        . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
+        $checkout = Join-Path $TestDrive 'patch-checkout'
+        New-Item -ItemType Directory -Path $checkout -Force | Out-Null
+        & git -C $checkout init --quiet
+        & git -C $checkout config core.autocrlf false
+        $file = Join-Path $checkout 'sample.php'
+        [System.IO.File]::WriteAllText($file, "<?php echo 'base';`n")
+        & git -C $checkout add .
+        & git -C $checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m base
+        $patch = Join-Path $TestDrive '001-sample.patch'
+        [System.IO.File]::WriteAllText($patch, "diff --git a/sample.php b/sample.php`n--- a/sample.php`n+++ b/sample.php`n@@ -1 +1 @@`n-<?php echo 'base';`n+<?php echo 'patched';`n")
+        { Invoke-CanaryAACPatch -Checkout $checkout -PatchPath $patch } | Should Not Throw
+        (Get-Content -LiteralPath $file -Raw) | Should Be "<?php echo 'patched';`n"
+        { Invoke-CanaryAACPatch -Checkout $checkout -PatchPath $patch } | Should Not Throw
+        (Get-Content -LiteralPath $file -Raw) | Should Be "<?php echo 'patched';`n"
+        [System.IO.File]::WriteAllText($file, "<?php echo 'unaccounted';`n")
+        { Invoke-CanaryAACPatch -Checkout $checkout -PatchPath $patch } | Should Throw 'neither safely applicable nor already applied'
+    }
+
+    It 'accepts recorded vendor content and rejects an unrecorded mutation' {
+        . (Join-Path $toolRoot 'Install-CanaryAAC.ps1') -Plan | Out-Null
+        $checkout = Join-Path $TestDrive 'vendor-checkout'
+        New-Item -ItemType Directory -Path (Join-Path $checkout 'vendor') -Force | Out-Null
+        & git -C $checkout init --quiet
+        & git -C $checkout config core.autocrlf false
+        $file = Join-Path $checkout 'vendor\generated.php'
+        Set-Content -LiteralPath $file -Value 'base' -NoNewline
+        & git -C $checkout add .
+        & git -C $checkout -c user.name=Test -c user.email=test@example.invalid commit --quiet -m base
+        Set-Content -LiteralPath $file -Value 'generated' -NoNewline
+        $recorded = @([pscustomobject] @{ Status = ' M'; Path = 'vendor/generated.php'; Sha256 = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() })
+        { Assert-CanaryAACVendorInventory -Checkout $checkout -Recorded $recorded } | Should Not Throw
+        Set-Content -LiteralPath $file -Value 'unrecorded' -NoNewline
+        { Assert-CanaryAACVendorInventory -Checkout $checkout -Recorded $recorded } | Should Throw 'Unrecorded vendor'
+    }
+
+    It 'recognizes XML capabilities built into the pinned Windows runtime' {
+        $repo = (Resolve-Path (Join-Path $toolRoot '..\..')).Path
+        $php = Join-Path $repo '.tools\php\php.exe'
+        if (-not (Test-Path -LiteralPath $php)) { Set-TestInconclusive 'Pinned PHP is not installed yet.'; return }
+        $start = New-Object System.Diagnostics.ProcessStartInfo
+        $start.FileName = $php
+        $start.Arguments = '-c "' + (Join-Path $toolRoot 'config\php.ini') + '" -m'
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        $process = [System.Diagnostics.Process]::Start($start)
+        try {
+            $output = $process.StandardOutput.ReadToEnd()
+            $errors = $process.StandardError.ReadToEnd()
+            $process.WaitForExit()
+            $process.ExitCode | Should Be 0
+            $errors | Should Be ''
+            $output | Should Match '(?m)^dom\r?$'
+            $output | Should Match '(?m)^xml\r?$'
+        } finally { $process.Dispose() }
+    }
+
+    It 'does not create runtime directories for a plan' {
+        $fixture = Join-Path $TestDrive 'plan-repo'
+        $fixtureTools = Join-Path $fixture 'tools\local-canaryaac'
+        New-Item -ItemType Directory -Path $fixtureTools -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $toolRoot 'Install-CanaryAAC.ps1'), (Join-Path $toolRoot 'CanaryAAC.Local.psm1'), (Join-Path $toolRoot 'runtime.lock.json') -Destination $fixtureTools
+        $plan = & (Join-Path $fixtureTools 'Install-CanaryAAC.ps1') -Plan | ConvertFrom-Json
+        $plan.Checkout | Should Be (Join-Path $fixture '.tools\canaryaac')
+        Test-Path (Join-Path $fixture '.tools') | Should Be $false
+        @($plan.PSObject.Properties).Count | Should Be 4
+    }
+
+    It 'refuses a checkout belonging to another origin before provisioning' {
+        $fixture = Join-Path $TestDrive 'foreign-repo'
+        $fixtureTools = Join-Path $fixture 'tools\local-canaryaac'
+        $checkout = Join-Path $fixture '.tools\canaryaac'
+        New-Item -ItemType Directory -Path $fixtureTools, $checkout -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $toolRoot 'Install-CanaryAAC.ps1'), (Join-Path $toolRoot 'CanaryAAC.Local.psm1'), (Join-Path $toolRoot 'runtime.lock.json') -Destination $fixtureTools
+        & git -C $checkout init --quiet
+        & git -C $checkout remote add origin 'https://example.invalid/unrelated.git'
+        { & (Join-Path $fixtureTools 'Install-CanaryAAC.ps1') } | Should Throw 'origin mismatch'
+        Test-Path (Join-Path $fixture '.tools\php') | Should Be $false
+        (& git -C $checkout remote get-url origin) | Should Be 'https://example.invalid/unrelated.git'
     }
 }

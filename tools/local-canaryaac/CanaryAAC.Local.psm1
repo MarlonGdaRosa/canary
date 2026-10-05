@@ -19,7 +19,7 @@ function Get-CanaryAACLayout {
         Checkout = $checkout
         PhpRoot = $phpRoot
         PhpPath = [System.IO.Path]::GetFullPath((Join-Path $phpRoot 'php.exe'))
-        ComposerPath = [System.IO.Path]::GetFullPath((Join-Path $runtimeRoot 'composer.phar'))
+        ComposerPath = [System.IO.Path]::GetFullPath((Join-Path $runtimeRoot 'composer\composer.phar'))
         RouterPath = [System.IO.Path]::GetFullPath((Join-Path $checkout 'router.php'))
         PidFile = [System.IO.Path]::GetFullPath((Join-Path $runtimeRoot 'canaryaac.pid'))
         LogRoot = [System.IO.Path]::GetFullPath((Join-Path $runtimeRoot 'canaryaac-logs'))
