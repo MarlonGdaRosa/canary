@@ -12,10 +12,6 @@ function cultsOfTibiaLeverMota.onUse(player, item, fromPosition, itemEx, toPosit
 	local stoneId = 15487
 
 	local missionStatus = player:getStorageValue(Storage.Quest.U11_40.CultsOfTibia.MotA.Mission)
-	if missionStatus ~= 12 and missionStatus ~= 13 then
-		player:getPosition():sendMagicEffect(CONST_ME_POFF)
-		return false
-	end
 
 	for i = 33300, 33305 do
 		local newpos = Position(i, 32144, 10)

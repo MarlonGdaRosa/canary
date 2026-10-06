@@ -26,22 +26,7 @@ function yalaharDemon.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	local sacrificeId, sacrifice = Tile(flame.sacrificePosition):getThing(1).itemid, true
-	if not table.contains({ 940, 941, 944, 945 }, sacrificeId) then
-		sacrifice = false
-	end
 
-	if not sacrifice then
-		player:teleportTo(flame.pushPosition)
-		position:sendMagicEffect(CONST_ME_ENERGYHIT)
-		flame.pushPosition:sendMagicEffect(CONST_ME_ENERGYHIT)
-		return true
-	end
-
-	local soilItem = Tile(flame.sacrificePosition):getItemById(sacrificeId)
-	if soilItem then
-		soilItem:remove()
-	end
 
 	player:teleportTo(flame.destination)
 	position:sendMagicEffect(CONST_ME_HITBYFIRE)

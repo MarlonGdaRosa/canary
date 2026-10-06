@@ -32,22 +32,16 @@ function teleport.onStepIn(player, item, position, fromPosition)
 	if not player then
 		return true
 	end
-	for i = 1, #config do
-		local table = config[i]
-		if item.uid == 35022 then
-			player:teleportTo(Position(32615, 32482, 9))
-			position:sendMagicEffect(CONST_ME_TELEPORT)
-			return true
-		elseif Tile(table.leverpos):getItemById(2772) then
-			player:teleportTo(fromPosition)
-			position:sendMagicEffect(CONST_ME_TELEPORT)
-			return true
-		elseif i == #config and item.uid == 35021 then
-			player:teleportTo(Position(32615, 32485, 10))
-			position:sendMagicEffect(CONST_ME_TELEPORT)
-			return true
-		end
+	if item.uid == 35022 then
+		player:teleportTo(Position(32615, 32482, 9))
+		position:sendMagicEffect(CONST_ME_TELEPORT)
+		return true
+	elseif item.uid == 35021 then
+		player:teleportTo(Position(32615, 32485, 10))
+		position:sendMagicEffect(CONST_ME_TELEPORT)
+		return true
 	end
+	return true
 end
 
 teleport:type("stepin")

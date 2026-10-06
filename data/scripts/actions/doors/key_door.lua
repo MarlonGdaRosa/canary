@@ -27,10 +27,13 @@ end
 
 local keyDoor = Action()
 function keyDoor.onUse(player, item, fromPosition, target, toPosition, isHotkey)
-	-- It is locked msg
-	if table.contains(keyLockedDoor, item.itemid) or (table.contains(keyUnlockedDoor, item.itemid) and table.contains({ 1001, 101 }, item.actionid)) then
-		player:sendTextMessage(MESSAGE_LOOK, "It is locked.")
-		return true
+	-- onUse locked key door
+	for index, value in ipairs(KeyDoorTable) do
+		if value.lockedDoor == item.itemid then
+			item:transform(value.openDoor)
+			item:getPosition():sendSingleSoundEffect(SOUND_EFFECT_TYPE_ACTION_OPEN_DOOR)
+			return true
+		end
 	end
 
 	-- onUse unlocked key door
@@ -53,24 +56,18 @@ function keyDoor.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	end
 
 	-- Key use on door (locked key door)
-	if target.actionid > 0 then
+	if target and target:isItem() then
 		for index, value in ipairs(KeyDoorTable) do
-			if item.actionid ~= target.actionid and value.lockedDoor == target.itemid then
-				player:sendCancelMessage("The key does not match.")
+			if value.lockedDoor == target.itemid then
+				target:transform(value.openDoor)
+				item:getPosition():sendSingleSoundEffect(SOUND_EFFECT_TYPE_ACTION_OPEN_DOOR)
 				return true
-			end
-			if item.actionid == target.actionid then
-				if value.lockedDoor == target.itemid then
-					target:transform(value.openDoor)
-					item:getPosition():sendSingleSoundEffect(SOUND_EFFECT_TYPE_ACTION_OPEN_DOOR)
-					return true
-				elseif table.contains({ value.openDoor, value.closedDoor }, target.itemid) then
-					if value.openDoor == item.itemid then
-						item:getPosition():sendSingleSoundEffect(SOUND_EFFECT_TYPE_ACTION_CLOSE_DOOR)
-					end
-					target:transform(value.lockedDoor)
-					return true
+			elseif table.contains({ value.openDoor, value.closedDoor }, target.itemid) then
+				if value.openDoor == target.itemid then
+					item:getPosition():sendSingleSoundEffect(SOUND_EFFECT_TYPE_ACTION_CLOSE_DOOR)
 				end
+				target:transform(value.lockedDoor)
+				return true
 			end
 		end
 	end

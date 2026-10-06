@@ -25,12 +25,6 @@ function teleportEvent.onUse(player, item, fromPosition, target, toPosition, isH
 		return false
 	end
 
-	local access = player:kv():scoped("rotten-blood-quest"):get("access") or 0
-	if access < 5 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You should pay respect to the Bloodshade guarding this realm before entering.")
-		return false
-	end
-
 	for _, entrance in pairs(entrances) do
 		if entrance.position == item:getPosition() then
 			player:teleportTo(entrance.destination)
@@ -62,26 +56,6 @@ function bakragoreEntrance.onUse(player, item, fromPosition, target, toPosition,
 
 	if player:getLevel() < 250 then
 		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You need at least level 250 to enter.")
-		return false
-	end
-
-	local now, text = os.time(), ""
-	for _, bossName in pairs({ "murcion", "chagorz", "ichgahal", "vemiath" }) do
-		local cooldown = player:kv():scoped("rotten-blood-quest"):scoped(bossName):get("cooldown") or 0
-		if cooldown <= now then
-			text = text .. "\n" .. bossName:titleCase()
-		end
-	end
-
-	if text ~= "" then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You still need to defeat: " .. text)
-		return false
-	end
-
-	local taints = player:kv():scoped("rotten-blood-quest"):get("taints") or 0
-	if taints < 4 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, string.format("You have %i taints.", taints))
-		player:teleportTo(fromPosition, true)
 		return false
 	end
 

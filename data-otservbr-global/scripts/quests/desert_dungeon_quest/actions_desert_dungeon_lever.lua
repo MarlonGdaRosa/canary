@@ -42,38 +42,27 @@ function othersDesert.onUse(player, item, fromPosition, target, toPosition, isHo
 	local players = {}
 	for i = 1, #config do
 		local creature = Tile(config[i].fromPosition):getTopCreature()
-		if not creature or not creature:isPlayer() then
-			player:sendCancelMessage("You need one player of each vocation for this quest.")
-			position:sendMagicEffect(CONST_ME_POFF)
-			return true
+		if creature and creature:isPlayer() then
+			local vocationId = creature:getVocation():getBaseId()
+			if vocationId ~= config[i].vocationId then
+				player:sendCancelMessage("A player on the tile has the wrong vocation.")
+				position:sendMagicEffect(CONST_ME_POFF)
+				return true
+			end
+			players[#players + 1] = { player = creature, toPosition = config[i].toPosition }
 		end
+	end
 
-		local vocationId = creature:getVocation():getBaseId()
-		if vocationId ~= config[i].vocationId then
-			player:sendCancelMessage("You need one player of each vocation for this quest.")
-			position:sendMagicEffect(CONST_ME_POFF)
-			return true
-		end
-
-		local sacrificeItem = Tile(config[i].sacrificePosition):getItemById(config[i].sacrificeId)
-		if not sacrificeItem then
-			player:sendCancelMessage(creature:getName() .. " is missing " .. creature:getPossessivePronoun() .. " sacrifice on the altar.")
-			position:sendMagicEffect(CONST_ME_POFF)
-			return true
-		end
-
-		players[#players + 1] = creature
+	if #players == 0 then
+		player:sendCancelMessage("You need at least one player on the vocation tiles.")
+		position:sendMagicEffect(CONST_ME_POFF)
+		return true
 	end
 
 	for i = 1, #players do
-		local sacrificeItem = Tile(config[i].sacrificePosition):getItemById(config[i].sacrificeId)
-		if sacrificeItem then
-			sacrificeItem:remove()
-		end
-
-		players[i]:getPosition():sendMagicEffect(CONST_ME_POFF)
-		players[i]:teleportTo(config[i].toPosition)
-		config[i].toPosition:sendMagicEffect(CONST_ME_TELEPORT)
+		players[i].player:getPosition():sendMagicEffect(CONST_ME_POFF)
+		players[i].player:teleportTo(players[i].toPosition)
+		players[i].toPosition:sendMagicEffect(CONST_ME_TELEPORT)
 	end
 	return true
 end

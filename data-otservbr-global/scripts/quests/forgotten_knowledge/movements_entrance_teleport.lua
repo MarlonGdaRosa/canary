@@ -83,40 +83,9 @@ function entranceTeleport.onStepIn(creature, item, position, fromPosition)
 	if not teleport then
 		return
 	end
-	if item.itemid == 10840 then
-		if player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.AccessLast) < 1 then
-			if
-				player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.LadyTenebrisKilled) >= 1
-				and player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.LloydKilled) >= 1
-				and player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.ThornKnightKilled) >= 1
-				and player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.DragonkingKilled) >= 1
-				and player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.HorrorKilled) >= 1
-				and player:getStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.TimeGuardianKilled) >= 1
-			then
-				player:setStorageValue(Storage.Quest.U11_02.ForgottenKnowledge.AccessLast, 1)
-			end
-		end
-	end
-	if player:getStorageValue(teleport.storage) >= 1 then
-		position:sendMagicEffect(teleport.effect)
-		player:teleportTo(teleport.newPos)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	else
-		if item.itemid == 10840 then
-			player:teleportTo(fromPosition)
-			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You don't have the permission to use this portal.")
-			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-			return true
-		end
-		local pos = position
-		pos.y = pos.y + 2
-		player:teleportTo(pos)
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You don't have the permission to use this portal.")
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		pos.y = pos.y - 2
-		pos:sendMagicEffect(CONST_ME_TELEPORT)
-	end
+	position:sendMagicEffect(teleport.effect)
+	player:teleportTo(teleport.newPos)
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end
 

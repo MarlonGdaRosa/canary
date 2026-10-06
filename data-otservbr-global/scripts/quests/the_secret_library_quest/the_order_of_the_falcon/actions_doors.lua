@@ -38,31 +38,21 @@ function actions_falcon_doors.onUse(player, item, fromPosition, target, toPositi
 	if item:getActionId() == 4920 then
 		for _, p in pairs(doors) do
 			local door = p.doorPosition
-			local value = p.value
 			if (item:getPosition() == door) and not (Tile(item:getPosition()):getTopCreature()) then
-				if player:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.FalconBastion.KillingBosses) >= value then
-					player:teleportTo(toPosition, true)
-					item:transform(item.itemid + 1)
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The door seems to be sealed against unwanted intruders.")
-				end
+				player:teleportTo(toPosition, true)
+				item:transform(item.itemid + 1)
 			end
 		end
 	elseif item:getActionId() == 4921 then
 		for _, p in pairs(boats) do
 			local boat = p.boatPosition
-			local value = p.value
 			local toPos = p.toPosition
 			local message = p.message
 			if item:getPosition() == boat then
-				if player:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.FalconBastion.KillingBosses) >= value then
-					player:teleportTo(toPos, true)
-					player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-					if message then
-						player:sendTextMessage(MESSAGE_EVENT_ADVANCE, message)
-					end
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You can not use this boat yet.")
+				player:teleportTo(toPos, true)
+				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+				if message then
+					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, message)
 				end
 			end
 		end

@@ -11,12 +11,6 @@ function entranceAncientFeud.onUse(creature, item, position, fromPosition)
 	if not player then
 		return false
 	end
-	if player:getStorageValue(Storage.Quest.U10_80.GrimvaleQuest.AncientFeudShortcut) < 0 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You are not worthy to travel by the lion's roar.")
-		player:teleportTo(fromPosition, true)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return false
-	end
 	for value in pairs(config) do
 		if Position(config[value].position) == item:getPosition() then
 			player:teleportTo(Position(config[value].destination))

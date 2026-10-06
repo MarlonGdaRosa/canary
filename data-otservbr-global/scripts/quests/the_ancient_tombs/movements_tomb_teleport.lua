@@ -56,11 +56,6 @@ function tombTeleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if not player:removeItem(teleport.removeId, 1) then
-		player:teleportTo(teleport.exitDestination)
-		teleport.exitDestination:sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	end
 
 	player:teleportTo(teleport.destination)
 	teleport.destination:sendMagicEffect(CONST_ME_TELEPORT)

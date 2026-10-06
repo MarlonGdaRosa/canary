@@ -71,7 +71,7 @@ setmetatable(BossLever, {
 			requiredLevel = config.requiredLevel or 0,
 			createBoss = boss.createFunction,
 			disabled = config.disabled,
-			minPlayers = config.minPlayers or 1,
+			minPlayers = 1,
 			playerPositions = config.playerPositions,
 			onUseExtra = config.onUseExtra or function() end,
 			exitTeleporter = config.exitTeleporter,
@@ -217,9 +217,9 @@ function BossLever:onUse(player)
 	end)
 
 	lever:checkPositions()
-	if #lever:getPlayers() < self.minPlayers then
+	if #lever:getPlayers() < 1 then
 		lever:executeOnPlayers(function(creature)
-			local message = string.format("You need %d qualified players for this challenge.", self.minPlayers)
+			local message = "You need at least 1 qualified player for this challenge."
 			creature:sendTextMessage(MESSAGE_EVENT_ADVANCE, message)
 			creature:getPosition():sendMagicEffect(CONST_ME_POFF)
 		end)

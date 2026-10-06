@@ -41,32 +41,11 @@ local config = {
 }
 
 local function tpX(i, player, position)
-	if player:getStorageValue(config[i].Access) == 1 then
-		if position == config[i].teleportPos then
-			return config[i].destinationA
-		else
-			return config[i].destinationB
-		end
-	elseif player:getStorageValue(config[i].Access) == 2 then
-		if position == config[i].teleportPos then
-			return config[i].destinationC
-		else
-			return config[i].destinationB
-		end
-	elseif player:getStorageValue(config[i].Access) == 3 then
-		if position == config[i].teleportPos then
-			if Tile(config[i].itemPos):getItemById(11673) then
-				config[i].itemPos:removeItem(11673, 1)
-				return config[i].destinationA
-			else
-				player:say("This teleporter constantly flickers. It seems to be instable and completely unworking.", TALKTYPE_MONSTER_SAY)
-				return false
-			end
-		else
-			return config[i].destinationB
-		end
+	if position == config[i].teleportPos then
+		return config[i].destinationA
+	else
+		return config[i].destinationB
 	end
-	return false
 end
 
 local function getDestinationByPos(player, position)

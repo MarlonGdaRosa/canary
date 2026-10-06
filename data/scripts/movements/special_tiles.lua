@@ -53,12 +53,6 @@ function tile.onStepIn(creature, item, position, fromPosition)
 		return checkAndSendDepotMessage(player)
 	end
 
-	if item.actionid ~= 0 and player:getStorageValue(item.actionid) <= 0 then
-		player:teleportTo(fromPosition, false)
-		position:sendMagicEffect(CONST_ME_MAGIC_BLUE)
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The tile seems to be protected against unwanted intruders.")
-		return true
-	end
 	return true
 end
 

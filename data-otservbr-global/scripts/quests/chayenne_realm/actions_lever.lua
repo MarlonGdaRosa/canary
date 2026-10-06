@@ -7,10 +7,6 @@ function chayenneLever.onUse(player, item, fromPosition, itemEx, toPosition)
 			return true
 		end
 
-		if player:getItemCount(14682) < 1 then
-			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You do not have the Chayenne's magical key.")
-			return true
-		end
 
 		local tile = Tile({ x = 33075, y = 32591, z = 3 })
 		local item = tile:getItemById(2129)

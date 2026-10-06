@@ -42,15 +42,13 @@ function leverDeathPriestShargon.onUse(player, item, fromPosition, target, toPos
 		for i = 1, #setting.playerPositions do
 			local tile = Tile(setting.playerPositions[i])
 			local creature = tile and tile:getTopCreature()
-			if not creature or not creature:isPlayer() then
-				player:sendCancelMessage("You need 5 players to fight with Death Priest Shargon.")
-				return true
+			if creature and creature:isPlayer() then
+				storePlayers[#storePlayers + 1] = creature
 			end
-			storePlayers[#storePlayers + 1] = creature
 		end
 
-		if #storePlayers < 5 then
-			player:sendCancelMessage("You need exactly 5 players to fight with Death Priest Shargon.")
+		if #storePlayers < 1 then
+			player:sendCancelMessage("You need at least 1 player to fight with Death Priest Shargon.")
 			return true
 		end
 
@@ -61,11 +59,8 @@ function leverDeathPriestShargon.onUse(player, item, fromPosition, target, toPos
 
 		for i = 1, #storePlayers do
 			local playerToTeleport = storePlayers[i]
-			local oldPosition = setting.playerPositions[i]
 			local newPosition = setting.newPositions[i]
-			if Tile(oldPosition) then
-				oldPosition:sendMagicEffect(CONST_ME_POFF)
-			end
+			playerToTeleport:getPosition():sendMagicEffect(CONST_ME_POFF)
 			if newPosition then
 				playerToTeleport:teleportTo(newPosition)
 				newPosition:sendMagicEffect(CONST_ME_ENERGYAREA)

@@ -15,7 +15,11 @@ end
 local theAncientOasisLever = Action()
 function theAncientOasisLever.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	if item.itemid == 1662 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You first must find the Carrot under one of the three hats to get the access!")
+		item:transform(1663)
+		player:teleportTo(toPosition, true)
+		return true
+	elseif item.itemid == 1663 then
+		item:transform(1662)
 		return true
 	end
 

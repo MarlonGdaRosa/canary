@@ -45,24 +45,25 @@ function elementalSpheresLever.onUse(player, item, fromPosition, target, toPosit
 	local players = {}
 	for i = 1, #config do
 		local creature = Tile(config[i].position):getTopCreature()
-		if not creature or not creature:isPlayer() then
-			player:say("You need one player of each vocation having completed the Elemental Spheres quest and also carrying the elemental rare item.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
-			return true
+		if creature and creature:isPlayer() then
+			local vocationId = creature:getVocation():getBaseId()
+			if vocationId ~= config[i].vocationId then
+				player:say("A player on the tile has the wrong vocation.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
+				return true
+			end
+			players[#players + 1] = { player = creature, toPosition = config[i].toPosition, position = config[i].position }
 		end
+	end
 
-		local vocationId = creature:getVocation():getBaseId()
-		if vocationId ~= config[i].vocationId or creature:getItemCount(config[i].itemid) < 1 or creature:getStorageValue(Storage.Quest.U8_2.ElementalSpheres.QuestLine) < 1 then
-			player:say("You need one player of each vocation having completed the Elemental Spheres quest and also carrying the elemental rare item.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
-			return true
-		end
-
-		players[#players + 1] = creature
+	if #players == 0 then
+		player:say("You need at least one player on the vocation tiles.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
+		return true
 	end
 
 	for i = 1, #players do
-		players[i]:teleportTo(config[i].toPosition)
-		config[i].position:sendMagicEffect(CONST_ME_TELEPORT)
-		config[i].toPosition:sendMagicEffect(CONST_ME_TELEPORT)
+		players[i].player:teleportTo(players[i].toPosition)
+		players[i].position:sendMagicEffect(CONST_ME_TELEPORT)
+		players[i].toPosition:sendMagicEffect(CONST_ME_TELEPORT)
 	end
 
 	item:transform(item.itemid + 1)

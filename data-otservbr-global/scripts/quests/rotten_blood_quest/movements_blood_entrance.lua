@@ -23,14 +23,6 @@ function accessBlood.onStepIn(creature, item, position, fromPosition)
 		return false
 	end
 
-	local access = player:kv():scoped("rotten-blood-quest"):get("access") or 0
-	if access < 4 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You offerings to this sanguine master of this realm have been insufficient. You can not pass.")
-		player:teleportTo(config.noAccess, true)
-		player:addHealth(-getDamage(player:getHealth()), COMBAT_PHYSICALDAMAGE)
-		return false
-	end
-
 	if config.entrance == position then
 		player:teleportTo(config.destination)
 		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)

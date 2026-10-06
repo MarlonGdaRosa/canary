@@ -17,13 +17,6 @@ function turtles.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.AccessToLagunaIsland) ~= 1 and item.uid == 3206 then
-		local accessPosition = Position(32340, 32540, 7)
-		player:teleportTo(accessPosition)
-		position:sendMagicEffect(CONST_ME_TELEPORT)
-		accessPosition:sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	end
 
 	local toPosition = setting[item.uid]
 	if not toPosition then

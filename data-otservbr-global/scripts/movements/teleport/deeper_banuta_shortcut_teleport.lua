@@ -17,12 +17,7 @@ function deeperBanutaShortcutTeleport.onStepIn(creature, item, position, fromPos
 		return true
 	end
 
-	if player:getStorageValue(Storage.BanutaSecretTunnel.DeeperBanutaShortcut) == 1 then
-		player:teleportTo(targetPosition)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	end
-	player:teleportTo(fromPosition)
+	player:teleportTo(targetPosition)
 	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end

@@ -11,12 +11,8 @@ local actions_museum_doors = Action()
 function actions_museum_doors.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	for _, p in pairs(doors) do
 		if (item:getPosition() == p.doorPosition) and not (Tile(item:getPosition()):getTopCreature()) then
-			if player:getStorageValue(p.storage) >= p.value then
-				player:teleportTo(toPosition, true)
-				item:transform(item.itemid + 1)
-			else
-				player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The door seems to be sealed against unwanted intruders.")
-			end
+			player:teleportTo(toPosition, true)
+			item:transform(item.itemid + 1)
 		end
 	end
 

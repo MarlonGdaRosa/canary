@@ -22,15 +22,6 @@ function soul_war_entrances.onStepIn(creature, item, position, fromPosition)
 		return
 	end
 
-	-- Check if player has access to teleport from Flickering Soul npc: "hi/task/yes"
-	local soulWarQuest = player:soulWarQuestKV()
-	if not soulWarQuest:get("teleport-access") then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "Your soul does not yet resonate with the frequency required to enter here.")
-		player:teleportTo(fromPosition, true)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return
-	end
-
 	for position, destination in pairs(positionsTable) do
 		if position == player:getPosition() then
 			fromPosition:sendMagicEffect(CONST_ME_TELEPORT)
@@ -57,27 +48,10 @@ function soul_war_megalomania_entrance.onStepIn(creature, item, position, fromPo
 		return false
 	end
 
-	local soulWarQuest = player:soulWarQuestKV()
 	if player:getLevel() < 250 then
 		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You are not allowed to enter here.")
 		player:teleportTo(fromPosition, true)
 		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return false
-	end
-
-	local text = ""
-	local soulWarCount = 0
-	for bossName, completed in pairs(SoulWarQuest.miniBosses) do
-		if soulWarQuest:get(bossName) == completed then
-			soulWarCount = soulWarCount + 1
-		else
-			text = text .. "\n" .. bossName
-		end
-	end
-
-	if soulWarCount < 5 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You still need to defeat:" .. text)
-		player:teleportTo(fromPosition, true)
 		return false
 	end
 
@@ -122,15 +96,6 @@ local goshnarSpiteEntrance = MoveEvent()
 function goshnarSpiteEntrance.onStepIn(creature, item, position, fromPosition)
 	local player = creature:getPlayer()
 	if not player then
-		return false
-	end
-
-	local soulWarQuest = player:soulWarQuestKV()
-	local killCount = soulWarQuest:get("hazardous-phantom-death") or 0
-	if killCount < 20 then
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You have killed " .. killCount .. " and need to kill 20 Hazardous Phantoms")
-		player:teleportTo(fromPosition, true)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 		return false
 	end
 

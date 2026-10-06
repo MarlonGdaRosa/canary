@@ -17,21 +17,9 @@ function gnomprona.onStepIn(creature, item, position, fromPosition)
 	for c = 1, #teleports do
 		if teleports[c].position then
 			if player:getPosition() == Position(teleports[c].position) then
-				if teleports[c].access then
-					if player:getStorageValue(teleports[c].access) > 0 then
-						player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-						player:teleportTo(teleports[c].destination)
-						player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-					else
-						player:getPosition():sendMagicEffect(CONST_ME_POFF)
-						player:teleportTo(fromPosition)
-						player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You don't have access to this teleport yet.")
-					end
-				else
-					player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-					player:teleportTo(teleports[c].destination)
-					player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-				end
+				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+				player:teleportTo(teleports[c].destination)
+				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			end
 		elseif teleports[c].positions then
 			for d = 1, #teleports[c].positions do

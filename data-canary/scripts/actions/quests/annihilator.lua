@@ -16,19 +16,26 @@ local annihilator = Action()
 function annihilator.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	if item.itemid == 2772 then
 		local players = {}
-		for _, position in ipairs(playerPosition) do
+		for i, position in ipairs(playerPosition) do
 			local topPlayer = Tile(position):getTopCreature()
-			if not topPlayer or not topPlayer:isPlayer() or topPlayer:getLevel() < 100 or topPlayer:getStorageValue(Storage.Quest.ExampleQuest.Example) ~= -1 then
-				player:sendCancelMessage(RETURNVALUE_NOTPOSSIBLE)
-				return false
+			if topPlayer and topPlayer:isPlayer() then
+				if topPlayer:getLevel() < 100 then
+					player:sendCancelMessage(RETURNVALUE_NOTPOSSIBLE)
+					return false
+				end
+				players[#players + 1] = { player = topPlayer, index = i }
 			end
-			players[#players + 1] = topPlayer
 		end
 
-		for i, targetPlayer in ipairs(players) do
-			Position(playerPosition[i]):sendMagicEffect(CONST_ME_POFF)
-			targetPlayer:teleportTo(newPosition[i], false)
-			targetPlayer:getPosition():sendMagicEffect(CONST_ME_ENERGYAREA)
+		if #players == 0 then
+			player:sendCancelMessage(RETURNVALUE_NOTPOSSIBLE)
+			return false
+		end
+
+		for _, p in ipairs(players) do
+			Position(playerPosition[p.index]):sendMagicEffect(CONST_ME_POFF)
+			p.player:teleportTo(newPosition[p.index], false)
+			p.player:getPosition():sendMagicEffect(CONST_ME_ENERGYAREA)
 		end
 		item:transform(2773)
 	elseif item.itemid == 2773 then

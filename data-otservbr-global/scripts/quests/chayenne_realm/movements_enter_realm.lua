@@ -7,13 +7,13 @@ function enterRealm.onStepIn(creature, item, position, fromPosition)
 	end
 
 	if item.actionid == 55022 then
-		if player:getItemCount(14682) >= 1 and player:getLevel() >= 40 then
+		if player:getLevel() >= 40 then
 			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			player:teleportTo(Position(32829, 31451, 8))
 			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You're entering the realm of dreams.")
 		else
-			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You do not have level 40+ or missing the Chayenne's magical key.")
+			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You do not have level 40+.")
 			player:teleportTo(fromPosition, true)
 		end
 	elseif item.actionid == 55024 then

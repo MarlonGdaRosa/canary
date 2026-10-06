@@ -402,8 +402,8 @@ function heartDestructionFinal.onUse(player, item, fromPosition, itemEx, toPosit
 					end
 				end
 
-				if #storeHunger < 1 or #storeDestruction < 1 or #storeRage < 1 then
-					player:sendTextMessage(19, "You need at least 3 players, each in a column.")
+				if #storeHunger + #storeDestruction + #storeRage < 1 then
+					player:sendTextMessage(19, "You need at least 1 player.")
 					return true
 				end
 

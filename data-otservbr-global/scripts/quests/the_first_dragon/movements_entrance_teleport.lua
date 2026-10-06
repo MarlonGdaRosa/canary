@@ -65,28 +65,18 @@ function entranceTeleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if player:getStorageValue(Storage.Quest.U11_02.TheFirstDragon.Questline) < 1 or player:getStorageValue(setting.storage) < setting.value then
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:teleportTo(fromPosition)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:say("You don't have permission to use this portal", TALKTYPE_MONSTER_SAY)
+	local monster = Game.createMonster(setting.bossName, setting.bossPos, true, true)
+	if not monster then
 		return true
 	end
 
-	if player:getStorageValue(setting.storage) >= setting.value then
-		local monster = Game.createMonster(setting.bossName, setting.bossPos, true, true)
-		if not monster then
-			return true
-		end
-
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:teleportTo(setting.newPos)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:say("You have ten minutes to kill and loot this boss. Otherwise you will lose that chance and will be kicked out.", TALKTYPE_MONSTER_SAY)
-		player:setBossCooldown(setting.bossName, os.time() + 2 * 3600)
-		addEvent(clearBossRoom, 60 * 30 * 1000, player.uid, setting.bossPos, false, setting.range, setting.range, fromPosition)
-		return true
-	end
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+	player:teleportTo(setting.newPos)
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+	player:say("You have ten minutes to kill and loot this boss. Otherwise you will lose that chance and will be kicked out.", TALKTYPE_MONSTER_SAY)
+	player:setBossCooldown(setting.bossName, os.time() + 2 * 3600)
+	addEvent(clearBossRoom, 60 * 30 * 1000, player.uid, setting.bossPos, false, setting.range, setting.range, fromPosition)
+	return true
 	return true
 end
 

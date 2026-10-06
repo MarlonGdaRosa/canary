@@ -18,14 +18,7 @@ function magicianQuarter.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if targetWall.requireSoil then
-		if not (player:removeItem(940, 1) or player:removeItem(941, 1) or player:removeItem(944, 1) or player:removeItem(945, 1)) then
-			player:teleportTo(targetWall.pushbackPosition)
-			player:say("You may not enter without a sacrifice of elemental soil.", TALKTYPE_MONSTER_SAY)
-			targetWall.pushbackPosition:sendMagicEffect(targetWall.effect)
-			return true
-		end
-	end
+
 
 	player:teleportTo(targetWall.toPosition)
 	targetWall.toPosition:sendMagicEffect(targetWall.effect)

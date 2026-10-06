@@ -8,15 +8,11 @@ local actions_asura_doors = Action()
 function actions_asura_doors.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	for _, p in pairs(doors) do
 		if (item:getPosition() == p.doorPosition) and not (Tile(item:getPosition()):getTopCreature()) then
-			if player:getStorageValue(p.storage) >= p.value then
-				if not p.level or (p.level and player:getLevel() >= p.level) then
-					player:teleportTo(toPosition, true)
-					item:transform(item.itemid + 1)
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You do not have enough level.")
-				end
+			if not p.level or (p.level and player:getLevel() >= p.level) then
+				player:teleportTo(toPosition, true)
+				item:transform(item.itemid + 1)
 			else
-				player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The door seems to be sealed against unwanted intruders.")
+				player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You do not have enough level.")
 			end
 		end
 	end

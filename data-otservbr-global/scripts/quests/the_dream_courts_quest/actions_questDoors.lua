@@ -100,46 +100,25 @@ function actions_questDoors.onUse(player, item, fromPosition, target, toPosition
 	for _, p in pairs(doors) do
 		if iPos == p.doorPosition and not (player:getPosition() == p.doorPosition) then
 			if p.help == "Tomb" then
-				if player:getStorageValue(p.storage) < p.value then
-					player:teleportTo(toPosition, true)
-					item:transform(item.itemid + 1)
-					addEvent(closeDoor, 2000, iPos, item.itemid)
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The door seems to be sealed against unwanted intruders.")
-				end
+				player:teleportTo(toPosition, true)
+				item:transform(item.itemid + 1)
+				addEvent(closeDoor, 2000, iPos, item.itemid)
 			elseif p.help == "Medusa" then
-				if player:getStorageValue(p.storage) < 1 then
-					player:setStorageValue(p.storage, 1)
-					local count = player:getStorageValue(Storage.Quest.U12_00.TheDreamCourts.TheSevenKeys.Count)
-					player:setStorageValue(Storage.Quest.U12_00.TheDreamCourts.TheSevenKeys.Count, (count < 0 and 1 or count + 1))
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "As Medusa's Ointment takes effect, the door is unpetrified. You can use it now.")
-				end
 				local newPos = (iPos.y < player:getPosition().y) and Position(iPos.x, iPos.y - 3, iPos.z) or Position(iPos.x, iPos.y + 3, iPos.z)
 				player:teleportTo(newPos)
 				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 				addEvent(closeDoor, 2000, iPos, item.itemid)
 			elseif p.help == "Lock" then
-				if player:getStorageValue(p.storage) >= p.value then
-					local newPos = (iPos.y < player:getPosition().y) and Position(iPos.x, iPos.y - 1, iPos.z) or Position(iPos.x, iPos.y + 1, iPos.z)
-					player:teleportTo(newPos)
-					player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-					addEvent(closeDoor, 2000, iPos, item.itemid)
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The lock in this door is missing. Perhaps you can find a matching lock somewhere?")
-					return true
-				end
+				local newPos = (iPos.y < player:getPosition().y) and Position(iPos.x, iPos.y - 1, iPos.z) or Position(iPos.x, iPos.y + 1, iPos.z)
+				player:teleportTo(newPos)
+				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+				addEvent(closeDoor, 2000, iPos, item.itemid)
 			elseif p.help == "Open/Close" then
-				if player:getStorageValue(p.storage) >= p.value then
-					item:transform((item.itemid == 30033) and 30035 or 30033)
-				end
+				item:transform((item.itemid == 30033) and 30035 or 30033)
 			else
-				if player:getStorageValue(p.storage) >= p.value then
-					player:teleportTo(toPosition, true)
-					item:transform(item.itemid + 1)
-					addEvent(closeDoor, 2000, iPos, item.itemid)
-				else
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "The door seems to be sealed against unwanted intruders.")
-				end
+				player:teleportTo(toPosition, true)
+				item:transform(item.itemid + 1)
+				addEvent(closeDoor, 2000, iPos, item.itemid)
 			end
 		end
 	end
