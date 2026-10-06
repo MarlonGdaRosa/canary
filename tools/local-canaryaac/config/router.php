@@ -1,5 +1,6 @@
 <?php
 // Installed in the application root. Never delegate existing files to php -S.
+clearstatcache(true);
 $root = realpath(__DIR__);
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
@@ -14,10 +15,14 @@ $deny = static function (): never {
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if (!is_string($path) || !str_starts_with($path, '/')) $deny();
 $path = rawurldecode($path);
-if (preg_match('/[\\\\:%\x00-\x1f\x7f]/', $path)) $deny();
-foreach (explode('/', $path) as $segment) {
-    if (str_starts_with($segment, '.') || preg_match('/\.(?:php\d*|phtml|phar|sql|env|ini|lock|twig|bak|old|log)(?:\.|$)/i', $segment)) $deny();
-}
+$safeSegments = static function (string $relativePath): bool {
+    if (preg_match('/[\\\\:%\x00-\x1f\x7f]/', $relativePath)) return false;
+    foreach (explode('/', $relativePath) as $segment) {
+        if (str_starts_with($segment, '.') || preg_match('/\.(?:php\d*|phtml|phar|sql|env|ini|lock|twig|bak|old|log)(?:\.|$)/i', $segment)) return false;
+    }
+    return true;
+};
+if (!$safeSegments($path)) $deny();
 $allowedDirectories = ['base', 'bootstrap', 'canary', 'icons', 'images', 'javascripts', 'styles'];
 $types = ['css' => 'text/css', 'js' => 'text/javascript', 'png' => 'image/png', 'jpg' => 'image/jpeg',
     'jpeg' => 'image/jpeg', 'gif' => 'image/gif', 'svg' => 'image/svg+xml', 'webp' => 'image/webp',
@@ -26,6 +31,11 @@ $within = static function (string $file, string $directory): bool {
     // Case-insensitive Windows filesystem; separator boundary prevents prefix collisions.
     $prefix = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR;
     return PHP_OS_FAMILY === 'Windows' ? str_starts_with(strtolower($file), strtolower($prefix)) : str_starts_with($file, $prefix);
+};
+$allowedTarget = static function (string $file, string $directory) use ($within, $safeSegments, $types): bool {
+    if (!is_file($file) || !$within($file, $directory)) return false;
+    $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', substr($file, strlen(rtrim($directory, '/\\')) + 1));
+    return $safeSegments($relativePath) && isset($types[strtolower(pathinfo($file, PATHINFO_EXTENSION))]);
 };
 $serve = static function (string $file, string $type): never {
     header('Content-Type: ' . $type);
@@ -50,15 +60,13 @@ if (str_starts_with(strtolower($path), '/resources/')) {
     $expectedDirectory = $root . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . $parts[2];
     if ((PHP_OS_FAMILY === 'Windows' ? strcasecmp($directory, $expectedDirectory) : strcmp($directory, $expectedDirectory)) !== 0) $deny();
     if ($file !== false) {
-        if (!is_file($file) || !$within($file, $directory)) $deny();
-        if (!isset($types[strtolower(pathinfo($file, PATHINFO_EXTENSION))])
-            || preg_match('/\.(?:php\d*|phtml|phar|sql|env|ini|lock|twig|bak|old|log)(?:\.|$)/i', basename($file))) $deny();
+        if (!$allowedTarget($file, $directory)) $deny();
         $serve($file, $types[$extension]);
     }
     // Retain only the two known image fallbacks, subject to the same containment.
     if (preg_match('#^/resources/images/charactertrade/items/[0-9]+\.gif$#', $path)) {
         $fallback = realpath($root . '/resources/images/charactertrade/objects/empty.gif');
-        if ($fallback && is_file($fallback) && $within($fallback, $directory)) $serve($fallback, 'image/gif');
+        if ($fallback && $allowedTarget($fallback, $directory)) $serve($fallback, $types[strtolower(pathinfo($fallback, PATHINFO_EXTENSION))]);
     }
     $deny();
 }

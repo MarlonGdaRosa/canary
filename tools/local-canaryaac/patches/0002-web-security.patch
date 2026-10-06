@@ -94,10 +94,10 @@ index 7de2c18..ebc2a37 100644
 +}
 diff --git a/app/Utils/RateLimiter.php b/app/Utils/RateLimiter.php
 new file mode 100644
-index 0000000..423a6d5
+index 0000000..dd991af
 --- /dev/null
 +++ b/app/Utils/RateLimiter.php
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,37 @@
 +<?php
 +namespace App\Utils;
 +
@@ -125,9 +125,13 @@ index 0000000..423a6d5
 +            ++$state['count'];
 +            $encoded = json_encode($state, JSON_THROW_ON_ERROR);
 +            if (!rewind($handle) || !ftruncate($handle, 0) || fwrite($handle, $encoded) !== strlen($encoded) || !fflush($handle)) throw new SecurityFailure(503);
++        } catch (\ErrorException $error) {
++            // Checked native storage operations can warn before returning failure.
++            throw new SecurityFailure(503);
 +        } finally {
-+            flock($handle, LOCK_UN);
-+            fclose($handle);
++            $unlocked = @flock($handle, LOCK_UN);
++            $closed = @fclose($handle);
++            if (!$unlocked || !$closed) throw new SecurityFailure(503);
 +        }
 +    }
 +}
@@ -186,10 +190,10 @@ index 4789625..540fa27 100644
 +}
 diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
 new file mode 100644
-index 0000000..8123114
+index 0000000..6c12193
 --- /dev/null
 +++ b/app/Utils/WebSecurity.php
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,162 @@
 +<?php
 +namespace App\Utils;
 +
@@ -258,7 +262,12 @@ index 0000000..8123114
 +            session_name($name);
 +            session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => self::$production,
 +                'httponly' => true, 'samesite' => 'Lax']);
-+            if (!session_start()) throw new SecurityFailure(503);
++            try {
++                if (!session_start()) throw new SecurityFailure(503);
++            } catch (\ErrorException $error) {
++                // Native session storage warnings are expected availability failures.
++                throw new SecurityFailure(503);
++            }
 +        }
 +        self::csrfToken();
 +        self::guardRequest();
@@ -334,7 +343,7 @@ index 0000000..8123114
 +
 +    public static function authenticated(): void
 +    {
-+        if (!session_regenerate_id(true)) throw new SecurityFailure(503);
++        if (!@session_regenerate_id(true)) throw new SecurityFailure(503);
 +        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 +    }
 +
@@ -344,7 +353,7 @@ index 0000000..8123114
 +        $cookie = session_get_cookie_params();
 +        setcookie(session_name(), '', ['expires' => time() - 3600, 'path' => $cookie['path'],
 +            'secure' => $cookie['secure'], 'httponly' => true, 'samesite' => 'Lax']);
-+        if (!session_destroy()) throw new SecurityFailure(503);
++        if (!@session_destroy()) throw new SecurityFailure(503);
 +    }
 +}
 diff --git a/includes/app.php b/includes/app.php

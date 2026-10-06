@@ -34,6 +34,10 @@ try {
         foreach ($pipes as $pipe) { stream_get_contents($pipe); fclose($pipe); }
         $hasRootLink = proc_close($process) === 0;
     }
+    $fixture->write('resources/images/.private/secret.png', 'FAKE_PRIVATE_SENTINEL');
+    $fixture->write('resources/images/.private/empty.gif', 'FAKE_PRIVATE_SENTINEL');
+    $hasHiddenLink = $fixture->directoryLink('resources/images/hidden-alias', 'resources/images/.private');
+    $hasHiddenFileLink = @symlink($fixture->root . '/resources/images/.private.png', $fixture->root . '/resources/images/hidden-file.png');
     $fixture->start($fixture->root . '/router.php');
     $denied = ['/.env', '/.git/HEAD', '/composer.lock', '/canaryaac.sql', '/vendor/composer/installed.json',
         '/%2eenv', '/%252eenv', '/.ENV', '/.GIT/HEAD', '/resources/images/../view/private.html.twig',
@@ -42,6 +46,8 @@ try {
     if ($hasLink) $denied[] = '/resources/images/escape.png';
     if ($hasDirectoryLink) $denied[] = '/resources/images/junction/secret.png';
     if ($hasRootLink) $denied[] = '/resources/icons/secret.png';
+    if ($hasHiddenLink) $denied[] = '/resources/images/hidden-alias/secret.png';
+    if ($hasHiddenFileLink) $denied[] = '/resources/images/hidden-file.png';
     foreach ($denied as $path) {
         $result = $fixture->request($path, 'HEAD');
         expect(in_array($result['status'], [403, 404], true), "$path leaked HTTP " . $result['status']);
@@ -53,6 +59,12 @@ try {
     expect($fixture->request('/')['body'] === 'APPLICATION', 'Application route lost');
     expect($fixture->request('/resources/images/charactertrade/items/123.gif')['body'] === 'GIF89a', 'Item fallback lost');
     expect($fixture->request('/resources/images/')['status'] === 200, 'Empty image fallback lost');
+    unlink($fixture->root . '/resources/images/charactertrade/objects/empty.gif');
+    rmdir($fixture->root . '/resources/images/charactertrade/objects');
+    if ($fixture->directoryLink('resources/images/charactertrade/objects', 'resources/images/.private')) {
+        expect($fixture->request('/resources/images/charactertrade/items/123.gif', 'HEAD')['status'] === 404,
+            'Item fallback leaked hidden resolved directory');
+    }
     echo 'PASS RouterSecurityTest (' . count($denied) . ' denied paths; allowed assets/fallbacks)' . PHP_EOL;
     if (!$hasLink) echo 'SKIP symlink escape: Windows identity cannot create symlinks' . PHP_EOL;
     if (!$hasDirectoryLink) echo 'SKIP junction escape: fixture identity cannot create junctions' . PHP_EOL;

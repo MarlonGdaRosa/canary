@@ -38,6 +38,20 @@ final class HttpFixture
         throw new RuntimeException('Fixture did not start');
     }
 
+    public function directoryLink(string $path, string $target): bool
+    {
+        $link = $this->root . '/' . $path;
+        $destination = $this->root . '/' . $target;
+        if (@symlink($destination, $link)) return true;
+        if (PHP_OS_FAMILY !== 'Windows') return false;
+        $process = proc_open(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command',
+            'New-Item -ItemType Junction -Path $env:CANARYAAC_FIXTURE_LINK -Target $env:CANARYAAC_FIXTURE_TARGET -ErrorAction Stop | Out-Null'],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, array_merge(getenv(), [
+                'CANARYAAC_FIXTURE_LINK' => $link, 'CANARYAAC_FIXTURE_TARGET' => $destination]));
+        foreach ($pipes as $pipe) { stream_get_contents($pipe); fclose($pipe); }
+        return proc_close($process) === 0;
+    }
+
     public function request(string $path, string $method = 'GET', string $body = '', array $headers = []): array
     {
         $socket = fsockopen('127.0.0.1', $this->port);

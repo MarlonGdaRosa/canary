@@ -47,6 +47,10 @@ if (isset($_GET['view'])) {
 } elseif (isset($_GET['warning'])) {
     trigger_error('FAKE_SECRET_SENTINEL', E_USER_WARNING);
     echo 'Unexpected continuation';
+} elseif (isset($_GET['limiterio'])) {
+    // A real PHP non-lockable storage stream: no warning injection or fake limiter.
+    \App\Utils\RateLimiter::consume('php://memory', 'signup', '127.0.0.1');
+    echo 'Unexpected continuation';
 } elseif (str_starts_with($_SERVER['REQUEST_URI'], '/account/logout')) {
     Login::logout();
     echo json_encode(['logged' => isset($_SESSION['account']['user']), 'session' => session_status()]);
@@ -105,5 +109,16 @@ PHP;
     expect($error['status'] === 500 && $error['body'] === 'Internal Server Error', 'Exception leaked or invalid status');
     $warning = $fixture->request('/?warning=1');
     expect($warning['status'] === 500 && $warning['body'] === 'Internal Server Error', 'Warning bypassed redacted error boundary');
+    $storageSession = $fixture->request('/');
+    $storageId = json_decode($storageSession['body'], true)['session'];
+    $storageCookie = explode(';', $storageSession['headers']['set-cookie'][0])[0];
+    $sessionFile = $fixture->root . '/state/sessions/sess_' . $storageId;
+    unlink($sessionFile);
+    mkdir($sessionFile);
+    $sessionFailure = $fixture->request('/', 'GET', '', ['Cookie' => $storageCookie]);
+    expect($sessionFailure['status'] === 503 && $sessionFailure['body'] === 'Service Unavailable', 'Session storage I/O warning must return 503; got ' . $sessionFailure['status']);
+    rmdir($sessionFile);
+    $limiterFailure = $fixture->request('/?limiterio=1');
+    expect($limiterFailure['status'] === 503 && $limiterFailure['body'] === 'Service Unavailable', 'Limiter storage I/O warning must return 503; got ' . $limiterFailure['status']);
     echo 'PASS WebSecurityTest (CSRF, budgets, cookies, production gates, authentication, redacted errors)' . PHP_EOL;
 } finally { $fixture->close(); }
