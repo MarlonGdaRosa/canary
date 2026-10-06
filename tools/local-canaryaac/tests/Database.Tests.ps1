@@ -13,6 +13,50 @@ if (Test-Path -LiteralPath $initializerPath) {
     }
 }
 
+Describe 'CanaryAAC global role privilege source' {
+    It 'refuses PUBLIC global UPDATE even when USER_PRIVILEGES returns no role rows' {
+        Mock Get-CanaryAACSqlLines {
+            if ($Sql -match 'mysql.global_priv') { return "5055424C4943`t`t1`t4" }
+            return @()
+        }
+        { Get-CanaryAACPublicAudit } | Should Throw
+    }
+
+    It 'refuses global privileges obtained through an inherited role using the real role audit' {
+        Mock Get-CanaryAACSqlLines {
+            if ($Sql -match 'mysql.roles_mapping' -and $Sql -match "User='PUBLIC'") { return "777269746572`tN" }
+            if ($Sql -match 'mysql.global_priv' -and $Sql -match "User='PUBLIC'") { return "5055424C4943`t`t1`t0" }
+            if ($Sql -match 'mysql.global_priv' -and $Sql -match "User='writer'") { return "777269746572`t`t1`t4" }
+            return @()
+        }
+        { Get-CanaryAACPublicAudit } | Should Throw
+    }
+
+    It 'allows only exact role identity with a valid unsigned zero global access value' {
+        $script:globalFixture = @("6F646427726F6C65`t`t1`t0")
+        $script:globalQuery = ''
+        Mock Get-CanaryAACSqlLines { $script:globalQuery = $Sql; return $script:globalFixture }
+        { Assert-CanaryAACPublicPrivileges @(Get-CanaryAACRoleGlobalPrivileges -Role "odd'role") } | Should Not Throw
+        $script:globalQuery | Should Match "BINARY User='odd''role' AND Host=''"
+        foreach ($bits in @('1','4','1024','18446744073709551615')) {
+            $script:globalFixture = @("6F646427726F6C65`t`t1`t$bits")
+            { Assert-CanaryAACPublicPrivileges @(Get-CanaryAACRoleGlobalPrivileges -Role "odd'role") } | Should Throw
+        }
+        foreach ($malformed in @("6F646427726F6C65`t`t1`t-1", "6F646427726F6C65`t`t1`t1e0", "6F646427726F6C65`t`t1`t18446744073709551616", "6F646427726F6C65`t`t1`tNULL", "6F646427726F6C65`t`t0`t0", "6F646427726F6C65`t3132372E302E302E31`t1`t0", "77726F6E67`t`t1`t0", "6F646427726F6C65`t`t1`t0`textra")) {
+            $script:globalFixture = @($malformed)
+            { Get-CanaryAACRoleGlobalPrivileges -Role "odd'role" } | Should Throw
+        }
+        $script:globalFixture = @()
+        { Get-CanaryAACRoleGlobalPrivileges -Role "odd'role" } | Should Throw
+        $script:globalFixture = @("6F646427726F6C65`t`t1`t0", "6F646427726F6C65`t`t1`t0")
+        { Get-CanaryAACRoleGlobalPrivileges -Role "odd'role" } | Should Throw
+        # '@host' inside the name is still a role name, never an account host.
+        $script:globalFixture = @("726561646572406C6F63616C686F7374`t`t1`t0")
+        { Assert-CanaryAACPublicPrivileges @(Get-CanaryAACRoleGlobalPrivileges -Role 'reader@localhost') } | Should Not Throw
+        $script:globalQuery | Should Match "BINARY User='reader@localhost' AND Host=''"
+    }
+}
+
 Describe 'CanaryAAC effective grants' {
     It 'allows only the inherited permissions already in the canary contract' {
         $records = @("SCHEMA`t1`tcanary`t*`t*`tSELECT`tNO", "TABLE`t1`tcanary`taccounts`t*`tINSERT`tNO", "COLUMN`t1`tcanary`tplayers`tname`tSELECT`tNO", "SCHEMA`t0`ttest\\_%`t*`t*`tDELETE`tNO")
@@ -39,13 +83,13 @@ Describe 'CanaryAAC effective grants' {
 
     It 'queries every MariaDB privilege scope and treats schema wildcard grants as applicable' {
         $capturedQueries = [Collections.Generic.List[string]]::new()
-        Mock Get-CanaryAACSqlLines { $capturedQueries.Add($Sql); return @() }
+        Mock Get-CanaryAACSqlLines { $capturedQueries.Add($Sql); if ($Sql -match 'mysql.global_priv') { return "6F646427726F6C65`t`t1`t0" }; return @() }
         # Pester 3 keeps the preceding role fixture mock for this Describe;
         # execute the production body directly while capturing SQL calls.
         $realPrivileges = [scriptblock]::Create($ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-CanaryAACRolePrivileges' }, $false).Body.Extent.Text.Trim('{', '}'))
         $null = & $realPrivileges -Role "odd'role"
         $capturedQueries.Count | Should Be 6
-        foreach ($scope in @('USER_PRIVILEGES','SCHEMA_PRIVILEGES','TABLE_PRIVILEGES','COLUMN_PRIVILEGES','mysql.procs_priv','mysql.proxies_priv')) {
+        foreach ($scope in @('mysql.global_priv','SCHEMA_PRIVILEGES','TABLE_PRIVILEGES','COLUMN_PRIVILEGES','mysql.procs_priv','mysql.proxies_priv')) {
             @($capturedQueries | Where-Object { $_.Contains($scope) }).Count | Should Be 1
         }
         @($capturedQueries | Where-Object { $_.Contains("IF('canary' LIKE TABLE_SCHEMA,1,0)") }).Count | Should Be 1
@@ -170,6 +214,26 @@ Describe 'CanaryAAC atomic dotenv publication' {
 }
 
 Describe 'CanaryAAC restoration byte parity' {
+    It 'drops the validated restore database when CREATE commits and the client then times out' {
+        $script:fixtureRestoreExists = $false
+        Mock Invoke-CanaryAACSql {
+            if ($Sql -ceq 'CREATE DATABASE `canaryaac_restore_20261005123456_a0b1c2d3` CHARACTER SET utf8mb4;') { $script:fixtureRestoreExists = $true; throw 'controlled timeout after server CREATE' }
+            if ($Sql -ceq 'DROP DATABASE IF EXISTS `canaryaac_restore_20261005123456_a0b1c2d3`;') { $script:fixtureRestoreExists = $false; return }
+            throw 'Unexpected restoration SQL.'
+        }
+        { Invoke-CanaryAACRestoreVerification -RestoreDatabase 'canaryaac_restore_20261005123456_a0b1c2d3' -DumpPath 'fixture.sql' } | Should Throw 'controlled timeout after server CREATE'
+        $script:fixtureRestoreExists | Should Be $false
+    }
+
+    It 'never attempts CREATE or DROP for an unvalidated restore identity' {
+        $script:fixtureCoreExists = $true
+        $script:fixtureSqlCalls = 0
+        Mock Invoke-CanaryAACSql { $script:fixtureCoreExists = $false; $script:fixtureSqlCalls++ }
+        { Invoke-CanaryAACRestoreVerification -RestoreDatabase 'canary' -DumpPath 'fixture.sql' } | Should Throw
+        $script:fixtureCoreExists | Should Be $true
+        $script:fixtureSqlCalls | Should Be 0
+    }
+
     It 'aborts when restored values differ despite unchanged row counts' {
         $before = Join-Path $TestDrive 'live-before.tsv'
         $restored = Join-Path $TestDrive 'restored.tsv'
@@ -283,7 +347,7 @@ Describe 'CanaryAAC database safety boundaries' {
         $main = $source.Substring($source.IndexOf('$repositoryRoot ='))
         $main | Should Match 'Protect-CanaryAACBackupTree -Root \$backupRoot'
         [regex]::Matches($main, 'Get-CanaryAACPublicAudit').Count | Should Be 2
-        $main | Should Match 'Assert-CanaryAACRestoredRows -RestoreDatabase \$restoreName -Baselines \$baselines'
+        $main | Should Match 'Invoke-CanaryAACRestoreVerification -RestoreDatabase \$restoreName -DumpPath \$dumpPath -CountSql \$countSql -LiveCounts \$liveCounts -Baselines \$baselines'
         $main | Should Match 'New-CanaryAACGrantSql -Password \$runtimePassword -Roles \$roles -Proxies \$proxies'
         $main | Should Match 'Assert-CanaryAACNoIndirectRuntimeGrants'
         $main | Should Match "PRIVILEGE_TYPE <> 'USAGE' OR IS_GRANTABLE <> 'NO'"
@@ -292,7 +356,7 @@ Describe 'CanaryAAC database safety boundaries' {
         $main | Should Not Match '\[IO.File\]::WriteAllText\(\$evidencePath'
         $main | Should Not Match 'restoreCreated -and'
         ($main.IndexOf('Protect-CanaryAACBackupTree') -lt $main.IndexOf('$null = Invoke-CanaryAACDatabaseProcess')) | Should Be $true
-        ($main.IndexOf('Assert-CanaryAACRestoredRows') -lt $main.IndexOf('for ($pass =')) | Should Be $true
+        ($main.IndexOf('Invoke-CanaryAACRestoreVerification') -lt $main.IndexOf('for ($pass =')) | Should Be $true
     }
 
     It 'returns plain SQL result strings without provider metadata in evidence' {

@@ -235,14 +235,36 @@ function Assert-CanaryAACPublicPrivileges {
     }
 }
 
+function Get-CanaryAACRoleGlobalPrivileges {
+    param([string] $Role)
+    $roleSql = ConvertTo-CanaryAACSqlLiteral $Role
+    # MariaDB 11.8 USER_PRIVILEGES enumerates users, not acl_roles. Read only
+    # role identity/is_role/access from the authoritative global record. Never
+    # return the Priv JSON or authentication properties to the client/evidence.
+    $rows = @(Get-CanaryAACSqlLines "SELECT HEX(User),HEX(Host),JSON_VALUE(Priv,'$.is_role'),JSON_VALUE(Priv,'$.access') FROM mysql.global_priv WHERE BINARY User=$roleSql AND Host='';")
+    if ($rows.Count -ne 1) { throw 'Global role privilege identity is missing or ambiguous.' }
+    $fields = $rows[0] -split "`t"
+    [uint64] $access = 0
+    if ($fields.Count -ne 4 -or (ConvertFrom-CanaryAACSqlHex $fields[0]) -cne $Role -or
+        (ConvertFrom-CanaryAACSqlHex $fields[1]) -cne '' -or $fields[2] -cne '1' -or
+        $fields[3] -cnotmatch '\A(?:0|[1-9][0-9]*)\z' -or
+        -not [uint64]::TryParse($fields[3], [Globalization.NumberStyles]::None, [Globalization.CultureInfo]::InvariantCulture, [ref] $access)) {
+        throw 'Malformed global role privilege record; audit refused.'
+    }
+    if ($access -eq 0) { return "GLOBAL`t1`t*`t*`t*`tUSAGE`tNO" }
+    # All global bits are outside the canary contract, including GRANT OPTION;
+    # do not maintain an incomplete/version-dependent privilege-name bit map.
+    "GLOBAL`t1`t*`t*`t*`tGLOBAL_ACCESS_BITS:$access`tNO"
+}
+
 function Get-CanaryAACRolePrivileges {
     param([string] $Role)
+    Get-CanaryAACRoleGlobalPrivileges -Role $Role
     $roleSql = ConvertTo-CanaryAACSqlLiteral $Role
     # MariaDB information_schema represents roles using quoted grantees with
     # an empty host; QUOTE also handles quote/backslash characters in names.
     $grantee = "GRANTEE IN ($roleSql, QUOTE($roleSql), CONCAT(QUOTE($roleSql),'@',QUOTE('')))"
     $queries = @(
-        "SELECT 'GLOBAL',1,'*','*','*',PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.USER_PRIVILEGES WHERE $grantee;",
         "SELECT 'SCHEMA',IF('canary' LIKE TABLE_SCHEMA,1,0),TABLE_SCHEMA,'*','*',PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.SCHEMA_PRIVILEGES WHERE $grantee;",
         "SELECT 'TABLE',IF(TABLE_SCHEMA='canary',1,0),TABLE_SCHEMA,TABLE_NAME,'*',PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.TABLE_PRIVILEGES WHERE $grantee;",
         "SELECT 'COLUMN',IF(TABLE_SCHEMA='canary',1,0),TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME,PRIVILEGE_TYPE,IS_GRANTABLE FROM information_schema.COLUMN_PRIVILEGES WHERE $grantee;",
@@ -442,6 +464,29 @@ function Assert-CanaryAACRestoredRows {
     }
 }
 
+function Invoke-CanaryAACRestoreVerification {
+    param([string] $RestoreDatabase, [string] $DumpPath, [string] $CountSql, [string[]] $LiveCounts, [object[]] $Baselines)
+    Assert-CanaryAACRestoreName $RestoreDatabase
+    $identifier = ConvertTo-CanaryAACSqlIdentifier $RestoreDatabase
+    $attempted = $false
+    try {
+        # The server may commit CREATE before its client times out or fails.
+        # Track the attempt before sending SQL, not the observed client result.
+        $attempted = $true
+        $null = Invoke-CanaryAACSql -Sql ("CREATE DATABASE $identifier CHARACTER SET utf8mb4;")
+        $null = Invoke-CanaryAACDatabaseProcess -Executable $client -Arguments @($connectionArguments + @('--binary-mode', '--local-infile=0', ('--database=' + $RestoreDatabase))) -InputPath $DumpPath
+        $restoredCounts = @(Get-CanaryAACSqlLines -Sql $CountSql -Database $RestoreDatabase)
+        if (($LiveCounts -join "`n") -cne ($restoredCounts -join "`n")) { throw 'Restored core table counts do not match the live database.' }
+        $restoredRows = @(Assert-CanaryAACRestoredRows -RestoreDatabase $RestoreDatabase -Baselines $Baselines)
+        [pscustomobject] @{ Database = $RestoreDatabase; Counts = $restoredCounts; CompleteRowsEqual = $true; Tables = $restoredRows; Dropped = $true }
+    } finally {
+        if ($attempted) {
+            Assert-CanaryAACRestoreName $RestoreDatabase
+            $null = Invoke-CanaryAACSql -Sql ('DROP DATABASE IF EXISTS ' + (ConvertTo-CanaryAACSqlIdentifier $RestoreDatabase) + ';')
+        }
+    }
+}
+
 function Get-CanaryAACRowEvidence {
     param([string] $Path)
     foreach ($line in [IO.File]::ReadAllLines($Path, [Text.Encoding]::UTF8)) {
@@ -520,7 +565,6 @@ try {
     $liveCounts = @(Get-CanaryAACSqlLines $countSql)
     $restoreName = 'canaryaac_restore_' + (Get-Date).ToString('yyyyMMddHHmmss') + '_' + [guid]::NewGuid().ToString('N').Substring(0, 8)
     Assert-CanaryAACRestoreName $restoreName
-    $restoreIdentifier = ConvertTo-CanaryAACSqlIdentifier $restoreName
     $schemaSql = "SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_TYPE, IS_NULLABLE, HEX(COLUMN_DEFAULT), EXTRA, COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='canary' AND TABLE_NAME IN ('accounts','players')"
     $indexSql = "SELECT TABLE_NAME,INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,COLLATION,SUB_PART,INDEX_TYPE FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='canary' AND TABLE_NAME IN ('accounts','players') ORDER BY TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX;"
     $fkSql = "SELECT CONSTRAINT_NAME,TABLE_NAME,REFERENCED_TABLE_NAME,UPDATE_RULE,DELETE_RULE FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='canary' AND TABLE_NAME IN ('accounts','players') ORDER BY TABLE_NAME,CONSTRAINT_NAME;"
@@ -540,28 +584,14 @@ try {
     $playerColumns = $baselines[1].Columns
     $godPath = Invoke-CanaryAACSql -Sql (Get-CanaryAACSpecialPlayerQuery -Columns $playerColumns -Kind God) -Database canary -OutputPath ($prefix + '.god-before.tsv')
     $samplePath = Invoke-CanaryAACSql -Sql (Get-CanaryAACSpecialPlayerQuery -Columns $playerColumns -Kind Samples) -Database canary -OutputPath ($prefix + '.samples-before.tsv')
-    $restoreCreated = $false
-    try {
-        $null = Invoke-CanaryAACSql -Sql ("CREATE DATABASE $restoreIdentifier CHARACTER SET utf8mb4;")
-        $restoreCreated = $true
-        $null = Invoke-CanaryAACDatabaseProcess -Executable $client -Arguments @($connectionArguments + @('--binary-mode', '--local-infile=0', ('--database=' + $restoreName))) -InputPath $dumpPath
-        $restoredCounts = @(Get-CanaryAACSqlLines -Sql $countSql -Database $restoreName)
-        if (($liveCounts -join "`n") -cne ($restoredCounts -join "`n")) { throw 'Restored core table counts do not match the live database.' }
-        # The dump and the subsequently captured live baseline must agree in
-        # every original value, not merely counts. Concurrent core mutations
-        # between those captures abort before any migration statement is run.
-        $restoredRows = @(Assert-CanaryAACRestoredRows -RestoreDatabase $restoreName -Baselines $baselines)
-    } finally {
-        if ($restoreCreated) {
-            Assert-CanaryAACRestoreName $restoreName
-            $null = Invoke-CanaryAACSql -Sql ('DROP DATABASE ' + (ConvertTo-CanaryAACSqlIdentifier $restoreName) + ';')
-        }
-    }
+    # The dump and the captured live baseline must agree in every value, not
+    # merely counts. Concurrent core mutations abort before migration.
+    $restoreVerification = Invoke-CanaryAACRestoreVerification -RestoreDatabase $restoreName -DumpPath $dumpPath -CountSql $countSql -LiveCounts $liveCounts -Baselines $baselines
     Write-Host 'Backup restored with complete core-row byte parity; temporary database removed.'
     $evidence = [pscustomobject] [ordered] @{
         Schema = 'CanaryAAC-database-evidence-v1'; StartedUtc = [DateTime]::UtcNow.ToString('o'); MariaDBVersion = $version
         Backup = [pscustomobject] @{ Path = $dumpPath; Sha256 = (Get-FileHash -LiteralPath $dumpPath -Algorithm SHA256).Hash.ToLowerInvariant(); Bytes = (Get-Item -LiteralPath $dumpPath).Length }
-        Restore = [pscustomobject] @{ Database = $restoreName; Counts = $restoredCounts; CompleteRowsEqual = $true; Tables = $restoredRows; Dropped = $true }
+        Restore = $restoreVerification
         Baseline = $baselines; BaselineCounts = $liveCounts
         CoreSchemaPaths = @($baselineSchema, $baselineIndexes, $baselineForeignKeys)
         God = [pscustomobject] @{ ExportPath = $godPath; Rows = @(Get-CanaryAACRowEvidence $godPath) }
