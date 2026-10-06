@@ -64,12 +64,6 @@ local function addTravelKeyword(keyword, cost, destination, text, condition)
 		keywordHandler:addKeyword({ keyword }, StdModule.say, { npcHandler = npcHandler, text = "I'm sorry but I don't sail there." }, condition)
 	end
 
-	if keyword == "goroma" then
-		keywordHandler:addKeyword({ keyword }, StdModule.say, { npcHandler = npcHandler, text = "Never heard about a place like this." }, function(player)
-			return player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.AccessToGoroma) ~= 1
-		end)
-	end
-
 	local travelKeyword = keywordHandler:addKeyword({ keyword }, StdModule.say, { npcHandler = npcHandler, text = (text or "Do you seek a passage to ") .. keyword:titleCase() .. " for |TRAVELCOST|?", cost = cost, discount = "postman" })
 	travelKeyword:addChildKeyword({ "yes" }, StdModule.travel, { npcHandler = npcHandler, premium = false, cost = cost, discount = "postman", destination = destination })
 	travelKeyword:addChildKeyword({ "no" }, StdModule.say, { npcHandler = npcHandler, text = "We would like to serve you some time.", reset = true })
@@ -81,9 +75,7 @@ addTravelKeyword("port hope", 50, Position(32527, 32784, 6))
 addTravelKeyword("darashia", 200, Position(33289, 32480, 6))
 addTravelKeyword("ankrahmun", 90, Position(33092, 32883, 6))
 addTravelKeyword("goroma", 0, Position(32161, 32558, 6), "Ugh. You really want to go back to Goroma? I'll surely have to repair my ship afterwards, so I won't charge. Okay?")
-addTravelKeyword("yalahar", 275, Position(32816, 31272, 6), nil, function(player)
-	return player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.LibertyBay) ~= 1 and player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.TownsCounter) < 5
-end)
+addTravelKeyword("yalahar", 275, Position(32816, 31272, 6))
 
 -- Thais
 local travelKeyword = keywordHandler:addKeyword({ "thais" }, StdModule.say, { npcHandler = npcHandler, text = "Do you seek a passage to Thais for |TRAVELCOST|?", cost = 180, discount = "postman" })

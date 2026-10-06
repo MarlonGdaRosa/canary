@@ -54,13 +54,10 @@ end
 
 -- Travel
 local function addTravelKeyword(keyword, text, destination, randomDestination, randomNumber, condition, ringCheck, ringRemove)
-	if condition then
-		keywordHandler:addKeyword({ keyword }, StdModule.say, { npcHandler = npcHandler, text = "No, no, no, you even are no barb....barba...er.. one of us!!!! Talk to the Jarl first!" }, condition)
-	end
 	if ringCheck then
 		local ring = keywordHandler:addKeyword({ keyword }, StdModule.say, { npcHandler = npcHandler, text = "Ohh, you got a nice ring there! Ya don't have to pay if you gimme the ring and I promise you I will bring you to the correct spot!*HICKS* Alright?" }, ringCheck)
 		ring:addChildKeyword({ "yes" }, StdModule.travel, { npcHandler = npcHandler, premium = false, cost = 0, destination = destination }, ringRemove)
-		local normalTravel = ring:addChildKeyword({ "no" }, StdModule.say, { npcHandler = npcHandler, text = "Give me 50 gold and I bring you to " .. keyword .. ". 'kay?" })
+		local normalTravel = ring:addChildKeyword({ "no" }, StdModule.say, { npcHandler = npcHandler, text = "Give me |TRAVELCOST| and I bring you to " .. keyword .. ". 'kay?", cost = 50, discount = "postman" })
 		normalTravel:addChildKeyword({ "no" }, StdModule.say, { npcHandler = npcHandler, text = "You shouldn't miss the experience.", reset = true })
 		if randomNumber then
 			normalTravel:addChildKeyword({ "yes" }, StdModule.travel, { npcHandler = npcHandler, premium = false, cost = 50, discount = "postman", destination = destination }, randomNumber)

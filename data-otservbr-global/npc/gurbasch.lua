@@ -80,9 +80,7 @@ addTravelKeyword("farmine", { "Do you seek a ride to Farmine for |TRAVELCOST|?",
 		destination.z = 12
 	end
 	return destination
-end, function(player)
-	return player:getStorageValue(TheNewFrontier.FarmineFirstTravel) < 1
-end, function(player)
+end, nil, function(player)
 	if player:getStorageValue(TheNewFrontier.FarmineFirstTravel) < 1 then
 		player:setStorageValue(TheNewFrontier.FarmineFirstTravel, 1)
 	end

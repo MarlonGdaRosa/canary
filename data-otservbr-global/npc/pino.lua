@@ -70,12 +70,8 @@ local function addTravelKeyword(keyword, text, cost, destination, condition, act
 	travelKeyword:addChildKeyword({ "no" }, StdModule.say, { npcHandler = npcHandler, text = "You shouldn't miss the experience.", reset = true })
 end
 
-addTravelKeyword("farmine", "Do you seek a ride to Farmine for |TRAVELCOST|?", 60, Position(32983, 31539, 1), function(player)
-	return player:getStorageValue(TheNewFrontier.Mission10[1]) ~= 2
-end)
-addTravelKeyword("zao", "Do you seek a ride to Farmine for |TRAVELCOST|?", 60, Position(32983, 31539, 1), function(player)
-	return player:getStorageValue(TheNewFrontier.Mission10[1]) ~= 2
-end)
+addTravelKeyword("farmine", "Do you seek a ride to Farmine for |TRAVELCOST|?", 60, Position(32983, 31539, 1))
+addTravelKeyword("zao", "Do you seek a ride to Farmine for |TRAVELCOST|?", 60, Position(32983, 31539, 1))
 addTravelKeyword("darashia", "Darashia on Darama", 40, Position(33270, 32441, 6))
 addTravelKeyword("darama", "Darashia on Darama", 40, Position(33270, 32441, 6))
 addTravelKeyword("kazordoon", "Kazordoon", 70, Position(32588, 31941, 0))

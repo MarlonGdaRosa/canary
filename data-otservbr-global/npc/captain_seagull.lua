@@ -68,9 +68,7 @@ addTravelKeyword("carlin", 80, Position(32387, 31820, 6))
 addTravelKeyword("gray island", 150, Position(33196, 31984, 7))
 addTravelKeyword("edron", 70, Position(33175, 31764, 6))
 addTravelKeyword("venore", 90, Position(32954, 32022, 6))
-addTravelKeyword("yalahar", 160, Position(32816, 31272, 6), function(player)
-	return player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.AbDendriel) ~= 1 and player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.TownsCounter) < 5
-end)
+addTravelKeyword("yalahar", 160, Position(32816, 31272, 6))
 
 -- Kick
 keywordHandler:addKeyword({ "kick" }, StdModule.kick, { npcHandler = npcHandler, destination = { Position(32724, 31669, 6), Position(32726, 31665, 6) } })

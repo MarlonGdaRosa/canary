@@ -121,9 +121,7 @@ local function creatureSayCallback(npc, creature, type, message)
 		end
 		addTravelKeyword("edron", 150, Position(33173, 31764, 6))
 		addTravelKeyword("venore", 160, Position(32954, 32022, 6))
-		addTravelKeyword("yalahar", 260, Position(32816, 31272, 6), function(player)
-			return player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.PortHope) ~= 1 and player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.TownsCounter) < 5
-		end)
+		addTravelKeyword("yalahar", 260, Position(32816, 31272, 6))
 		addTravelKeyword("ankrahmun", 110, Position(33092, 32883, 6))
 		addTravelKeyword("darashia", 180, Position(33289, 32480, 6))
 		addTravelKeyword("thais", 160, Position(32310, 32210, 6))

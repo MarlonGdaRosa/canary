@@ -65,17 +65,15 @@ local function creatureSayCallback(npc, creature, type, message)
 	end
 
 	if table.contains({ "sail", "passage", "wreck", "liberty bay", "ship" }, message) then
-		if player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.AccessToGoroma) ~= 1 then
-			if player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.Shipwrecked) < 1 then
-				npcHandler:say("I'd love to bring you back to Liberty Bay, but as you can see, my ship is ruined. I also hurt my leg and can barely move. Can you help me?", npc, creature)
-				npcHandler:setTopic(playerId, 1)
-			elseif player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.Shipwrecked) == 1 then
-				npcHandler:say("Have you brought 30 pieces of wood so that I can repair the ship?", npc, creature)
-				npcHandler:setTopic(playerId, 3)
-			end
-		else
-			npcHandler:say("Do you want to travel back to Liberty Bay?", npc, creature)
-			npcHandler:setTopic(playerId, 4)
+		npcHandler:say("Do you want to travel back to Liberty Bay?", npc, creature)
+		npcHandler:setTopic(playerId, 4)
+	elseif table.contains({ "wood", "repair", "help" }, message) and player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.AccessToGoroma) ~= 1 then
+		if player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.Shipwrecked) < 1 then
+			npcHandler:say("I'd love to bring you back to Liberty Bay, but as you can see, my ship is ruined. I also hurt my leg and can barely move. Can you help me?", npc, creature)
+			npcHandler:setTopic(playerId, 1)
+		elseif player:getStorageValue(Storage.Quest.U7_8.TheShatteredIsles.Shipwrecked) == 1 then
+			npcHandler:say("Have you brought 30 pieces of wood so that I can repair the ship?", npc, creature)
+			npcHandler:setTopic(playerId, 3)
 		end
 	elseif MsgContains(message, "yes") then
 		if npcHandler:getTopic(playerId) == 1 then

@@ -57,12 +57,8 @@ local function creatureSayCallback(npc, creature, type, message)
 	end
 
 	if MsgContains(message, "trip") or MsgContains(message, "passage") then
-		if player:getStorageValue(TheNewFrontier.Questline) >= 24 then
-			npcHandler:say("You want trip to Izzle of Zzao?", npc, creature)
-			npcHandler:setTopic(playerId, 1)
-		else
-			npcHandler:say("You need permission to travel to.", npc, creature)
-		end
+		npcHandler:say("You want trip to Izzle of Zzao?", npc, creature)
+		npcHandler:setTopic(playerId, 1)
 	elseif MsgContains(message, "yes") then
 		if npcHandler:getTopic(playerId) == 1 then
 			npcHandler:say("It'zz done your travel to.", npc, creature)
