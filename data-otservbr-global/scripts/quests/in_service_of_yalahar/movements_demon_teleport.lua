@@ -14,27 +14,7 @@ function demonTeleport.onStepIn(creature, item, position, fromPosition)
 	end
 
 	local teleport = teleports[item.uid]
-	if not teleport.soilPosition then
-		player:teleportTo(teleport.destination)
-		teleport.destination:sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	end
-
-	local soilItem
-	local soilRemoved = false
-	for i = 1, #soilIds do
-		soilItem = Tile(teleport.soilPosition):getItemById(soilIds[i])
-		if soilItem then
-			soilItem:remove(1)
-			soilRemoved = true
-			break
-		end
-	end
-
-	if not soilRemoved then
-		player:teleportTo(fromPosition)
-		fromPosition:sendMagicEffect(CONST_ME_ENERGYHIT)
-		player:say("You may not enter without a sacrifice of a elemental soil.", TALKTYPE_MONSTER_SAY)
+	if not teleport then
 		return true
 	end
 

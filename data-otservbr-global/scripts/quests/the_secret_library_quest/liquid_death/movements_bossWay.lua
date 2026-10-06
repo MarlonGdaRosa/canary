@@ -19,16 +19,11 @@ function movements_liquid_bossWay.onStepIn(creature, item, position, fromPositio
 		local accesses = config.accesses
 		for i = 1, #accesses do
 			if accesses[i].fromPos == position then
-				if player:getStorageValue(accesses[i].storage) < accesses[i].value then
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, accesses[i].message)
+				if player:getStorageValue(accesses[i].timer) > os.time() then
+					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, config.notime)
 					player:teleportTo(fromPosition, true)
 				else
-					if player:getStorageValue(accesses[i].timer) > os.time() then
-						player:sendTextMessage(MESSAGE_EVENT_ADVANCE, config.notime)
-						player:teleportTo(fromPosition, true)
-					else
-						player:teleportTo(accesses[i].toPos, true)
-					end
+					player:teleportTo(accesses[i].toPos, true)
 				end
 			end
 		end

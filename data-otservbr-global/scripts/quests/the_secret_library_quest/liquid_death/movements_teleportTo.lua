@@ -21,25 +21,12 @@ function movements_liquid_teleportTo.onStepIn(creature, item, position, fromPosi
 		for i = 1, #config.teleports do
 			local tab = config.teleports
 			if position == tab[i].fromPos then
-				if tab[i].storage then
-					if player:getStorageValue(tab[i].storage) >= tab[i].value then
-						player:teleportTo(tab[i].toPos)
-						if tab[i].message then
-							player:sendTextMessage(MESSAGE_EVENT_ADVANCE, tab[i].message)
-						end
-						if tab[i].achievementName and not player:hasAchievement(tab[i].achievementName) then
-							player:addAchievement(tab[i].achievementName)
-						end
-						if player:getStorageValue(tab[i].storage) == tab[i].value then
-							player:setStorageValue(tab[i].storage, player:getStorageValue(tab[i].storage) + 1)
-						end
-					else
-						player:sendTextMessage(MESSAGE_EVENT_ADVANCE, config.defaultMessage)
-						player:teleportTo(fromPosition, true)
-						return true
-					end
-				else
-					player:teleportTo(tab[i].toPos)
+				player:teleportTo(tab[i].toPos)
+				if tab[i].message then
+					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, tab[i].message)
+				end
+				if tab[i].achievementName and not player:hasAchievement(tab[i].achievementName) then
+					player:addAchievement(tab[i].achievementName)
 				end
 				player:getPosition():sendMagicEffect(tab[i].effect)
 			end

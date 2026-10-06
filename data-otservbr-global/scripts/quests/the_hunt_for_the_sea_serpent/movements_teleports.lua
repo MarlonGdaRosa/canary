@@ -14,31 +14,9 @@ function teleports.onStepIn(creature, item, position, fromPosition)
 	end
 	for b = 1, #config do
 		if player:getPosition() == Position(config[b].teleportPos) then
-			if config[b].condition then
-				if player:getStorageValue(config[b].condition) == 2 then
-					if player:getSlotItem(CONST_SLOT_HEAD) then
-						if table.contains({ 5460, 11585, 13995 }, player:getSlotItem(CONST_SLOT_HEAD).itemid) then
-							player:teleportTo(config[b].destination)
-							player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-						else
-							player:teleportTo(fromPosition)
-							player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-							player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You have to wear a helmet of the deep.")
-						end
-					else
-						player:teleportTo(fromPosition)
-						player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-						player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You have to wear a helmet of the deep.")
-					end
-				else
-					player:teleportTo(fromPosition)
-					player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-					player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You are not yet at the right spot.")
-				end
-			else
-				player:teleportTo(config[b].destination)
-				player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-			end
+			player:teleportTo(config[b].destination)
+			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+			break
 		end
 	end
 	return true

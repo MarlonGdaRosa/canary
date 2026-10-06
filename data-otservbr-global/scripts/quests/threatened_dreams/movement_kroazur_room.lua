@@ -34,13 +34,6 @@ function kroazurRoom.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if player:getStorageValue(room.access) < 1 then
-		position:sendMagicEffect(CONST_ME_TELEPORT)
-		player:teleportTo(fromPosition, true)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:say("You don't have access to this room!", TALKTYPE_MONSTER_SAY)
-		return true
-	end
 
 	if not player:canFightBoss(room.bossName) then
 		position:sendMagicEffect(CONST_ME_TELEPORT)

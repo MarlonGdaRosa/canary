@@ -10,19 +10,7 @@ function portalPaleWorm.onStepIn(creature, item, position, fromPosition)
 	if not player then
 		return false
 	end
-	local text = ""
-	for value in pairs(storagesTable) do
-		if player:getStorageValue(storagesTable[value].storage) < 0 then
-			text = text .. "\n" .. storagesTable[value].bossName
-		end
-	end
-	if text == "" then
-		return true
-	else
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You still need to defeat:" .. text)
-		player:teleportTo(fromPosition, true)
-		return false
-	end
+	return true
 end
 
 portalPaleWorm:type("stepin")

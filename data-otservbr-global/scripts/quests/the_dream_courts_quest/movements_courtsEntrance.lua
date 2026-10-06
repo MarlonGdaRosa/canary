@@ -136,11 +136,8 @@ function movements_courtsEntrance.onStepIn(creature, item, position, fromPositio
 
 	for _, k in pairs(config) do
 		if k.hisPosition == posItem then
-			if player:getStorageValue(k.storage) >= k.value then
-				player:teleportTo(k.toPosition)
-			else
-				player:teleportTo(fromPosition)
-			end
+			player:teleportTo(k.toPosition)
+			break
 		end
 	end
 

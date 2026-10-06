@@ -35,12 +35,9 @@ function nibelorDogLed.onStepIn(creature, item, position, fromPosition)
 	end
 	for b = 1, #setting do
 		if player:getPosition() == setting[b].sledPosition then
-			if player:getStorageValue(setting[b].storage) == setting[b].value and player:removeItem(3582, 1) then
-				player:teleportTo(setting[b].destination)
-				setting[b].destination:sendMagicEffect(CONST_ME_TELEPORT)
-			else
-				player:teleportTo(fromPosition)
-			end
+			player:teleportTo(setting[b].destination)
+			setting[b].destination:sendMagicEffect(CONST_ME_TELEPORT)
+			break
 		end
 	end
 	return true

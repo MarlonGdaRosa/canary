@@ -157,8 +157,8 @@ function heartDestructionCracklers.onUse(player, item, fromPosition, itemEx, toP
 					end
 				end
 
-				if #storePlayers < 4 then
-					player:sendTextMessage(19, "You need at least 4 players to this mission.")
+				if #storePlayers < 1 then
+					player:sendTextMessage(19, "You need at least 1 player to this mission.")
 					return true
 				end
 
@@ -169,7 +169,7 @@ function heartDestructionCracklers.onUse(player, item, fromPosition, itemEx, toP
 
 					for i = 1, #storePlayers do
 						players = storePlayers[i]
-						config.playerPositions[i]:sendMagicEffect(CONST_ME_POFF)
+						players:getPosition():sendMagicEffect(CONST_ME_POFF)
 						players:teleportTo(config.newPos)
 					end
 					Position(config.newPos):sendMagicEffect(11)

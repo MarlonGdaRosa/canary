@@ -61,11 +61,6 @@ function bossTeleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if player:getStorageValue(teleportConfig.storage) ~= 1 then
-		player:teleportTo(fromPosition)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		return true
-	end
 
 	return true
 end

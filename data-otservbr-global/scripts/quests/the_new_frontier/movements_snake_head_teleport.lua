@@ -12,13 +12,8 @@ function teleport.onStepIn(player, item, position, fromPosition)
 	if not player then
 		return true
 	end
-	if player:getStorageValue(TheNewFrontier.SnakeHeadTeleport) == 1 then
-		player:teleportTo(destination)
-		destination:sendMagicEffect(CONST_ME_TELEPORT)
-	else
-		player:teleportTo(fromPosition)
-		fromPosition:sendMagicEffect(CONST_ME_TELEPORT)
-	end
+	player:teleportTo(destination)
+	destination:sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end
 

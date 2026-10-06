@@ -18,18 +18,9 @@ function iceTeleport.onStepIn(creature, item, position, fromPosition)
 		return
 	end
 
-	if player:getStorageValue(teleport.storage) >= 1 then
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:teleportTo(teleport.position)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-	else
-		local pos = position
-		item:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		pos.x = pos.x + 1
-		player:teleportTo(pos)
-		player:say("You haven't permission to use this teleport.", TALKTYPE_MONSTER_SAY, false, nil, position)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-	end
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
+	player:teleportTo(teleport.position)
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end
 

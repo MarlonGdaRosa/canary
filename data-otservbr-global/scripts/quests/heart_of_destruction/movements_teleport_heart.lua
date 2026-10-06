@@ -65,35 +65,17 @@ function teleportHeart.onStepIn(creature, item, position, fromPosition)
 
 	if data.pos then
 		player:teleportTo(data.pos)
-	elseif data.storage then
-		if player:getStorageValue(data.storage) >= 1 then
-			if player:canFightBoss(data.boss) then
-				player:teleportTo(data.position)
-			else
-				denyAndReturn(player, fromPosition, "It's too early for you to endure this challenge again.")
-			end
+	elseif data.storage or data.storage1 then
+		if player:canFightBoss(data.boss) then
+			player:teleportTo(data.position)
 		else
-			denyAndReturn(player, fromPosition, "You don't have access to this portal.")
-		end
-	elseif data.storage1 then
-		if player:getStorageValue(data.storage1) >= 1 and player:getStorageValue(data.storage2) >= 1 and player:getStorageValue(data.storage3) >= 1 then
-			if player:canFightBoss(data.boss) then
-				player:teleportTo(data.position)
-			else
-				denyAndReturn(player, fromPosition, "It's too early for you to endure this challenge again.")
-			end
-		else
-			denyAndReturn(player, fromPosition, "You don't have access to this portal.")
+			denyAndReturn(player, fromPosition, "It's too early for you to endure this challenge again.")
 		end
 	elseif data.special == "worldDevourerEnter" then
-		if player:getStorageValue(14330) >= 1 and player:getStorageValue(14332) >= 1 then
-			if player:canFightBoss("World Devourer") then
-				player:teleportTo(Position(32272, 31384, 14))
-			else
-				denyAndReturn(player, fromPosition, "It's too early for you to endure this challenge again.")
-			end
+		if player:canFightBoss("World Devourer") then
+			player:teleportTo(Position(32272, 31384, 14))
 		else
-			denyAndReturn(player, fromPosition, "You don't have access to this portal.")
+			denyAndReturn(player, fromPosition, "It's too early for you to endure this challenge again.")
 		end
 	elseif data.special == "worldDevourerExit" then
 		player:teleportTo(Position(32214, 31376, 14))

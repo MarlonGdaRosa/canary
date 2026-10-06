@@ -25,27 +25,15 @@ function movements_museum_teleportTo.onStepIn(creature, item, position, fromPosi
 	if item.actionid == 4905 then
 		for _, p in pairs(teleports) do
 			if position == p.fromPos then
-				if player:getStorageValue(p.storage) >= p.value then
-					player:teleportTo(p.toPos)
-					sendFire(p.toPos)
-					if p.nextValue and player:getStorageValue(p.storage) < p.nextValue then
-						player:setStorageValue(p.storage, p.nextValue)
-					end
-				else
-					player:teleportTo(fromPosition, true)
+				player:teleportTo(p.toPos)
+				sendFire(p.toPos)
+				if p.nextValue and player:getStorageValue(p.storage) < p.nextValue then
+					player:setStorageValue(p.storage, p.nextValue)
 				end
 			end
 		end
 	elseif item.actionid == 4906 then
-		local hasPermission = false
-
-		if player:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.MoTA.YellowGem) >= 1 and player:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.MoTA.GreenGem) >= 1 and player:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.MoTA.RedGem) >= 1 then
-			hasPermission = true
-		end
-
-		if not hasPermission then
-			player:teleportTo(Position(33226, 32084, 9))
-		end
+		-- unrestricted access
 	elseif item.actionid == 4907 then
 		if position == lastroom_enter then
 			player:teleportTo(Position(33363, 32146, 10))

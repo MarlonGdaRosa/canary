@@ -44,20 +44,9 @@ function bossTeleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	local expectedStatus = item.uid - 3188
-
-	if player:getStorageValue(Storage.Quest.U8_6.WrathOfTheEmperor.BossStatus) ~= expectedStatus then
-		player:teleportTo(fromPosition, true)
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "Go to another Teleport or take mission with Zizzle.")
-		return true
-	end
-
-	if Game.getStorageValue(teleport.storage) ~= 1 then
-		player:teleportTo(teleport.destination)
-		teleport.destination:sendMagicEffect(CONST_ME_TELEPORT)
-	else
-		player:teleportTo(teleport.destination)
-	end
+	player:teleportTo(teleport.destination)
+	teleport.destination:sendMagicEffect(CONST_ME_TELEPORT)
+	return true
 
 	return true
 end

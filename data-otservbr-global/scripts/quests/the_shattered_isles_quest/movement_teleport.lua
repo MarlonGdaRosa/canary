@@ -13,31 +13,6 @@ function teleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	local completedSacrifice = true
-	for sacrificeItemId, sacrificeTile in pairs(sacrifices) do
-		if sacrificeTile:getThing(1).itemId ~= sacrificeItemId then
-			completedSacrifice = false
-			break
-		end
-	end
-
-	local failDestination = Position(31919, 32596, 10)
-	if not sacrifices then
-		player:teleportTo(failDestination)
-		position:sendMagicEffect(CONST_ME_ENERGYHIT)
-		failDestination:sendMagicEffect(CONST_ME_ENERGYHIT)
-		return true
-	end
-
-	for sacrificeItemId, sacrificeTile in pairs(sacrifices) do
-		if sacrificeTile:getThing(1).itemId == 2114 then
-			sacrificeTile:getThing(1):remove()
-		end
-		if sacrificeTile:getThing(0).itemId == 2114 then
-			sacrificeTile:getThing(0):remove()
-		end
-	end
-
 	local successDestination = Position(31916, 32607, 10)
 	player:teleportTo(successDestination)
 	position:sendMagicEffect(CONST_ME_HITBYFIRE)

@@ -105,12 +105,7 @@ function movements_asura_elemental_portals.onStepIn(creature, item, position, fr
 
 	if item.actionid == 4915 then
 		if position == purplePosition then
-			if player:getStorageValue(quest) >= 5 then
-				player:teleportTo(toPosition_l)
-			else
-				player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You can not use this portal yet.")
-				player:teleportTo(fromPosition, true)
-			end
+			player:teleportTo(toPosition_l)
 			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			return true
 		end

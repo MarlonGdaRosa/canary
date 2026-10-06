@@ -13,15 +13,11 @@ function deeplingBosses.onStepIn(creature, item, position, fromPosition)
 	end
 
 	local setting = config[item.uid]
-	if player:getStorageValue(setting.storage) == setting.value then
+	if setting then
 		player:teleportTo(setting.position)
 		player:getPosition():sendMagicEffect(CONST_ME_WATERSPLASH)
-		return true
-	else
-		player:teleportTo(fromPosition, true)
-		player:getPosition():sendMagicEffect(CONST_ME_WATERSPLASH)
-		return true
 	end
+	return true
 end
 
 for index, value in pairs(config) do

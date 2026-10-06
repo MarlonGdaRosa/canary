@@ -16,11 +16,7 @@ function movements_falcon_bossEntrance.onStepIn(creature, item, position, fromPo
 	if item:getActionId() == 4920 then
 		if creature then
 			if item:getPosition() == entrance then
-				if creature:getStorageValue(Storage.Quest.U11_80.TheSecretLibrary.FalconBastion.KillingBosses) >= 5 then
-					creature:teleportTo(Position(exit.x, exit.y - 2, exit.z), true)
-				else
-					creature:teleportTo(Position(entrance.x - 2, entrance.y, entrance.z), true)
-				end
+				creature:teleportTo(Position(exit.x, exit.y - 2, exit.z), true)
 			elseif item:getPosition() == exit then
 				creature:teleportTo(Position(entrance.x - 2, entrance.y, entrance.z), true)
 			end

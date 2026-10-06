@@ -54,9 +54,18 @@ function othersDesert.onUse(player, item, fromPosition, target, toPosition, isHo
 	end
 
 	if #players == 0 then
-		player:sendCancelMessage("You need at least one player on the vocation tiles.")
-		position:sendMagicEffect(CONST_ME_POFF)
-		return true
+		local vocationId = player:getVocation():getBaseId()
+		for i = 1, #config do
+			if vocationId == config[i].vocationId then
+				players[#players + 1] = { player = player, toPosition = config[i].toPosition }
+				break
+			end
+		end
+		if #players == 0 then
+			player:sendCancelMessage("You need at least one player on the vocation tiles.")
+			position:sendMagicEffect(CONST_ME_POFF)
+			return true
+		end
 	end
 
 	for i = 1, #players do

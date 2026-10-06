@@ -130,18 +130,7 @@ function movements_desert_teleportTo.onStepIn(creature, item, position, fromPosi
 			else
 				for _, k in pairs(teleports) do
 					if position == k.position then
-						if k.storage then
-							if player:getStorageValue(k.storage) >= k.value then
-								player:teleportTo(k.destination)
-							else
-								if k.challenge then
-									player:say("You have to master the challenge first!", TALKTYPE_MONSTER_SAY)
-								end
-								player:teleportTo(fromPosition, true)
-							end
-						else
-							player:teleportTo(k.destination)
-						end
+						player:teleportTo(k.destination)
 						player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 					end
 				end

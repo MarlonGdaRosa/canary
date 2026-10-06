@@ -6,14 +6,8 @@ function puminTeleport.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if player:getStorageValue(Storage.Quest.U7_9.ThePitsOfInferno.ThronePumin) >= 9 then
-		player:teleportTo(Position(32786, 32308, 15))
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-	else
-		player:teleportTo(fromPosition)
-		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
-		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "To enter Pumin's domain you must gain permission from the bureaucrats.")
-	end
+	player:teleportTo(Position(32786, 32308, 15))
+	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end
 

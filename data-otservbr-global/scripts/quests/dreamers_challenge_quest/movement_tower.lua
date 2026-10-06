@@ -23,12 +23,7 @@ function tower.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if (player:getStorageValue(Storage.Quest.U7_9.NightmareOutfits.Outfits) >= targetTeleport.storageValue or player:getStorageValue(Storage.Quest.U7_9.BrotherhoodOutfits.Outfits) >= targetTeleport.storageValue) and player:removeItem(5021, 1) then
-		player:teleportTo(targetTeleport.toPosition)
-	else
-		player:teleportTo(fromPosition)
-	end
-
+	player:teleportTo(targetTeleport.toPosition)
 	player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 	return true
 end

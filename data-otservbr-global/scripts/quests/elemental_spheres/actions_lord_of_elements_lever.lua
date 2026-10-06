@@ -160,8 +160,7 @@ function elementalSpheresLordLever.onUse(player, item, fromPosition, target, toP
 		end
 	end
 	player:say("ZOOOOOOOOM", TALKTYPE_MONSTER_SAY, false, 0, walls.soundPosition)
-
-	if leverCount ~= #config.leverPositions then
+	if Game.getStorageValue(Storage.Quest.U8_2.ElementalSpheres.BossRoom) == 1 then
 		return true
 	end
 

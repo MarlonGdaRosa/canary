@@ -31,11 +31,6 @@ function elementalSpheresLever.onUse(player, item, fromPosition, target, toPosit
 		item:transform(2772)
 		return true
 	end
-
-	if player:getPosition() ~= Position(33270, 31835, 10) then
-		return false
-	end
-
 	local spectators = Game.getSpectators(Position(33268, 31836, 12), false, true, 30, 30, 30, 30)
 	if #spectators > 0 or Game.getStorageValue(Storage.Quest.U8_2.ElementalSpheres.BossRoom) > 0 then
 		player:say("Wait for the current team to exit.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
@@ -56,8 +51,17 @@ function elementalSpheresLever.onUse(player, item, fromPosition, target, toPosit
 	end
 
 	if #players == 0 then
-		player:say("You need at least one player on the vocation tiles.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
-		return true
+		local vocationId = player:getVocation():getBaseId()
+		for i = 1, #config do
+			if vocationId == config[i].vocationId then
+				players[#players + 1] = { player = player, toPosition = config[i].toPosition, position = player:getPosition() }
+				break
+			end
+		end
+		if #players == 0 then
+			player:say("You need at least one player on the vocation tiles.", TALKTYPE_MONSTER_SAY, false, 0, Position(33268, 31835, 10))
+			return true
+		end
 	end
 
 	for i = 1, #players do
