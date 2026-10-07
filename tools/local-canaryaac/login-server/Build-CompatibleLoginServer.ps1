@@ -28,11 +28,12 @@ if ($reverseExit -ne 0) {
 
 $stage = Join-Path $ToolsRoot ('login-server-builds\' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage | Out-Null
-$environmentKeys = @('GOPATH','GOCACHE','GOMODCACHE','GOTMPDIR','GOTOOLCHAIN','TEMP','TMP','PATH')
+$environmentKeys = @('GOPATH','GOBIN','GOCACHE','GOMODCACHE','GOTMPDIR','GOTOOLCHAIN','TEMP','TMP','PATH')
 $previous = @{}
 foreach ($key in $environmentKeys) { $previous[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
 try {
     $env:GOPATH = Join-Path $ToolsRoot 'go'
+    $env:GOBIN = Join-Path $env:GOPATH 'bin'
     $env:GOCACHE = Join-Path $env:GOPATH 'build-cache'
     $env:GOMODCACHE = Join-Path $env:GOPATH 'pkg\mod'
     $env:GOTMPDIR = Join-Path $env:GOPATH 'tmp'
@@ -55,7 +56,16 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Login build failed.' }
         & $Go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
         if ($LASTEXITCODE -ne 0) { throw 'Pinned vulnerability scanner installation failed; audit is incomplete.' }
-        $scanner = Join-Path $env:GOPATH 'bin\govulncheck.exe'
+        $scanner = Join-Path $env:GOBIN 'govulncheck.exe'
+        $scannerBuildInfo = & $Go version -m $scanner
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot verify scanner binary identity; audit is incomplete.' }
+        $scannerMetadata = $scannerBuildInfo -join "`n"
+        $scannerModule = [regex]::Match($scannerMetadata, '(?m)^\s*mod\s+golang\.org/x/vuln\s+(\S+)\s+(\S+)\s*$')
+        if ($scannerMetadata -notmatch '(?m)^\s*path\s+golang\.org/x/vuln/cmd/govulncheck\s*$' -or
+            !$scannerModule.Success -or $scannerModule.Groups[1].Value -ne 'v1.8.0' -or
+            $scannerMetadata -match '(?m)^\s*=>\s') {
+            throw 'Unexpected scanner binary identity; no vulnerability scan was executed.'
+        }
         $scans = @(
             @{Name='source'; Arguments=@('-show','verbose','./src/...')},
             @{Name='tests'; Arguments=@('-test','-show','traces','./src/...')},
@@ -80,7 +90,9 @@ try {
             PatchFile=$patch; PatchSHA256=(Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash
             SourceFiles=$sources; BinaryPath=$binary; BinarySHA256=(Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash
             AuthenticationProfile=@{Argon2='id'; Version=19; MemoryKiB=65536; Iterations=2; Parallelism=2; SaltBytes=16; DigestBytes=32; LegacySHA1=$true; AuthenticationWrites=$false}
-            Scanner=@{Module='golang.org/x/vuln'; Version='v1.8.0'; BinarySHA256=(Get-FileHash -LiteralPath $scanner -Algorithm SHA256).Hash; Scans=$audit}
+            Scanner=@{Module='golang.org/x/vuln'; Version=$scannerModule.Groups[1].Value; ModuleChecksum=$scannerModule.Groups[2].Value;
+                IdentityVerified=$true; BinaryPath=$scanner; BuildInfo=$scannerBuildInfo;
+                BinarySHA256=(Get-FileHash -LiteralPath $scanner -Algorithm SHA256).Hash; Scans=$audit}
             AuditPassed=(@($audit | Where-Object { $_.ExitCode -ne 0 }).Count -eq 0)
         }
         $manifestPath = Join-Path $stage 'build-manifest.json'

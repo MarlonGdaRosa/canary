@@ -25,6 +25,13 @@ foreach (["bad\xFFpassword123", "Valid\0Pass123", str_repeat('x', 129), str_repe
 }
 foreach ([str_repeat('x', 12), str_repeat('é', 128), 'a password with spaces'] as $password)
     expect(AccountCreationValidator::validate(array_replace($valid, ['password1' => $password, 'password2' => $password]))['password'] === $password, 'Valid UTF8 password changed');
+foreach ([12, 128, 129] as $count) {
+    $password = str_repeat("\u{1F680}", $count);
+    try {
+        $actual = AccountCreationValidator::validate(array_replace($valid, ['password1'=>$password, 'password2'=>$password]));
+        expect($count <= 128 && $actual['password'] === $password, 'Supplementary password boundary failed');
+    } catch (InvalidArgumentException $error) { expect($count === 129, 'Valid supplementary password rejected'); }
+}
 $fixture = new HttpFixture();
 try {
     $fixture->write('router.php', '<?php require __DIR__ . "/entry.php";');

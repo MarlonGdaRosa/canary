@@ -6,7 +6,8 @@ $_ENV['DEV_MODE'] = 'false';
 $twig = App\Utils\View::getContentView('pages/account');
 $twig->setCache(false);
 $html = $twig->render('createaccount.html.twig', ['worlds'=>[], 'activevoc'=>1]);
-foreach (['accname'=>32, 'email'=>254, 'password1'=>128, 'password2'=>128, 'name'=>29] as $field=>$length) {
+// HTML counts UTF-16 code units: 128 supplementary characters need room for 256.
+foreach (['accname'=>32, 'email'=>254, 'password1'=>256, 'password2'=>256, 'name'=>29] as $field=>$length) {
     preg_match('/<input[^>]*name="'.preg_quote($field, '/').'"[^>]*>/', $html, $match);
     expect(isset($match[0]) && str_contains($match[0], 'maxlength="'.$length.'"'), 'Wrong form length for '.$field);
 }

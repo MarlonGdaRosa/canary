@@ -872,7 +872,7 @@ index 2c96eae..b7e7feb 100644
                      var l_AdditionalInfoImage = '<img style="border:0px;" src="' + JS_DIR_IMAGES + 'global/content/info.gif" alt="special offer" />';
                      var l_AdditionalInfoHeadline = '<b>Experimental game world:</b>';
 diff --git a/resources/view/pages/account/createaccount.html.twig b/resources/view/pages/account/createaccount.html.twig
-index 6654fda..987ca64 100644
+index 6654fda..d2eb3d5 100644
 --- a/resources/view/pages/account/createaccount.html.twig
 +++ b/resources/view/pages/account/createaccount.html.twig
 @@ -149,7 +149,7 @@ document.getElementById("ActiveSubmenuItemIcon_createaccount").style.visibility
@@ -907,7 +907,7 @@ index 6654fda..987ca64 100644
  																				<td>
  																					<div class="div_password">
 -																						<input type="password" name="password1" id="password1" class="CreateAccountFormInput" maxlength="29">
-+																						<input type="password" name="password1" id="password1" class="CreateAccountFormInput" minlength="12" maxlength="128" autocomplete="new-password" required>
++																						<input type="password" name="password1" id="password1" class="CreateAccountFormInput" minlength="12" maxlength="256" autocomplete="new-password" required>
  																						<div id="password1_indicator" class="InputIndicatorNotOK"></div>
  																						<div class="PWStrengthContainer">
  																							<div class="PWStrengthToolTip" id="StrengthDisp">
@@ -940,7 +940,7 @@ index 6654fda..987ca64 100644
  																					<span id="password2_label">Password Again:</span>
  																				</td>
 -																				<td><input id="password2" type="password" name="password2" class="CreateAccountFormInput" value="" maxlength="29">
-+																				<td><input id="password2" type="password" name="password2" class="CreateAccountFormInput" value="" minlength="12" maxlength="128" autocomplete="new-password" required>
++																				<td><input id="password2" type="password" name="password2" class="CreateAccountFormInput" value="" minlength="12" maxlength="256" autocomplete="new-password" required>
  																					<div id="password2_indicator" class="InputIndicatorNotOK"></div>
  																				</td>
  																			</tr>

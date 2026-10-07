@@ -1,6 +1,6 @@
 {
     "SchemaVersion":  1,
-    "CreatedUtc":  "2026-10-07T03:18:45.1269568Z",
+    "CreatedUtc":  "2026-10-07T03:28:36.0181919Z",
     "BaseRevision":  "2612930de4d97123a397f8f2cd0d5f784094af40",
     "SourceRoot":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server",
     "GoVersion":  "go version go1.27.0 windows/amd64",
@@ -70,7 +70,7 @@
                         "src/serviceerrors/hints.go":  "0E8427CF51C0C2C54BDBE93EABB55F8A35958FB01BC047312F3D22C9D3121FB2",
                         "src/serviceerrors/hints_test.go":  "66BBACB2B1A1666168FD5F2528729FF041129996FEE37C7E45FA16FAF5411B5A"
                     },
-    "BinaryPath":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\3c1ca4622f5e44a1865c4d9c08a9b080\\login-server.exe",
+    "BinaryPath":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\ca208b7eee41428297795128ebb069a3\\login-server.exe",
     "BinarySHA256":  "DE8F32FB3BD934BFEFA1F3C7F41C7A0EEBCF7054B816D042ACF7AE7EE39F06AF",
     "AuthenticationProfile":  {
                                   "SaltBytes":  16,
@@ -84,29 +84,49 @@
                                   "Argon2":  "id"
                               },
     "Scanner":  {
+                    "Version":  "v1.8.0",
+                    "ModuleChecksum":  "h1:clG4qBU6zH5VKjti8n5j8BBuYzoSha392xXMkXS351U=",
                     "Module":  "golang.org/x/vuln",
+                    "BinarySHA256":  "4C6DDF3E9B3D430B4F6B74AE90980E9F55F73748859DD73E36B49E62164D6FB7",
                     "Scans":  [
                                   {
                                       "Mode":  "source",
                                       "ExitCode":  0,
-                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\3c1ca4622f5e44a1865c4d9c08a9b080\\source-govulncheck.txt",
+                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\ca208b7eee41428297795128ebb069a3\\source-govulncheck.txt",
                                       "OutputSHA256":  "F572475D6FE3C7760BBEADA6926F9D41686D0FAE5925A5550BC1361C3126D786"
                                   },
                                   {
                                       "Mode":  "tests",
                                       "ExitCode":  0,
-                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\3c1ca4622f5e44a1865c4d9c08a9b080\\tests-govulncheck.txt",
+                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\ca208b7eee41428297795128ebb069a3\\tests-govulncheck.txt",
                                       "OutputSHA256":  "30D974061DF15C89AC116D65FAD1F966A47421057EBF4F62C4171CA6B400BE36"
                                   },
                                   {
                                       "Mode":  "binary",
                                       "ExitCode":  0,
-                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\3c1ca4622f5e44a1865c4d9c08a9b080\\binary-govulncheck.txt",
+                                      "OutputFile":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\login-server-builds\\ca208b7eee41428297795128ebb069a3\\binary-govulncheck.txt",
                                       "OutputSHA256":  "30D974061DF15C89AC116D65FAD1F966A47421057EBF4F62C4171CA6B400BE36"
                                   }
                               ],
-                    "BinarySHA256":  "4C6DDF3E9B3D430B4F6B74AE90980E9F55F73748859DD73E36B49E62164D6FB7",
-                    "Version":  "v1.8.0"
+                    "IdentityVerified":  true,
+                    "BinaryPath":  "C:\\Users\\Marlon\\Documents\\OT\\.tools\\go\\bin\\govulncheck.exe",
+                    "BuildInfo":  [
+                                      "C:\\Users\\Marlon\\Documents\\OT\\.tools\\go\\bin\\govulncheck.exe: go1.27.0",
+                                      "\tpath\tgolang.org/x/vuln/cmd/govulncheck",
+                                      "\tmod\tgolang.org/x/vuln\tv1.8.0\th1:clG4qBU6zH5VKjti8n5j8BBuYzoSha392xXMkXS351U=",
+                                      "\tdep\tgolang.org/x/mod\tv0.41.0\th1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=",
+                                      "\tdep\tgolang.org/x/sync\tv0.23.0\th1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=",
+                                      "\tdep\tgolang.org/x/sys\tv0.48.0\th1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=",
+                                      "\tdep\tgolang.org/x/telemetry\tv0.0.0-20260908163034-4bcc4b2ee518\th1:F5BWKvW126NXR74uxkxuc1jQHhm/rwm/J3rSiFyuRs4=",
+                                      "\tdep\tgolang.org/x/tools\tv0.50.0\th1:c2ifzfcuY7L90lZ2aKd8S4K2NpASF08SZx9ZuJkHmSU=",
+                                      "\tbuild\t-buildmode=exe",
+                                      "\tbuild\t-compiler=gc",
+                                      "\tbuild\tDefaultGODEBUG=tracebacklabels=0,x509sslcertoverrideplatform=0",
+                                      "\tbuild\tCGO_ENABLED=0",
+                                      "\tbuild\tGOARCH=amd64",
+                                      "\tbuild\tGOOS=windows",
+                                      "\tbuild\tGOAMD64=v1"
+                                  ]
                 },
     "AuditPassed":  true
 }

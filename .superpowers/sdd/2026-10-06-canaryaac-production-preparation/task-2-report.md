@@ -136,3 +136,54 @@ Owned deliverables: ordered 0003/0004 website patches; login-server 0001 patch a
 Self-review corrected numeric world values in generated JS, selected the canonical world-list representation for signup, removed disabled password-bearing AJAX, treated duplicate 2FA records as ambiguous, and isolated the Twig stale-cache issue. The build helper recognizes an already applied patch and records source/binary scans without service actions. Clean apply paths were verified independently through scoped upstream exports. Existing symlink-capability skip and unused OpenPGP module notice are the remaining verification qualifications. No unresolved failed audit or incompatible live login remains.
 
 All user gameplay/NPC/item/quest changes were left unmodified and unstaged. Private environment/admin/backups ACLs were preserved. The deployment gate is gone; no further service restart or live test was performed during final evidence capture.
+
+## Review fix round 1 — 2026-10-07
+
+All three review findings addressed without service restarts or live database work:
+
+1. Build helper now saves/restores inherited `GOBIN`, sets it to the controlled `.tools/go/bin`, installs and executes that exact scanner path, and runs `go version -m` against the installed executable before any scan. It requires the govulncheck command path and `golang.org/x/vuln v1.8.0` main module, rejects replaced module metadata, and records observed version/checksum/build information plus `IdentityVerified=true` in the manifest. Version is no longer just a hardcoded claim.
+2. Both password inputs allow 256 native UTF-16 code units, accommodating 128 supplementary Unicode code points. Existing JavaScript and server validation still enforce 12–128 code points. Added 12/128/129 rocket-character cases to JS and PHP boundary tests, plus checks that both rendered native input caps can hold the valid maximum. Refreshed 0003 and invalidated only the compiled signup-template cache.
+3. SQLite test subprocess carries `--sqlite-retry`; if the driver is still unavailable, it exits 1 with a clear diagnostic instead of spawning again. The failure-path test disables passthru to make a regression fail immediately without creating an unbounded process chain.
+
+RED commands/output before fixes:
+
+```text
+& tools/local-canaryaac/tests/LoginBuildScanner.Tests.ps1
+Inherited alternate GOBIN received an install
+php .../SignupFormTest.php
+Wrong form length for password1
+node tools/local-canaryaac/tests/SignupForm.Tests.js
+Native maxlength truncates a valid 128-code-point password
+php .../SqliteRetryTest.php
+Unavailable SQLite did not fail clearly after one retry
+```
+
+GREEN focused checks:
+
+```text
+PASS LoginBuildScanner.Tests (alternate GOBIN confined/restored; stale scanner replaced/rejected before scans)
+PASS SignupFormTest (lengths, vocations, escaping, no password AJAX or confirmation)
+PASS SignupForm.Tests.js (raw passwords, UTF8 lengths, account rules, numeric world)
+PASS SqliteRetryTest (unavailable extension stops after one retry)
+PASS AccountTransactionTest (real SQLite rollback, fields/sample, duplicate email, bounded lock, Throwable)
+PASS AccountCreationValidatorTest (five vocations, strict fields, raw UTF8 password, HTTP duplicates)
+```
+
+The scanner fixture executes the real helper with isolated fake Go/install/build boundaries and a compiled harmless scanner stub. It starts with an inherited alternate GOBIN and an old scanner in GOPATH/bin, verifies the alternate directory remains untouched and the stale binary is replaced, then simulates a successful install that still yields v1.7.0 and verifies rejection before any additional scans. GOBIN restoration is checked on success and failure. It does not write to the live source, scan real credentials, or deploy executables.
+
+Real helper rerun (default pinned Go), exit 0:
+
+```text
+all modules verified
+ok github.com/opentibiabr/login-server/src/database 0.192s
+ok github.com/opentibiabr/login-server/src/api 0.097s
+ok github.com/opentibiabr/login-server/src/grpc 0.091s
+source govulncheck exit=0
+tests govulncheck exit=0
+binary govulncheck exit=0
+Build manifest: C:\Users\Marlon\Documents\OT\.tools\login-server-builds\ca208b7eee41428297795128ebb069a3\build-manifest.json
+```
+
+Current evidence snapshot supersedes the earlier build manifest: created 2026-10-07T03:28:36.0181919Z, verified embedded scanner v1.8.0; executable hash unchanged (`DE8F32FB3BD934BFEFA1F3C7F41C7A0EEBCF7054B816D042ACF7AE7EE39F06AF`). Source/test/binary audit output snapshots refreshed; their findings remain zero affected symbols and the previously documented unused OpenPGP module notice. Current 0003 SHA256: `1995B688C41F98DDE52931AD2B0DB743734B9C581AA44027702DBD148EBED890`.
+
+Finally reran the full required `Get-ChildItem tools/local-canaryaac/tests/php/*Test.php` loop using bundled PHP/config: **8/8 PASS**, including new SqliteRetryTest, with only the existing Windows symlink capability SKIP. No PHP implementation changed after this final suite. No ordinary account, service, gameplay/quest file, private ACL or existing Go source was changed in this fix round.

@@ -1,7 +1,11 @@
 <?php
 require __DIR__ . '/HttpFixture.php';
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-    passthru(escapeshellarg(PHP_BINARY) . ' -c ' . escapeshellarg(php_ini_loaded_file()) . ' -d extension=pdo_sqlite ' . escapeshellarg(__FILE__), $status);
+    if (in_array('--sqlite-retry', $argv, true)) {
+        fwrite(STDERR, "SQLite unavailable after one extension retry; enable pdo_sqlite for this test.\n");
+        exit(1);
+    }
+    passthru(escapeshellarg(PHP_BINARY) . ' -c ' . escapeshellarg(php_ini_loaded_file()) . ' -d extension=pdo_sqlite ' . escapeshellarg(__FILE__) . ' --sqlite-retry', $status);
     exit($status);
 }
 $runtime = getenv('CANARYAAC_TEST_ROOT') ?: 'C:/Users/Marlon/Documents/OT/.tools/canaryaac';
