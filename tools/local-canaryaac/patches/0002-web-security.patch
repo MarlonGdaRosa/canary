@@ -1,0 +1,560 @@
+diff --git a/app/Http/Router.php b/app/Http/Router.php
+index f3f0774..3d5509c 100644
+--- a/app/Http/Router.php
++++ b/app/Http/Router.php
+@@ -218,8 +218,12 @@ class Router
+ 
+             return (new MiddlewareQueue($route['middlewares'], $route['controller'], $args))->next($this->request);
+ 
+-        }catch(Exception $e){
+-            return new Response($e->getCode(), $this->getErrorMessage($e->getMessage()), $this->contentType);
++        }catch(\Throwable $e){
++            if ($e instanceof \App\Utils\SecurityFailure) throw $e;
++            if (in_array($e->getCode(), [400, 403, 404, 405], true)) {
++                return new Response($e->getCode(), $e->getCode() === 404 ? 'Not Found' : 'Request Rejected', 'text/plain');
++            }
++            throw $e;
+         }
+     }
+ 
+@@ -259,4 +263,4 @@ class Router
+         header('Location: '.$url);
+         exit;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/app/Model/Functions/Player.php b/app/Model/Functions/Player.php
+index b104ec2..3448c70 100644
+--- a/app/Model/Functions/Player.php
++++ b/app/Model/Functions/Player.php
+@@ -116,7 +116,8 @@ use App\Model\Functions\Guilds as FunctionsGuilds;
+ 
+         public static function getOutfitImage($looktype = 0, $lookaddons = 0, $lookbody = 0, $lookfeet = 0, $lookhead = 0, $looklegs = 0, $mount = 0)
+         {
+-            $outfit = URL . OUTFITS_FOLDER . '/animoutfit.php?id='.$looktype.'&addons='.$lookaddons.'&head='.$lookhead.'&body='.$lookbody.'&legs='.$looklegs.'&feet='.$lookfeet.'&mount='.$mount.'';
++            // Preserve the local transparent fallback without executing an asset PHP script.
++            $outfit = URL . '/resources/images/charactertrade/objects/transparent.svg';
+             return $outfit;
+         }
+ 
+@@ -485,4 +486,4 @@ use App\Model\Functions\Guilds as FunctionsGuilds;
+         {
+             return true;
+         }
+-    }
+\ No newline at end of file
++    }
+diff --git a/app/Model/Functions/Server.php b/app/Model/Functions/Server.php
+index 9fe5d1b..b65e326 100644
+--- a/app/Model/Functions/Server.php
++++ b/app/Model/Functions/Server.php
+@@ -290,7 +290,7 @@ class Server
+     public static function getMonsterImage($looktypeEx = 0, $looktype = 0, $lookaddons = 0, $lookbody = 0, $lookfeet = 0, $lookhead = 0, $looklegs = 0, $mount = 0)
+     {
+         if ($looktypeEx == 0) {
+-            $outfit = URL . OUTFITS_FOLDER. '/animoutfit.php?id='.$looktype.'&addons='.$lookaddons.'&head='.$lookhead.'&body='.$lookbody.'&legs='.$looklegs.'&feet='.$lookfeet.'&mount='.$mount.'';
++            $outfit = URL . '/resources/images/charactertrade/objects/transparent.svg';
+         } else {
+             $outfit = URL . "/resources/images/charactertrade/items/" . $looktypeEx . ".gif";
+         }
+diff --git a/app/Session/Admin/Login.php b/app/Session/Admin/Login.php
+index 7de2c18..ebc2a37 100644
+--- a/app/Session/Admin/Login.php
++++ b/app/Session/Admin/Login.php
+@@ -23,6 +23,7 @@ class Login{
+     public static function login($obAccount)
+     {
+         self::init();
++        \App\Utils\WebSecurity::authenticated();
+         $_SESSION['account']['user'] = [
+             'id' => $obAccount->id,
+             'name' => $obAccount->name,
+@@ -41,9 +42,6 @@ class Login{
+                 unset($_SESSION['account']['user']);
+                 return false;
+             } else {
+-                if (!headers_sent()) {
+-                    session_regenerate_id(true);
+-                }
+                 return isset($_SESSION['account']['user']['id']);
+             }
+         } else {
+@@ -61,8 +59,7 @@ class Login{
+     public static function logout()
+     {
+         self::init();
+-        unset($_SESSION['account']['user']);
+-        unset($_SESSION['login_timeout']);
++        \App\Utils\WebSecurity::logout();
+         return true;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/app/Utils/RateLimiter.php b/app/Utils/RateLimiter.php
+new file mode 100644
+index 0000000..dd991af
+--- /dev/null
++++ b/app/Utils/RateLimiter.php
+@@ -0,0 +1,37 @@
++<?php
++namespace App\Utils;
++
++final class RateLimiter
++{
++    public static function consume(string $directory, string $action, string $address): void
++    {
++        $budgets = ['signup' => [5, 600], 'login' => [10, 900]];
++        if (!isset($budgets[$action]) || filter_var($address, FILTER_VALIDATE_IP) === false) throw new SecurityFailure(503);
++        [$limit, $window] = $budgets[$action];
++        $file = $directory . '/' . hash('sha256', $action . "\0" . $address) . '.json';
++        if (is_link($file)) throw new SecurityFailure(503);
++        $handle = @fopen($file, 'c+b');
++        if ($handle === false) throw new SecurityFailure(503);
++        try {
++            if (!flock($handle, LOCK_EX)) throw new SecurityFailure(503);
++            $data = stream_get_contents($handle, 4097);
++            if ($data === false || strlen($data) > 4096) throw new SecurityFailure(503);
++            $now = time();
++            $state = $data === '' ? ['start' => $now, 'count' => 0] : json_decode($data, true);
++            if (!is_array($state) || !is_int($state['start'] ?? null) || !is_int($state['count'] ?? null)
++                || $state['start'] > $now || $state['count'] < 0 || $state['count'] > $limit) throw new SecurityFailure(503);
++            if ($now - $state['start'] >= $window) $state = ['start' => $now, 'count' => 0];
++            if ($state['count'] >= $limit) throw new SecurityFailure(429, max(1, $window - ($now - $state['start'])));
++            ++$state['count'];
++            $encoded = json_encode($state, JSON_THROW_ON_ERROR);
++            if (!rewind($handle) || !ftruncate($handle, 0) || fwrite($handle, $encoded) !== strlen($encoded) || !fflush($handle)) throw new SecurityFailure(503);
++        } catch (\ErrorException $error) {
++            // Checked native storage operations can warn before returning failure.
++            throw new SecurityFailure(503);
++        } finally {
++            $unlocked = @flock($handle, LOCK_UN);
++            $closed = @fclose($handle);
++            if (!$unlocked || !$closed) throw new SecurityFailure(503);
++        }
++    }
++}
+diff --git a/app/Utils/SecurityFailure.php b/app/Utils/SecurityFailure.php
+new file mode 100644
+index 0000000..5a0374a
+--- /dev/null
++++ b/app/Utils/SecurityFailure.php
+@@ -0,0 +1,10 @@
++<?php
++namespace App\Utils;
++
++final class SecurityFailure extends \RuntimeException
++{
++    public function __construct(int $status, public readonly int $retryAfter = 0)
++    {
++        parent::__construct('Request rejected', $status);
++    }
++}
+diff --git a/app/Utils/View.php b/app/Utils/View.php
+index 4789625..540fa27 100644
+--- a/app/Utils/View.php
++++ b/app/Utils/View.php
+@@ -33,7 +33,7 @@ class View{
+             __DIR__.'/../../resources/view/admin/alert',
+             __DIR__.'/../../resources/view/themeboxes/',
+         ]);
+-        if($_ENV['DEV_MODE'] == true){
++        if(WebSecurity::debugEnabled($_ENV['DEV_MODE'] ?? false)){
+             $twig = new Environment($loader, [
+                 'debug' => true,
+                 'charset' => 'utf-8',
+@@ -45,6 +45,7 @@ class View{
+                 'debug' => false,
+                 'charset' => 'utf-8',
+                 'cache' => __DIR__.'/../../resources/view/cache',
++                'autoescape' => 'html',
+             ]);
+         }
+ 
+@@ -60,7 +61,7 @@ class View{
+ 
+     public static function render($view, $vars = [])
+     {
+-        $vars = array_merge(self::$vars, $vars);
++        $vars = array_merge(self::$vars, $vars, ['csrf_token' => WebSecurity::csrfToken()]);
+         
+         $array = explode('/', $view);
+         $view_file = end($array);
+@@ -71,4 +72,4 @@ class View{
+         return $contentView->render($view_file.'.html.twig', $vars);
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+new file mode 100644
+index 0000000..6c12193
+--- /dev/null
++++ b/app/Utils/WebSecurity.php
+@@ -0,0 +1,162 @@
++<?php
++namespace App\Utils;
++
++final class WebSecurity
++{
++    private static bool $production = false;
++    private static string $stateDirectory;
++
++    public static function installErrorBoundary(): void
++    {
++        ini_set('display_errors', '0');
++        ini_set('display_startup_errors', '0');
++        set_error_handler(static function (int $severity): bool {
++            if ((error_reporting() & $severity) === 0) return false;
++            throw new \ErrorException('Request failed', $severity, $severity);
++        });
++        set_exception_handler(static function (\Throwable $error): void {
++            if ($error instanceof SecurityFailure && $error->retryAfter > 0) header('Retry-After: ' . $error->retryAfter);
++            self::respondToFailure($error);
++        });
++    }
++
++    public static function respondToFailure(\Throwable $error): void
++    {
++        $status = $error instanceof SecurityFailure ? $error->getCode() : 500;
++        $messages = [400 => 'Bad Request', 403 => 'Forbidden', 404 => 'Not Found', 429 => 'Too Many Requests',
++            503 => 'Service Unavailable', 500 => 'Internal Server Error'];
++        if (!isset($messages[$status])) $status = 500;
++        if ($status >= 500) error_log('CanaryAAC exception type=' . get_class($error) . ' code=' . (int) $error->getCode());
++        http_response_code($status);
++        header('Content-Type: text/plain; charset=utf-8');
++        header('Cache-Control: no-store');
++        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'HEAD') echo $messages[$status];
++    }
++
++    public static function boot(array $environment): void
++    {
++        self::$production = ($environment['APP_ENV'] ?? 'local') === 'production';
++        if (!in_array($environment['APP_ENV'] ?? 'local', ['local', 'production'], true)) throw new SecurityFailure(503);
++        if (self::$production) {
++            $url = parse_url($environment['URL'] ?? '');
++            $host = strtolower($url['host'] ?? '');
++            if (($url['scheme'] ?? '') !== 'https' || !str_contains($host, '.') || filter_var($host, FILTER_VALIDATE_IP)
++                || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.invalid')
++                || isset($url['user']) || isset($url['pass']) || isset($url['query']) || isset($url['fragment'])
++                || !in_array(strtolower((string) ($_SERVER['HTTPS'] ?? '')), ['on', '1'], true)) throw new SecurityFailure(503);
++            header('Strict-Transport-Security: max-age=31536000');
++        }
++        header('X-Content-Type-Options: nosniff');
++        header('X-Frame-Options: DENY');
++        header('Referrer-Policy: strict-origin-when-cross-origin');
++        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
++        header('Cache-Control: no-store');
++        $state = $environment['SECURITY_STATE_DIR'] ?? dirname(__DIR__, 3) . '/canaryaac-security-state';
++        if (self::$production && !isset($environment['SECURITY_STATE_DIR'])) throw new SecurityFailure(503);
++        self::$stateDirectory = self::privateDirectory($state);
++        $sessions = self::privateDirectory(self::$stateDirectory . '/sessions');
++        self::privateDirectory(self::$stateDirectory . '/limits');
++        if (session_status() !== PHP_SESSION_ACTIVE) {
++            ini_set('session.use_strict_mode', '1');
++            ini_set('session.use_only_cookies', '1');
++            ini_set('session.use_trans_sid', '0');
++            session_save_path($sessions);
++            $name = $environment['SITE_NAME'] ?? 'CanaryAAC';
++            if (!is_string($name) || !preg_match('/^[A-Za-z][A-Za-z0-9]{0,63}$/D', $name)) throw new SecurityFailure(503);
++            session_name($name);
++            session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => self::$production,
++                'httponly' => true, 'samesite' => 'Lax']);
++            try {
++                if (!session_start()) throw new SecurityFailure(503);
++            } catch (\ErrorException $error) {
++                // Native session storage warnings are expected availability failures.
++                throw new SecurityFailure(503);
++            }
++        }
++        self::csrfToken();
++        self::guardRequest();
++    }
++
++    private static function privateDirectory(string $path): string
++    {
++        if (is_link($path) || (!is_dir($path) && !@mkdir($path, 0700, true))) throw new SecurityFailure(503);
++        $resolved = realpath($path);
++        if (!$resolved || !is_writable($resolved)) throw new SecurityFailure(503);
++        $appRoot = realpath(dirname(__DIR__, 2));
++        foreach (['public', 'resources'] as $public) {
++            $forbidden = $appRoot . DIRECTORY_SEPARATOR . $public;
++            if (str_starts_with(strtolower($resolved . DIRECTORY_SEPARATOR), strtolower($forbidden . DIRECTORY_SEPARATOR))) throw new SecurityFailure(503);
++        }
++        return $resolved;
++    }
++
++    private static function guardRequest(): void
++    {
++        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
++        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
++        if (!is_string($path)) throw new SecurityFailure(400);
++        // Keep route identity identical to Router: encoded and ambiguous paths are never aliases.
++        $characterPath = preg_match('#^/community/characters/[A-Za-z]+(?:(?:%20| )[A-Za-z]+)*$#D', $path) === 1;
++        if ((str_contains($path, '%') && !$characterPath) || str_contains($path, '\\') || str_contains($path, '//') || preg_match('#(?:^|/)\.#', $path)) throw new SecurityFailure(404);
++        $path = rtrim($path, '/') ?: '/';
++        $gets = ['/', '/latestnews', '/createaccount', '/account/login', '/account', '/downloads', '/newsarchive',
++            '/community/characters', '/community/worlds', '/community/highscores', '/community/lastdeaths',
++            '/support/rules', '/support/team', '/library/creatures', '/library/boostablebosses',
++            '/library/achievements', '/library/experiencetable'];
++        if (!self::$production) $gets[] = '/account/createcharacter';
++        $readOnlyDynamic = preg_match('#^/(?:community/characters/[^/]+|newsarchive/[0-9]+/view)$#D', $path) === 1;
++        if (in_array($method, ['GET', 'HEAD'], true)) {
++            if (!in_array($path, $gets, true) && !$readOnlyDynamic) throw new SecurityFailure(404);
++            return;
++        }
++        if ($method !== 'POST' || !in_array($path, ['/createaccount', '/account/login', '/account/logout'], true)) throw new SecurityFailure(404);
++        $length = $_SERVER['CONTENT_LENGTH'] ?? '0';
++        if (!ctype_digit((string) $length) || (float) $length > 65536) throw new SecurityFailure(400);
++        // Also bound requests without Content-Length before the application parses them.
++        $input = fopen('php://input', 'rb');
++        $body = $input === false ? false : stream_get_contents($input, 65537);
++        if (is_resource($input)) fclose($input);
++        if ($body === false || strlen($body) > 65536) throw new SecurityFailure(400);
++        self::requireCsrf($_POST);
++        if ($path === '/createaccount' || $path === '/account/login')
++            self::checkRateLimit($path === '/createaccount' ? 'signup' : 'login', $_SERVER['REMOTE_ADDR'] ?? '');
++    }
++
++    public static function csrfToken(): string
++    {
++        if (!is_string($_SESSION['csrf_token'] ?? null) || strlen($_SESSION['csrf_token']) !== 64)
++            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
++        return $_SESSION['csrf_token'];
++    }
++
++    public static function requireCsrf(array $post): void
++    {
++        if (!is_string($post['csrf_token'] ?? null) || !is_string($_SESSION['csrf_token'] ?? null)
++            || !hash_equals($_SESSION['csrf_token'], $post['csrf_token'])) throw new SecurityFailure(403);
++    }
++
++    public static function checkRateLimit(string $action, string $remoteAddress): void
++    {
++        RateLimiter::consume(self::$stateDirectory . '/limits', $action, $remoteAddress);
++    }
++
++    public static function debugEnabled(mixed $value): bool
++    {
++        return !self::$production && filter_var($value, FILTER_VALIDATE_BOOLEAN) === true;
++    }
++
++    public static function authenticated(): void
++    {
++        if (!@session_regenerate_id(true)) throw new SecurityFailure(503);
++        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
++    }
++
++    public static function logout(): void
++    {
++        $_SESSION = [];
++        $cookie = session_get_cookie_params();
++        setcookie(session_name(), '', ['expires' => time() - 3600, 'path' => $cookie['path'],
++            'secure' => $cookie['secure'], 'httponly' => true, 'samesite' => 'Lax']);
++        if (!@session_destroy()) throw new SecurityFailure(503);
++    }
++}
+diff --git a/includes/app.php b/includes/app.php
+index af94158..84a3473 100644
+--- a/includes/app.php
++++ b/includes/app.php
+@@ -9,6 +9,7 @@ use App\Http\Middleware\Queue as MiddlewareQueue;
+ 
+ // Load the .env files
+ Dotenv::createImmutable(__DIR__.'/../')->load();
++\App\Utils\WebSecurity::boot($_ENV);
+ 
+ // Defines the URL constant
+ define('URL', $_ENV['URL']);
+@@ -53,4 +54,4 @@ MiddlewareQueue::setMap([
+ // Defines default middleware mapping (runs on all routes)
+ MiddlewareQueue::setDefault([
+     'maintenance',
+-]);
+\ No newline at end of file
++]);
+diff --git a/index.php b/index.php
+index ae01efe..25dc814 100644
+--- a/index.php
++++ b/index.php
+@@ -1,4 +1,8 @@
+ <?php
++require_once __DIR__.'/app/Utils/SecurityFailure.php';
++require_once __DIR__.'/app/Utils/RateLimiter.php';
++require_once __DIR__.'/app/Utils/WebSecurity.php';
++\App\Utils\WebSecurity::installErrorBoundary();
+ require __DIR__.'/includes/app.php';
+ 
+ use App\Http\Router;
+@@ -9,11 +13,7 @@ $obRouter = new Router(URL);
+ // Includes page routes
+ include __DIR__.'/routes/pages.php';
+ 
+-// Includes admin routes
+-include __DIR__.'/routes/admin.php';
+-
+-// Includes API routes
+-include __DIR__.'/routes/api.php';
++// Public admin/API/payment operations remain outside the reviewed launch surface.
+ 
+ // Print the route response
+-$obRouter->run()->sendResponse();
+\ No newline at end of file
++$obRouter->run()->sendResponse();
+diff --git a/public/index.php b/public/index.php
+new file mode 100644
+index 0000000..78159a5
+--- /dev/null
++++ b/public/index.php
+@@ -0,0 +1,7 @@
++<?php
++// Sole executable production entry. Assets are copied by the release exporter.
++require_once dirname(__DIR__) . '/app/Utils/SecurityFailure.php';
++require_once dirname(__DIR__) . '/app/Utils/RateLimiter.php';
++require_once dirname(__DIR__) . '/app/Utils/WebSecurity.php';
++\App\Utils\WebSecurity::installErrorBoundary();
++require dirname(__DIR__) . '/index.php';
+diff --git a/resources/images/charactertrade/objects/transparent.svg b/resources/images/charactertrade/objects/transparent.svg
+new file mode 100644
+index 0000000..7e4ad16
+--- /dev/null
++++ b/resources/images/charactertrade/objects/transparent.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"></svg>
+diff --git a/resources/view/pages/account/createaccount.html.twig b/resources/view/pages/account/createaccount.html.twig
+index a384fa6..6654fda 100644
+--- a/resources/view/pages/account/createaccount.html.twig
++++ b/resources/view/pages/account/createaccount.html.twig
+@@ -187,6 +187,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+                 {% endif %}
+ 				<div style="position:relative;top:0px;left:0px;">
+ 					<form action="{{URL}}/createaccount" method="post" name="CreateAccountAndCharacter" id="CreateAccountAndCharacterForm">
++                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 						<div class="TableContainer">
+ 							<div class="CaptionContainer">
+ 								<div class="CaptionInnerContainer">
+@@ -605,4 +606,4 @@ $(document).ready(function () {
+ 		});
+ 	});
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/pages/account/createcharacter.html.twig b/resources/view/pages/account/createcharacter.html.twig
+index 064611d..f12d8f8 100644
+--- a/resources/view/pages/account/createcharacter.html.twig
++++ b/resources/view/pages/account/createcharacter.html.twig
+@@ -11,6 +11,7 @@
+ 				Tibia Rules, or your character might get deleted or name locked.<br><br><br>
+ 				{{ status }}
+ 				<form action="{{URL}}/account/createcharacter" method="post">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 					<div class="TableContainer">
+ 						<div class="CaptionContainer">
+ 							<div class="CaptionInnerContainer">
+diff --git a/resources/view/pages/account/index.html.twig b/resources/view/pages/account/index.html.twig
+index 111177f..bf3c162 100644
+--- a/resources/view/pages/account/index.html.twig
++++ b/resources/view/pages/account/index.html.twig
+@@ -73,10 +73,11 @@
+ 																			</a>
+ 																			{% endif %}
+ 																			<div style="font-size:1px;height:4px;"></div>
+-																			<a href="{{URL}}/account/logout">
++                                                                            <form action="{{URL}}/account/logout" method="post" style="margin:0">
++                                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 																				{% set button_name = 'Logout' %}
+-																				{% include "red_button.html.twig" %}
+-																			</a>
++                                                                                {% include "red_button.html.twig" %}
++                                                                            </form>
+ 																		</td>
+ 																	</tr>
+ 																</tbody>
+diff --git a/resources/view/pages/account/login.html.twig b/resources/view/pages/account/login.html.twig
+index 9456ffc..8930535 100644
+--- a/resources/view/pages/account/login.html.twig
++++ b/resources/view/pages/account/login.html.twig
+@@ -58,6 +58,7 @@
+ 																				<tbody>
+ 																					<tr>
+                                                                                         <form action="" method="post">
++                                                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 																						<td>
+ 																							<table style="float: left; width: 100%; " cellpadding="0" cellspacing="0">
+ 																								<tbody>
+diff --git a/resources/view/pages/base.html.twig b/resources/view/pages/base.html.twig
+index 815bc0e..9aa8d71 100644
+--- a/resources/view/pages/base.html.twig
++++ b/resources/view/pages/base.html.twig
+@@ -146,13 +146,14 @@ var FB_ForceReload = 0;
+ 								</a>
+ 							</li>
+ 							<li class="Level2Entry MobileNavigationLinkContainer" id="MobileShortMenuLogout">
+-								<a href="{{ URL }}/account/logout" style="padding:0px;margin:0px;">
++                                <form action="{{ URL }}/account/logout" method="post" style="padding:0px;margin:0px;">
++                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<div class="BigButton" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_red.gif)">
+ 										<div onmouseover="MouseOverBigButton(this);" onmouseout="MouseOutBigButton(this);"><div class="BigButtonOver" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_red_over.gif);"></div>
+-										<input class="BigButtonText" type="button" value="Logout">
++                                            <input class="BigButtonText" type="submit" value="Logout">
+ 										</div>
+ 									</div>
+-								</a>
++                                </form>
+ 							</li>
+ 							{% endif %}
+ 							<li class="Level2Entry MobileNavigationLinkContainer" id="MobileShortMenuLogout">
+@@ -277,10 +278,10 @@ var FB_ForceReload = 0;
+ 								</a>
+ 							</div>
+ 						</div>
+-            {% if loginStatus == 'true' %}<a href="{{URL}}/account/logout">{% else %}<a href="{{URL}}/createaccount">{% endif %}
++            {% if loginStatus == 'true' %}<form action="{{URL}}/account/logout" method="post" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% else %}<a href="{{URL}}/createaccount">{% endif %}
+ 							<div class="Loginstatus" style="background-image:url({{IMAGE_PATH}}/global/loginbox/loginbox-textfield-background.gif)">
+-              <div id="LoginstatusText" onclick="LoginstatusTextAction(this);" onmouseover="MouseOverLoginBoxText(this);" onmouseout="MouseOutLoginBoxText(this);"><div id="LoginstatusText_1" class="LoginstatusText"></div><div id="LoginstatusText_2" class="LoginstatusText"></div></div></div>
+-						</a>
++              <div id="LoginstatusText" onclick="{% if loginStatus == 'true' %}this.closest('form').requestSubmit();{% else %}LoginstatusTextAction(this);{% endif %}" onmouseover="MouseOverLoginBoxText(this);" onmouseout="MouseOutLoginBoxText(this);"><div id="LoginstatusText_1" class="LoginstatusText"></div><div id="LoginstatusText_2" class="LoginstatusText"></div></div></div>
++                        {% if loginStatus == 'true' %}<button type="submit" style="position:absolute;left:-10000px">Logout</button></form>{% else %}</a>{% endif %}
+ 						<div class="SmallBoxBorder BorderRight" style="background-image:url({{IMAGE_PATH}}/global/general/chain.gif)"></div>
+ 						<div class="Loginstatus SmallBoxBottom" style="background-image:url({{IMAGE_PATH}}/global/general/box-bottom.gif)"></div>
+ 					</div>
+diff --git a/routes/pages.php b/routes/pages.php
+index 7b325b3..c077710 100644
+--- a/routes/pages.php
++++ b/routes/pages.php
+@@ -22,11 +22,7 @@ use App\Model\Functions\Signature;
+ 
+ include __DIR__.'/pages/account.php';
+ 
+-include __DIR__.'/pages/payment.php';
+-
+-include __DIR__.'/pages/guilds.php';
+-
+-include __DIR__.'/pages/outfit.php';
++// Optional payment/guild/outfit modules are disabled until separately reviewed.
+ 
+ $obRouter->get('', [
+     function(){
+@@ -198,4 +194,4 @@ $obRouter->get('/signature/{id}', [
+     function($request, $id){
+         return new Response(200, Signature::generate($request, $id));
+     }
+-]);
+\ No newline at end of file
++]);
+diff --git a/routes/pages/account.php b/routes/pages/account.php
+index e1c402b..1f82f58 100644
+--- a/routes/pages/account.php
++++ b/routes/pages/account.php
+@@ -28,7 +28,7 @@ $obRouter->post('/account/login', [
+         return new Response(200, Account\Login::setLogin($request));
+     }
+ ]);
+-$obRouter->get('/account/logout', [
++$obRouter->post('/account/logout', [
+     'middlewares' => [
+         'required-login'
+     ],

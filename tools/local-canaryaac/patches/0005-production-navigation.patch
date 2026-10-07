@@ -1,0 +1,216 @@
+diff --git a/app/Controller/Pages/Base.php b/app/Controller/Pages/Base.php
+index b3fc9660c..b30844546 100644
+--- a/app/Controller/Pages/Base.php
++++ b/app/Controller/Pages/Base.php
+@@ -236,7 +236,13 @@ class Base{
+                 'category' => 'shop',
+             ],
+         ];
++        $enabled = ['latestnews', 'newsarchive', 'library/creatures', 'library/boostablebosses',
++            'library/achievements', 'library/experiencetable', 'community/characters', 'community/worlds',
++            'community/highscores', 'community/lastdeaths', 'account', 'createaccount', 'downloads',
++            'support/rules', 'support/team'];
++        $format = [];
+         foreach($menu as $key => $value){
++            if (!in_array($value['link'], $enabled, true)) continue;
+             if($key == $currentPage){
+                 $current = 1;
+             }else{
+@@ -269,10 +275,10 @@ class Base{
+             'boostedboss' => FunctionsServer::getBoostedBoss(),
+             'playersonline' => FunctionsServer::getCountPlayersOnline(),
+             'server_status' => FunctionsServer::getServerStatus(),
+-            'active_donates' => $websiteInfo->donates,
++            'active_donates' => false,
+             'highscores' => FunctionsThemeBox::getHighscoresTop5(),
+-            'current_poll' => FunctionsThemeBox::getCurrentPoll(),
++            'current_poll' => null,
+             'countdown' => FunctionsThemeBox::getCurrentCountdown()
+         ]);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/app/DatabaseManager/Pagination.php b/app/DatabaseManager/Pagination.php
+index 08fa04ac8..aff4fe98e 100644
+--- a/app/DatabaseManager/Pagination.php
++++ b/app/DatabaseManager/Pagination.php
+@@ -44,7 +44,9 @@ class Pagination{
+   public function __construct($results,$currentPage = 1,$limit = 10){
+     $this->results     = $results;
+     $this->limit       = $limit;
+-    $this->currentPage = (is_numeric($currentPage) and $currentPage > 0) ? $currentPage : 1;
++    $page = (is_int($currentPage) || is_string($currentPage))
++      ? filter_var($currentPage, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false;
++    $this->currentPage = $page === false ? 1 : $page;
+     $this->calculate();
+   }
+ 
+@@ -88,4 +90,4 @@ class Pagination{
+     return $pages;
+   }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/app/Utils/View.php b/app/Utils/View.php
+index 540fa27a4..a45d34173 100644
+--- a/app/Utils/View.php
++++ b/app/Utils/View.php
+@@ -44,7 +44,9 @@ class View{
+             $twig = new Environment($loader, [
+                 'debug' => false,
+                 'charset' => 'utf-8',
+-                'cache' => __DIR__.'/../../resources/view/cache',
++                'cache' => ($_ENV['APP_ENV'] ?? 'local') === 'production'
++                    ? WebSecurity::productionCacheDirectory($_ENV['VIEW_CACHE_DIR'] ?? '')
++                    : __DIR__.'/../../resources/view/cache',
+                 'autoescape' => 'html',
+             ]);
+         }
+@@ -61,7 +63,9 @@ class View{
+ 
+     public static function render($view, $vars = [])
+     {
+-        $vars = array_merge(self::$vars, $vars, ['csrf_token' => WebSecurity::csrfToken()]);
++        $vars = array_merge(self::$vars, $vars, ['csrf_token' => WebSecurity::csrfToken(),
++            'active_donates' => false, 'reviewed_features_only' => true,
++            'allow_create_character' => ($_ENV['APP_ENV'] ?? 'local') !== 'production']);
+         
+         $array = explode('/', $view);
+         $view_file = end($array);
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+index 637444773..e06c04e0f 100644
+--- a/app/Utils/WebSecurity.php
++++ b/app/Utils/WebSecurity.php
+@@ -77,6 +77,19 @@ final class WebSecurity
+         self::guardRequest();
+     }
+ 
++    public static function productionCacheDirectory(string $path): string
++    {
++        if (!preg_match('#^(?:/|[A-Za-z]:[\\\\/])#', $path)) throw new SecurityFailure(503);
++        // Validate containment before creating any directory.
++        $normalized = str_replace('\\', '/', $path);
++        $root = str_replace('\\', '/', dirname(__DIR__, 2));
++        if (preg_match('#(?:^|/)\.\.?(?:/|$)#', $normalized)) throw new SecurityFailure(503);
++        foreach (['public', 'resources'] as $public) {
++            if (str_starts_with(strtolower(rtrim($normalized, '/') . '/'), strtolower($root . '/' . $public . '/'))) throw new SecurityFailure(503);
++        }
++        return self::privateDirectory($path);
++    }
++
+     private static function privateDirectory(string $path): string
+     {
+         if (is_link($path) || (!is_dir($path) && !@mkdir($path, 0700, true))) throw new SecurityFailure(503);
+diff --git a/resources/view/pages/account/index.html.twig b/resources/view/pages/account/index.html.twig
+index bf3c162f5..366874c57 100644
+--- a/resources/view/pages/account/index.html.twig
++++ b/resources/view/pages/account/index.html.twig
+@@ -61,16 +61,10 @@
+ 																		</td>
+                                                                         {% endif %}
+ 																		<td>
+-																			<a href="{{URL}}/account/manage">
+-																				{% set button_name = 'Manage Account' %}
+-																				{% include "blue_button.html.twig" %}
+-																			</a>
++																			<span>Feature unavailable in this release.</span>
+ 																			{% if active_donates == 1 %}
+ 																			<div style="font-size:1px;height:4px;"></div>
+-																			<a href="{{URL}}/payment">
+-																				{% set button_name = 'Get Coins' %}
+-																				{% include "green_button.html.twig" %}
+-																			</a>
++																			<span>Feature unavailable in this release.</span>
+ 																			{% endif %}
+ 																			<div style="font-size:1px;height:4px;"></div>
+                                                                             <form action="{{URL}}/account/logout" method="post" style="margin:0">
+@@ -213,9 +207,7 @@
+ 											<b>Your account not registered!</b>
+ 										</td>
+ 										<td>
+-											<a href="{{ URL }}/account/registration" style="padding:0px;margin:0px;">
+-											<div class="BigButton" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_blue.gif)"><div onmouseover="MouseOverBigButton(this);" onmouseout="MouseOutBigButton(this);"><div class="BigButtonOver" style="background-image: url({{IMAGE_PATH}}/global/buttons/button_blue_over.gif); visibility: hidden;"></div><input class="BigButtonText" type="button" value="Register Account"></div></div>
+-											</a>
++											<span>Feature unavailable in this release.</span>
+ 										</td>
+ 									</tr>
+ 									<tr>
+@@ -300,7 +292,7 @@
+ 																							{% if account.player.guild %}
+ 																							<br>
+ 																							Guild Membership: 
+-																							<span style="font-weight: normal;">{{ account.player.guild.rank_name }} of the <a href="{{URL}}/community/guilds/{{ account.player.guild.guild_name }}/view">{{ account.player.guild.guild_name }}</a></span>
++																							<span style="font-weight: normal;">{{ account.player.guild.rank_name }} of the <span>{{ account.player.guild.guild_name }}</span></span>
+ 																							{% endif %}
+ 																						</small>
+ 																					</span>
+@@ -328,7 +320,7 @@
+ 																					<span>Deleted</span>
+ 																					{% else %}
+ 																					<span id="CharacterOptionsOf_{{ count }}">
+-																						<span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ account.player.name }}/edit">Edit</a>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ account.player.name }}/delete">Delete</a>]</span>
++																						<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span>
+ 																					</span>
+ 																					{% endif %}
+ 																				</td>
+@@ -352,7 +344,7 @@
+ 																								{% if player.guild %}
+ 																								<br>
+ 																								Guild Membership: 
+-																								<span style="font-weight: normal;">{{ player.guild.rank_name }} of the <a href="{{URL}}/community/guilds/{{ player.guild.guild_name }}/view">{{ player.guild.guild_name }}</a></span>
++																								<span style="font-weight: normal;">{{ player.guild.rank_name }} of the <span>{{ player.guild.guild_name }}</span></span>
+ 																								{% endif %}
+ 																							</small>
+ 																						</span>
+@@ -380,7 +372,7 @@
+ 																						<span>Deleted</span>
+ 																						{% else %}
+ 																						<span id="CharacterOptionsOf_{{ count }}" style="display:none;">
+-																							<span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ player.name }}/edit">Edit</a>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ player.name }}/delete">Delete</a>]</span>
++																							<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span>
+ 																						</span>
+ 																						{% endif %}
+ 																					</td>
+@@ -398,10 +390,12 @@
+ 																										<tr>
+ 																											<td>
+ 																												<div class="DivWithButton">
++{% if allow_create_character %}
+ 																													<a href="{{URL}}/account/createcharacter">
+ 																													{% set button_name = 'Create Character' %}
+ 																													{% include "blue_button.html.twig" %}
+ 																													</a>
++{% endif %}
+ 																												</div>
+ 																											</td>
+ 																										</tr>
+diff --git a/resources/view/pages/account/login.html.twig b/resources/view/pages/account/login.html.twig
+index 893053539..becded9f5 100644
+--- a/resources/view/pages/account/login.html.twig
++++ b/resources/view/pages/account/login.html.twig
+@@ -88,9 +88,7 @@
+                                                                                                 <div class="BigButton" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_blue.gif)"><div onmouseover="MouseOverBigButton(this);" onmouseout="MouseOutBigButton(this);"><div class="BigButtonOver" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_blue_over.gif);"></div><input class="BigButtonText" type="submit" value="Login"></div>
+ 																							</div>
+ 																							<div style="width: 2px; height: 2px;"></div>
+-																							<a href="{{URL}}/account/lostaccount">
+-																								<div class="BigButton" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_blue.gif)"><div onmouseover="MouseOverBigButton(this);" onmouseout="MouseOutBigButton(this);"><div class="BigButtonOver" style="background-image:url({{IMAGE_PATH}}/global/buttons/button_blue_over.gif);"></div><input class="BigButtonText" type="button" value="Lost Account"></div>
+-																							</a>
++																							<span>Feature unavailable in this release.</span>
+ 																							</div>
+ 																							</div>
+ 																						</td>
+diff --git a/resources/view/pages/community/characters.html.twig b/resources/view/pages/community/characters.html.twig
+index 40829f2e0..31f52251f 100644
+--- a/resources/view/pages/community/characters.html.twig
++++ b/resources/view/pages/community/characters.html.twig
+@@ -130,7 +130,7 @@
+                                                                     {% set i = i + 1 %}
+ 																	<tr bgcolor="{{ getStyle(i) }}">
+ 																		<td class="LabelV175">Guild&nbsp;Membership:</td>
+-																		<td>{{ player.guild.rank_name }} of the <a href="{{URL}}/community/guilds/{{ player.guild.guild_name }}/view">{{ player.guild.guild_name }}</a> {% if player.guild.nick is not empty %} ({{ player.guild.nick }}){% endif %}</td>
++																		<td>{{ player.guild.rank_name }} of the <span>{{ player.guild.guild_name }}</span> {% if player.guild.nick is not empty %} ({{ player.guild.nick }}){% endif %}</td>
+ 																	</tr>
+ 																	{% endif %}
+                                                                     {% set i = i + 1 %}

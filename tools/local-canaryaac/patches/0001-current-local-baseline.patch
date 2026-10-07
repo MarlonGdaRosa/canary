@@ -1,0 +1,648 @@
+diff --git a/app/Controller/Admin/Base.php b/app/Controller/Admin/Base.php
+index 220a979..16cbacd 100644
+--- a/app/Controller/Admin/Base.php
++++ b/app/Controller/Admin/Base.php
+@@ -310,6 +310,9 @@ class Base
+ 
+             $account = EntityPlayer::getAccount([ 'id' => $admin])->fetchObject();
+             $playerMain = EntityPlayer::getPlayer([ 'account_id' => $account->id, 'main' => "1"])->fetchObject();
++            if (!$playerMain) {
++                $playerMain = EntityPlayer::getPlayer([ 'account_id' => $account->id ])->fetchObject();
++            }
+ 
+             $logged = [
+                 'id' => $account->id,
+@@ -317,14 +320,14 @@ class Base
+                 'email' => $account->email,
+                 'premdays' => $account->premdays,
+                 'coins' => $account->coins,
+-                'player' => [
++                'player' => $playerMain ? [
+                     'name' => $playerMain->name,
+                     'level' => $playerMain->level,
+                     'group' => Player::convertGroup($playerMain->group_id),
+                     'outfit' => Player::getOutfit($playerMain->id),
+                     'main' => $playerMain->main,
+                     'online' => Player::isOnline($playerMain->id)
+-                ],
++                ] : null,
+             ];
+         }
+         return $logged;
+diff --git a/app/Controller/Pages/Account/ChangePassword.php b/app/Controller/Pages/Account/ChangePassword.php
+index cc1b5da..e5eaf43 100644
+--- a/app/Controller/Pages/Account/ChangePassword.php
++++ b/app/Controller/Pages/Account/ChangePassword.php
+@@ -30,26 +30,25 @@ class ChangePassword extends Base{
+         $filter_oldpassword = filter_var($old_password, FILTER_SANITIZE_SPECIAL_CHARS);
+         $convert_oldpassword = Argon::generateArgonPassword($filter_oldpassword);
+ 
+-        if(SessionAdminLogin::isLogged() == true){
++        if(SessionAdminLogin::isLogged() == false){
+             return self::viewChangePassword($request, 'You are not logged in.');
+         }
+         if(empty($newpassword)){
+-            return self::viewChangePassword($request);
++            return self::viewChangePassword($request, 'Please enter a new password.');
+         }
+         if(empty($old_password)){
+-            return self::viewChangePassword($request);
++            return self::viewChangePassword($request, 'Please enter your current password.');
+         }
+         $AccountId = SessionAdminLogin::idLogged();
+         $account = EntityPlayer::getAccount([ 'id' => $AccountId])->fetchObject();
+-        if (!Argon::checkPassword($convert_oldpassword, $account->password, $account->id)) {
++        if (!Argon::checkPassword($filter_oldpassword, $account->password, $account->id)) {
+             return self::viewChangePassword($request, 'Invalid password.');
+         }
+-        if(Argon::checkPassword($convert_oldpassword, $account->password, $account->id)){
+-            EntityAccount::updateAccount([ 'id' => $AccountId], [
+-                'password' => $convert_newpassword,
+-            ]);
+-            $request->getRouter()->redirect('/account/logout');
+-        }
++        $convert_newpassword = sha1($filter_newpassword);
++        EntityAccount::updateAccount([ 'id' => $AccountId], [
++            'password' => $convert_newpassword,
++        ]);
++        $request->getRouter()->redirect('/account/logout');
+         return self::viewChangePassword($request);
+     }
+ 
+diff --git a/app/Controller/Pages/Account/Create.php b/app/Controller/Pages/Account/Create.php
+index a47c303..a75df4f 100644
+--- a/app/Controller/Pages/Account/Create.php
++++ b/app/Controller/Pages/Account/Create.php
+@@ -172,6 +172,7 @@ class Create extends Base{
+             'sex' => $filter_sex,
+             'balance' => $playerSample->balance,
+             'istutorial' => '1',
++            'conditions' => '',
+         ];
+         EntityCreateAccount::createCharacter($character);
+ 
+diff --git a/app/Controller/Pages/Account/CreateCharacter.php b/app/Controller/Pages/Account/CreateCharacter.php
+index aeea482..7b086a8 100644
+--- a/app/Controller/Pages/Account/CreateCharacter.php
++++ b/app/Controller/Pages/Account/CreateCharacter.php
+@@ -70,9 +70,9 @@ class CreateCharacter extends Base{
+         }
+         
+         $character_name = filter_var($postVars['name'], FILTER_SANITIZE_SPECIAL_CHARS);
+-        $character_vocation = filter_var($postVars['vocation'], FILTER_SANITIZE_NUMBER_INT);
+-        $character_world = filter_var($postVars['world'], FILTER_SANITIZE_NUMBER_INT);
+-        $character_tutorial = $postVars['tutorial'] ?? '';
++        $character_vocation = isset($postVars['vocation']) && $postVars['vocation'] !== '' ? filter_var($postVars['vocation'], FILTER_SANITIZE_NUMBER_INT) : 0;
++        $character_world = isset($postVars['world']) ? filter_var($postVars['world'], FILTER_SANITIZE_NUMBER_INT) : 0;
++        $character_tutorial = $postVars['tutorial'] ?? 0;
+ 
+         $CountName = strlen($character_name);
+         if($CountName < 5){
+@@ -86,8 +86,11 @@ class CreateCharacter extends Base{
+             return self::viewCreateCharacter($request, 'This character name is already being used.');
+         }
+ 
++        if(!isset($postVars['sex']) || $postVars['sex'] === ''){
++            return self::viewCreateCharacter($request, 'Please select a valid gender.');
++        }
+         $character_sex = filter_var($postVars['sex'], FILTER_SANITIZE_NUMBER_INT);
+-        if($character_sex > 2){
++        if($character_sex > 2 || $character_sex < 1){
+             return self::viewCreateCharacter($request, 'Please select a valid gender.');
+         }
+         if ($character_sex == 2) {
+@@ -95,7 +98,7 @@ class CreateCharacter extends Base{
+         }
+         
+         $activeVocations = EntityServerConfig::getInfoWebsite()->fetchObject();
+-        if($activeVocations->player_voc == 1){
++        if($activeVocations && $activeVocations->player_voc == 1){
+             if (empty($character_vocation)) {
+                 return self::viewCreateCharacter($request, 'Choose a vocation for the character.');
+             }
+@@ -120,6 +123,9 @@ class CreateCharacter extends Base{
+             $character_vocation = 0;
+         }
+         $playerSample = EntityCreateAccount::getPlayerSamples([ 'vocation' => $character_vocation])->fetchObject();
++        if(!$playerSample){
++            return self::viewCreateCharacter($request, 'Error loading sample character for vocation.');
++        }
+ 
+         $character = [
+             'name' => $character_name,
+@@ -151,6 +157,7 @@ class CreateCharacter extends Base{
+             'sex' => $character_sex,
+             'balance' => $playerSample->balance,
+             'istutorial' => $character_tutorial,
++            'conditions' => '',
+         ];
+         EntityCreateAccount::createCharacter($character);
+ 
+diff --git a/app/Controller/Pages/Account/Index.php b/app/Controller/Pages/Account/Index.php
+index 07f2d21..4e27066 100644
+--- a/app/Controller/Pages/Account/Index.php
++++ b/app/Controller/Pages/Account/Index.php
+@@ -49,7 +49,14 @@ class Index extends Base{
+ 
+             $account = EntityPlayer::getAccount([ 'id' => $admin])->fetchObject();
+             $playerMain = EntityPlayer::getPlayer([ 'account_id' => $account->id, 'main' => "1"])->fetchObject();
+-            $playerNoMain = EntityPlayer::getPlayer([ 'account_id' => $account->id, 'main' => "0"]);
++            if (!$playerMain) {
++                $playerMain = EntityPlayer::getPlayer([ 'account_id' => $account->id ])->fetchObject();
++            }
++            if ($playerMain) {
++                $playerNoMain = EntityPlayer::getPlayer([ 'account_id' => $account->id, 'id !=' => $playerMain->id ]);
++            } else {
++                $playerNoMain = EntityPlayer::getPlayer([ 'account_id' => $account->id ]);
++            }
+ 
+             $accountRegistred = Account::getAccountRegistration([ 'account_id' => $admin])->fetchObject();
+             if(empty($accountRegistred)){
+@@ -90,17 +97,9 @@ class Index extends Base{
+                 ];
+             }
+ 
+-            $logged = [
+-                'id' => $account->id,
+-                'name' => $account->name,
+-                'email' => $account->email,
+-                'premdays' => $account->premdays,
+-                'dateprem' => $datePrem,
+-                'coins' => $account->coins,
+-                'registered' => $registered,
+-                'account_banned' => $account_banned,
+-                'page_access' => $account->page_access,
+-                'player' => [
++            $playerData = null;
++            if ($playerMain) {
++                $playerData = [
+                     'id' => $playerMain->id,
+                     'name' => $playerMain->name,
+                     'world' => self::getWorlds($playerMain->world),
+@@ -108,13 +107,25 @@ class Index extends Base{
+                     'outfit' => Player::getOutfit($playerMain->id),
+                     'vocation' => Player::convertVocation($playerMain->vocation),
+                     'group' => Player::convertGroup($playerMain->group_id),
+-                    'outfit' => Player::getOutfit($playerMain->id),
+                     'main' => $playerMain->main,
+                     'online' => Player::isOnline($playerMain->id),
+                     'deletion' => $playerMain->deletion,
+                     'isreward' => $playerMain->isreward,
+                     'guild' => Player::getGuildMember($playerMain->id),
+-                ],
++                ];
++            }
++
++            $logged = [
++                'id' => $account->id,
++                'name' => $account->name,
++                'email' => $account->email,
++                'premdays' => $account->premdays,
++                'dateprem' => $datePrem,
++                'coins' => $account->coins,
++                'registered' => $registered,
++                'account_banned' => $account_banned,
++                'page_access' => $account->page_access,
++                'player' => $playerData,
+                 'players' => $players,
+                 'ban_info' => $arrayBan ?? [],
+             ];
+diff --git a/app/Model/Entity/CreateAccount.php b/app/Model/Entity/CreateAccount.php
+index aba03bb..ca90d5e 100644
+--- a/app/Model/Entity/CreateAccount.php
++++ b/app/Model/Entity/CreateAccount.php
+@@ -19,6 +19,9 @@
+         }
+ 
+         public static function createCharacter($character){
++            if (!isset($character['conditions'])) {
++                $character['conditions'] = '';
++            }
+             return (new Database('players'))->insert($character);
+         }
+ 
+diff --git a/app/Model/Entity/Login.php b/app/Model/Entity/Login.php
+index c683260..2ad2978 100644
+--- a/app/Model/Entity/Login.php
++++ b/app/Model/Entity/Login.php
+@@ -11,6 +11,7 @@ namespace App\Model\Entity;
+ 
+ use App\DatabaseManager\Database;
+ 
++#[\AllowDynamicProperties]
+ class Login{
+     
+     public $id;
+@@ -50,7 +51,11 @@ class Login{
+ 
+     public static function getLoginbyEmail($email)
+     {
+-        return self::getAccounts([ 'email' => $email])->fetchObject(self::class);
++        $account = self::getAccounts([ 'email' => $email])->fetchObject(self::class);
++        if (!$account) {
++            $account = self::getAccounts([ 'name' => $email])->fetchObject(self::class);
++        }
++        return $account;
+     }
+ 
+     public static function getAccounts($where = null, $order = null, $limit = null, $fields = '*')
+diff --git a/app/Model/Functions/Player.php b/app/Model/Functions/Player.php
+index 26893ce..b104ec2 100644
+--- a/app/Model/Functions/Player.php
++++ b/app/Model/Functions/Player.php
+@@ -25,6 +25,7 @@ use App\Model\Functions\Guilds as FunctionsGuilds;
+          * @return string $converted
+          */
+         public static function convertVocation($vocationId){
++            $converted = 'None';
+             $vocationList = [
+                 '0' => 'None',
+                 '1' => 'Sorcerer',
+@@ -35,6 +36,8 @@ use App\Model\Functions\Guilds as FunctionsGuilds;
+                 '6' => 'Elder Druid',
+                 '7' => 'Royal Paladin',
+                 '8' => 'Elite Knight',
++                '9' => 'Monk',
++                '10' => 'Exalted Monk',
+             ];
+             foreach($vocationList as $key => $value){
+                 if($key == $vocationId){
+@@ -119,10 +122,19 @@ use App\Model\Functions\Guilds as FunctionsGuilds;
+ 
+         public static function getOutfit($player_id)
+         {
++            $outfit = [
++                'image_url' => '',
++                'lookbody' => 0,
++                'lookfeet' => 0,
++                'lookhead' => 0,
++                'looklegs' => 0,
++                'looktype' => 0,
++                'lookaddons' => 0,
++            ];
+             $select = (new Database('players'))->select([ 'id' => $player_id]);
+             while($obOutfit = $select->fetchObject()){
+                 $outfit = [
+-                    'image_url' => self::getOutfitImage($obOutfit->looktype, $obOutfit->lookaddons, $obOutfit->lookbody, $obOutfit->lookfeet, $obOutfit->lookhead, $obOutfit->looklegs, $obOutfit->lookmountbody),
++                    'image_url' => self::getOutfitImage($obOutfit->looktype, $obOutfit->lookaddons, $obOutfit->lookbody, $obOutfit->lookfeet, $obOutfit->lookhead, $obOutfit->looklegs, $obOutfit->lookmountbody ?? 0),
+                     'lookbody' => (int)$obOutfit->lookbody,
+                     'lookfeet' => (int)$obOutfit->lookfeet,
+                     'lookhead' => (int)$obOutfit->lookhead,
+diff --git a/app/Model/Functions/Server.php b/app/Model/Functions/Server.php
+index 98c0aa6..9fe5d1b 100644
+--- a/app/Model/Functions/Server.php
++++ b/app/Model/Functions/Server.php
+@@ -231,7 +231,7 @@ class Server
+         while($obRecordPlayers = $selectRecordPlayers->fetchObject()) {
+             $playersRecord = [
+                 'record' => $obRecordPlayers->value,
+-                'timestamp' => $obRecordPlayers->timestamp
++                'timestamp' => $obRecordPlayers->timestamp ?? time()
+             ];
+         }
+         return $playersRecord ?? '';
+@@ -245,7 +245,7 @@ class Server
+             $players_record = $players_record + $obRecordPlayers->value;
+             $playersRecord = [
+                 'record' => $players_record,
+-                'timestamp' => $obRecordPlayers->timestamp
++                'timestamp' => $obRecordPlayers->timestamp ?? time()
+             ];
+         }
+         return $playersRecord ?? '';
+@@ -386,6 +386,7 @@ class Server
+ 
+     public static function getWorldById($world_id)
+     {
++        $world_id = empty($world_id) ? 1 : $world_id;
+         $selectWorlds = (new Database('canary_worlds'))->select([ 'id' => $world_id]);
+ 
+         while($obWorlds = $selectWorlds->fetchObject()) {
+diff --git a/app/Session/Admin/Login.php b/app/Session/Admin/Login.php
+index c180811..7de2c18 100644
+--- a/app/Session/Admin/Login.php
++++ b/app/Session/Admin/Login.php
+@@ -41,7 +41,9 @@ class Login{
+                 unset($_SESSION['account']['user']);
+                 return false;
+             } else {
+-                session_regenerate_id(true);
++                if (!headers_sent()) {
++                    session_regenerate_id(true);
++                }
+                 return isset($_SESSION['account']['user']['id']);
+             }
+         } else {
+diff --git a/app/Utils/Argon.php b/app/Utils/Argon.php
+index 5b4937d..e4e4e71 100644
+--- a/app/Utils/Argon.php
++++ b/app/Utils/Argon.php
+@@ -33,18 +33,7 @@ class Argon
+      */
+     public static function generateArgonPassword(string $password): string
+     {
+-        eval('$m_cost = ' . self::$m_cost . ';');
+-        $hashedPassword = password_hash($password, PASSWORD_ARGON2ID, [
+-            'memory_cost' => $m_cost,
+-            'time_cost' => self::$t_cost,
+-            'threads' => self::$parallelism,
+-        ]);
+-
+-        $components = explode("$", $hashedPassword);
+-        $salt = $components[4];
+-        $hash = $components[5];
+-
+-        return '$' . $salt . '$' . $hash;
++        return sha1($password);
+     }
+ 
+     /**
+@@ -55,7 +44,7 @@ class Argon
+      */
+     public static function updateAccountPassword(int $account_id, string $password): void
+     {
+-        $hashed_password = self::generateArgonPassword($password);
++        $hashed_password = sha1($password);
+         Argondb::updateAccount(['id' => $account_id], [
+             'password' => $hashed_password,
+         ]);
+@@ -85,17 +74,16 @@ class Argon
+ 
+     public static function checkPassword(string $password, string $hashed_password, int $account_id = -1): bool
+     {
+-        if (!self::compareArgonPassword($password, $hashed_password)) {
+-            if(!self::compareSha1Password($password, $hashed_password)) {
+-                return false;
+-            } else {
+-                if ($account_id != -1) {
+-                    self::updateAccountPassword($account_id, $password);
+-                    return true;
+-                }
++        if (self::compareSha1Password($password, $hashed_password)) {
++            return true;
++        }
++        if (self::compareArgonPassword($password, $hashed_password)) {
++            if ($account_id != -1) {
++                self::updateAccountPassword($account_id, $password);
+             }
++            return true;
+         }
+-        return true;
++        return false;
+     }
+ 
+ 
+diff --git a/resources/javascripts/create_character.js b/resources/javascripts/create_character.js
+index 49dbdb5..2c96eae 100644
+--- a/resources/javascripts/create_character.js
++++ b/resources/javascripts/create_character.js
+@@ -26,13 +26,17 @@ function InitializeCharacterCreator(PreselectServerType, PreselectServerLocation
+     if (IEVersion !== null && IEVersion < 7) {
+         return;
+     }
+-    document.getElementById("plain_world_box").style.display = "none";
+-    if (document.getElementById('filterbox_servertype') != null) { document.getElementById("filterbox_servertype").style.display = ""; }
+-    document.getElementById("filterbox_location").style.display = "";
+-    document.getElementById("filterbox_pvp").style.display = "";
++    var plainBox = document.getElementById("plain_world_box");
++    if (plainBox) { plainBox.style.display = "none"; }
++    var filterServer = document.getElementById('filterbox_servertype');
++    if (filterServer) { filterServer.style.display = ""; }
++    var filterLoc = document.getElementById("filterbox_location");
++    if (filterLoc) { filterLoc.style.display = ""; }
++    var filterPvp = document.getElementById("filterbox_pvp");
++    if (filterPvp) { filterPvp.style.display = ""; }
+     var PreselectPvP = 'open';
+     var PreselectServerType = 'REG';
+-    if (PreselectWorld.length > 0) {
++    if (PreselectWorld && PreselectWorld.length > 0) {
+         var Server = GetServerByName(PreselectWorld);
+         if (Server != null) {
+             PreselectServerLocation = Server[1];
+@@ -46,12 +50,15 @@ function InitializeCharacterCreator(PreselectServerType, PreselectServerLocation
+     } else {
+         PreselectWorld = undefined;
+     }
+-    if (document.getElementById('filterbox_servertype') != null) {
+-        document.getElementById(GetFilterOptionId('server_type', PreselectServerType)).checked = 'checked';
++    var elType = document.getElementById(GetFilterOptionId('server_type', PreselectServerType));
++    if (elType) { elType.checked = 'checked'; }
++    var elLoc = document.getElementById(GetFilterOptionId('server_location', PreselectServerLocation));
++    if (elLoc) { elLoc.checked = 'checked'; }
++    var elPvp = document.getElementById(GetFilterOptionId('server_pvp_type', PreselectPvP));
++    if (elPvp) { elPvp.checked = 'checked'; }
++    if (typeof UpdateServerList === 'function') {
++        UpdateServerList(null, PreselectWorld);
+     }
+-    document.getElementById(GetFilterOptionId('server_location', PreselectServerLocation)).checked = 'checked';
+-    document.getElementById(GetFilterOptionId('server_pvp_type', PreselectPvP)).checked = 'checked';
+-    UpdateServerList(null, PreselectWorld);
+ }
+ function GetFilterOptionId(GroupID, Name) {
+     return 'option_' + GroupID + '_' + Name;
+@@ -100,6 +107,7 @@ function SelectRandomWorld() {
+ }
+ function ClearServerList() {
+     WorldsBox = document.getElementById("world_list_tr");
++    if (!WorldsBox) return;
+     while (WorldsBox.firstChild != null) {
+         WorldsBox.removeChild(WorldsBox.firstChild);
+     }
+@@ -139,8 +147,10 @@ function GetServerByName(ServerName) {
+ }
+ function UpdateServerList(a_Caller, PreselectWorld) {
+     ClearServerList();
++    if (!WorldsBox) return;
+     l_BRA_Exception = false;
+-    if (document.getElementById('option_server_location_BRA').checked == true) {
++    var elBra = document.getElementById('option_server_location_BRA');
++    if (elBra && elBra.checked == true) {
+         l_BRA_Exception = true;
+     } else if (a_Caller != null && a_Caller.id != undefined && a_Caller.id == 'option_server_location_BRA') {
+             l_BRA_Exception = true;
+@@ -154,7 +164,7 @@ function UpdateServerList(a_Caller, PreselectWorld) {
+     //$('#option_server_pvp_type_hardcore_label').css('color', '#5A2800');
+ }
+     var MatchedServers = GetSelectableServers();
+-    if (MatchedServers.length > 0) {
++    if (MatchedServers.length > 0 && WorldsBox) {
+         WorldsBox.disabled = '';
+     }
+     var MAX_NUM_COLUMNS = 3;
+diff --git a/resources/javascripts/initialize.js b/resources/javascripts/initialize.js
+index 6eddabe..0944b0d 100644
+--- a/resources/javascripts/initialize.js
++++ b/resources/javascripts/initialize.js
+@@ -151,17 +151,24 @@ function FillMenuArray() {
+ 
+ function InitializeMenu() {
+     for (menuItemName in menu[0]) {
++        var subMenu = document.getElementById(menuItemName + "_Submenu");
++        var lights = document.getElementById(menuItemName + "_Lights");
++        var extend = document.getElementById(menuItemName + "_Extend");
+         if (menu[0][menuItemName] == "0") {
+-            document.getElementById(menuItemName + "_Submenu").style.visibility = "hidden";
+-            document.getElementById(menuItemName + "_Submenu").style.display = "none";
+-            document.getElementById(menuItemName + "_Lights").style.visibility = "visible";
+-            document.getElementById(menuItemName + "_Extend").style.backgroundImage = "url(" + JS_DIR_IMAGES + "global/general/plus.gif)";
++            if (subMenu) {
++                subMenu.style.visibility = "hidden";
++                subMenu.style.display = "none";
++            }
++            if (lights) lights.style.visibility = "visible";
++            if (extend) extend.style.backgroundImage = "url(" + JS_DIR_IMAGES + "global/general/plus.gif)";
+             $('#MobileMenu #' + menuItemName + ' .Level2Block').hide();
+         } else {
+-            document.getElementById(menuItemName + "_Submenu").style.visibility = "visible";
+-            document.getElementById(menuItemName + "_Submenu").style.display = "block";
+-            document.getElementById(menuItemName + "_Lights").style.visibility = "hidden";
+-            document.getElementById(menuItemName + "_Extend").style.backgroundImage = "url(" + JS_DIR_IMAGES + "global/general/minus.gif)";
++            if (subMenu) {
++                subMenu.style.visibility = "visible";
++                subMenu.style.display = "block";
++            }
++            if (lights) lights.style.visibility = "hidden";
++            if (extend) extend.style.backgroundImage = "url(" + JS_DIR_IMAGES + "global/general/minus.gif)";
+             $('#MobileMenu #' + menuItemName + ' .Level2Block').show();
+         }
+     }
+diff --git a/resources/view/pages/account/createaccount.html.twig b/resources/view/pages/account/createaccount.html.twig
+index 5a5501d..a384fa6 100644
+--- a/resources/view/pages/account/createaccount.html.twig
++++ b/resources/view/pages/account/createaccount.html.twig
+@@ -379,6 +379,16 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																									</span>
+ 																								</td>
+ 																							</tr>
++																							<tr>
++																								<td>
++																									<span style="margin-right:75px;" class="OptionContainer">
++																										<label for="vocation_monk">
++																											<span class="OptionContainer"><input id="vocation_monk" type="radio" name="vocation" value="9"><label for="vocation_monk">Monk</label>
++																											</span>
++																										</label>
++																									</span>
++																								</td>
++																							</tr>
+ 																						</tbody>
+ 																					</table>
+ 																				</td>
+diff --git a/resources/view/pages/account/createcharacter.html.twig b/resources/view/pages/account/createcharacter.html.twig
+index 060183f..064611d 100644
+--- a/resources/view/pages/account/createcharacter.html.twig
++++ b/resources/view/pages/account/createcharacter.html.twig
+@@ -1,4 +1,3 @@
+-<script type="text/javascript" src="{{JS_PATH}}/create_character.js"></script>
+ 
+ <div id="accountmanagement" class="Box">
+ 	<div class="Corner-tl" style="background-image:url({{IMAGE_PATH}}/global/content/corner-tl.gif);"></div>
+@@ -52,7 +51,7 @@
+ 																		<tr class="Odd">
+ 																			<td><input id="charactername" name="name" value="" size="30" maxlength="29"></td>
+ 																			<td>
+-																				<label><input type="radio" name="sex" value="1">Male</label><br>
++																				<label><input type="radio" name="sex" value="1" checked>Male</label><br>
+ 																				<label><input type="radio" name="sex" value="2">Female</label>
+ 																			</td>
+ 																		</tr>
+@@ -72,18 +71,22 @@
+ 																		</tr>
+ 																		<tr class="Odd">
+ 																			<td colspan="2">
+-																				<table id="js_world_box" width="100%">
++																				<table width="100%">
+ 																					<tbody>
+-																						<tr id="world_list_tr">
++																						<tr>
+ 																							<td style="border-style: none" align="center">
+ 																								<div style="width: 15em; position: relative; text-align: left;">
+-																									<input type="radio" name="vocation" id="vocation_sorcerer" value="1">
++																									<input type="radio" name="vocation" id="vocation_sorcerer" value="1" checked>
+ 																									<label for="vocation_sorcerer">Sorcerer</label>
+ 																								</div>
+ 																								<div style="width: 15em; position: relative; text-align: left;">
+ 																									<input type="radio" name="vocation" id="vocation_druid" value="2">
+ 																									<label for="vocation_druid">Druid</label>
+ 																								</div>
++																								<div style="width: 15em; position: relative; text-align: left;">
++																									<input type="radio" name="vocation" id="vocation_monk" value="9">
++																									<label for="vocation_monk">Monk</label>
++																								</div>
+ 																							</td>
+ 																							<td style="border-style: none" align="center">
+ 																								<div style="width: 15em; position: relative; text-align: left;">
+@@ -95,6 +98,7 @@
+ 																									<label for="vocation_knight">Knight</label>
+ 																								</div>
+ 																							</td>
++																						</tr>
+ 																					</tbody>
+ 																				</table>
+ 																			</td>
+@@ -115,17 +119,18 @@
+ 																		</tr>
+ 																		<tr class="Odd">
+ 																			<td colspan="2">
+-																				<table id="js_world_box" width="100%">
++																				<table width="100%">
+ 																					<tbody>
+-																						<tr id="world_list_tr">
++																						<tr>
+ 																							<td style="border-style: none" align="center">
+ 																							{% for world in worlds %}
+ 																								<div style="width: 15em; position: relative; text-align: left;">
+-																								<input type="radio" name="world" id="server_{{ world.name }}" value="{{ world.id }}">
++																								<input type="radio" name="world" id="server_{{ world.name }}" value="{{ world.id }}" {% if loop.first %}checked{% endif %}>
+ 																									<label for="server_{{ world.name }}">{{ world.name }}</label>
+ 																								</div>
+ 																							{% endfor %}
+ 																							</td>
++																						</tr>
+ 																					</tbody>
+ 																				</table>
+ 																			</td>
+@@ -176,10 +181,6 @@
+ 							</tr>
+ 						</tbody>
+ 					</table>
+-					<script type="text/javascript">
+-						PreselectWorld = "Canary";
+-InitializeCharacterCreator('REG', 'BRA', 'open')
+-					</script>
+ 				</form>
+ 			</div>
+ 		</div>
+diff --git a/resources/view/pages/account/index.html.twig b/resources/view/pages/account/index.html.twig
+index 9acea25..111177f 100644
+--- a/resources/view/pages/account/index.html.twig
++++ b/resources/view/pages/account/index.html.twig
+@@ -280,6 +280,8 @@
+ 																			<td style="width: 100px !important;">Status</td>
+ 																			<td style="width: 100px !important;">&nbsp;</td>
+ 																		</tr>
++                                                                        {% set count = 0 %}
++                                                                        {% if account.player %}
+                                                                         {% set count = 1 %}
+ 																		<tr id="CharacterRow_{{ count }}" onmouseover="InRowWithOverEffect('CharacterRow_{{ count }}', '#ffedd1');" onmouseout="OutRowWithOverEffect('CharacterRow_{{ count }}', '{{ getStyle(i) }}');" onclick="FocusCharacter({{ count }}, '{{ account.player.name }}', 9);" class="CharacterList {{ getStyleCss(i) }}" style="font-weight: bold;">
+ 																			<td style="text-align: center; padding:2px; padding-top: 4px;">{{ count }}.</td>
+@@ -330,6 +332,7 @@
+ 																					{% endif %}
+ 																				</td>
+ 																			</tr>
++                                                                        {% endif %}
+ 																		    {% for player in account.players %}
+                                                                                 {% set count = count + 1 %}
+                                                                                 {% set i = i + 1 %}
+diff --git a/resources/view/pages/community/characters.html.twig b/resources/view/pages/community/characters.html.twig
+index aed005b..40829f2 100644
+--- a/resources/view/pages/community/characters.html.twig
++++ b/resources/view/pages/community/characters.html.twig
+@@ -820,7 +820,7 @@
+ 																			</td>
+                                                                             <td style="width: 15%">{{ player.level }}</td>
+                                                                             <td style="width: 20%">{{ player.vocation }}</td>
+-																			<td style="width: 15%"><nobr>{{ player.world.name }}</nobr> <img src="{{IMAGE_PATH}}/{{ player.world.battle_eye_icon}}"></td>
++																			<td style="width: 15%"><nobr>{{ player.world.name }}</nobr> {% if player.world.battle_eye_icon %}<img src="{{IMAGE_PATH}}{{ player.world.battle_eye_icon }}">{% endif %}</td>
+ 																			<td style="width: 10%">
+                                                                                 {% if player.online == 1 %}
+                                                                                     <img src="{{IMAGE_PATH}}/on.gif" alt="Online" title="Online">

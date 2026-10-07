@@ -1,0 +1,27 @@
+{
+  "SchemaVersion": 1,
+  "CreatedUtc": "REPLACE_ACTUAL_AUDIT_UTC",
+  "Composer": {
+    "ValidateExitCode": -1,
+    "ExitCode": -1,
+    "LockSHA256": "REPLACE_SHA256",
+    "OutputFile": "C:\\REPLACE_PRIVATE_EVIDENCE\\composer-audit.json",
+    "OutputSHA256": "REPLACE_SHA256"
+  },
+  "LoginManifestPath": "C:\\REPLACE_PRIVATE_EVIDENCE\\build-manifest.json",
+  "Configuration": {
+    "SiteUrl": "https://example.invalid", "GameHost": "example.invalid",
+    "StatusPort": 7171, "Backend": "PhpFpm", "AppEnv": "production",
+    "Debug": false, "StrictSessions": true, "PrivateState": true,
+    "PrivateCache": true, "PublicDocrootOnly": true,
+    "Admin": false, "Payments": false, "Recovery": false,
+    "Uploads": false, "ExternalIntegrations": false
+  },
+  "ManualGates": {
+    "DomainTls": false, "ExternalReachability": false,
+    "FirewallPrivateServices": false, "BackupRestore": false,
+    "SecretRotation": false, "SupervisionMonitoring": false,
+    "MailRecoveryPolicy": false, "LegalPrivacy": false,
+    "OnlinePeakCounts": false, "DependencyInstallVerified": false
+  }
+}

@@ -1,0 +1,982 @@
+diff --git a/app/Controller/Pages/Account/Create.php b/app/Controller/Pages/Account/Create.php
+index a75df4f..58f72ef 100644
+--- a/app/Controller/Pages/Account/Create.php
++++ b/app/Controller/Pages/Account/Create.php
+@@ -1,193 +1,49 @@
+ <?php
+-/**
+- * Create Class
+- *
+- * @package   CanaryAAC
+- * @author    Lucas Giovanni <lucasgiovannidesigner@gmail.com>
+- * @copyright 2022 CanaryAAC
+- */
+-
+ namespace App\Controller\Pages\Account;
+ 
+ use App\Controller\Pages\Base;
+-use App\Model\Entity\Worlds as EntityWorlds;
+ use App\Model\Entity\CreateAccount as EntityCreateAccount;
+-use App\Model\Entity\ServerConfig as EntityServerConfig;
+-use App\Model\Entity\Player as EntityPlayer;
+ use App\Model\Functions\Server as FunctionServer;
++use App\Model\Functions\Player as FunctionsPlayer;
++use App\Utils\AccountCreationValidator;
+ use App\Utils\Argon;
+ use App\Utils\View;
+-use App\Model\Functions\Player as FunctionsPlayer;
+ 
+-class Create extends Base{
+-
+-    public static function getActiveVocation()
+-    {
+-        $activeVocations = EntityServerConfig::getInfoWebsite()->fetchObject();
+-        $active = $activeVocations->player_voc;
+-        return $active;
+-    }
++class Create extends Base
++{
++    public static function getActiveVocation() { return 1; }
+ 
+     public static function getCreateAccount($request, $status = null)
+     {
+-        $content = View::render('pages/account/createaccount', [
+-            'status' => $status,
+-            'worlds' => FunctionServer::getWorlds(),
+-            'preselect_world_pvptype' => 'open',
+-            'activevoc' => self::getActiveVocation(),
+-        ]);
++        $content = View::render('pages/account/createaccount', ['status' => $status,
++            'worlds' => array_values(array_filter(FunctionServer::getWorlds(), static fn(array $world): bool => (int) $world['id'] === 1)),
++            'preselect_world_pvptype' => 'open', 'activevoc' => 1]);
+         return parent::getBase('Create Account', $content, 'createaccount');
+     }
+ 
+     public static function createAccount($request)
+     {
+-        $postVars = $request->getPostVars();
+-        $account_name = $postVars['accname'] ?? '';
+-        $account_email = $postVars['email'] ?? '';
+-        $account_password1 = $postVars['password1'] ?? '';
+-        $account_password2 = $postVars['password2'] ?? '';
+-        $character_name = $postVars['name'] ?? '';
+-        $character_sex = $postVars['sex'] ?? '';
+-        $character_vocation = $postVars['vocation'] ?? '';
+-        $character_world = $postVars['world'] ?? '';
+-        $account_agreeagreements = $postVars['agreeagreements'] ?? '';
+-
+-        if(!filter_var($account_name, FILTER_SANITIZE_SPECIAL_CHARS)){
+-            return self::getCreateAccount($request, 'This email address has an invalid format. Please enter a correct email address!');
+-        }
+-        $filter_acc_name = filter_var($account_name, FILTER_SANITIZE_SPECIAL_CHARS);
+-        $verifyAccAccount = EntityPlayer::getAccount([ 'name' => $account_name])->fetchObject();
+-        if(!empty($verifyAccAccount)){
+-            return self::getCreateAccount($request, 'This Account name is already in use!');
+-        }
+-		
+-        if(!filter_var($account_email, FILTER_VALIDATE_EMAIL)){
+-            return self::getCreateAccount($request, 'This email address has an invalid format. Please enter a correct email address!');
+-        }
+-        $filter_email = filter_var($account_email, FILTER_SANITIZE_SPECIAL_CHARS);
+-        $verifyAccountEmail = EntityPlayer::getAccount([ 'email' => $filter_email])->fetchObject();
+-        if(!empty($verifyAccountEmail)){
+-            return self::getCreateAccount($request, 'This email address is already used. Please enter another email address!');
+-        }
+-
+-        if($account_password1 != $account_password2){
+-            return self::getCreateAccount($request, 'Please enter the password again!');
+-        }
+-        $filter_password = filter_var($account_password1, FILTER_SANITIZE_SPECIAL_CHARS);
+-        $convertPassword = Argon::generateArgonPassword($filter_password);
+-        
+-        $filter_name = filter_var($character_name, FILTER_SANITIZE_SPECIAL_CHARS);
+-        if(empty($filter_name)){
+-            return self::getCreateAccount($request, 'You need to define a name.');
+-        }
+-        $CountName = strlen($filter_name);
+-        if($CountName < 5){
+-            return self::getCreateAccount($request, 'The name must be at least 5 characters long.');
+-        }
+-        if($CountName > 29){
+-            return self::getCreateAccount($request, 'The name must be at least 29 characters long.');
+-        }
+-        $verifyPlayerName = EntityPlayer::getPlayer([ 'name' => $filter_name])->fetchObject();
+-        if($verifyPlayerName == true){
+-            return self::getCreateAccount($request, 'This character name is already being used.');
+-        }
+-
+-        $filter_sex = filter_var($character_sex, FILTER_SANITIZE_NUMBER_INT);
+-        if (empty($filter_sex)) {
+-            return self::getCreateAccount($request, 'You need to set a gender for the character.');
+-        }
+-        if($filter_sex > 2){
+-            return self::getCreateAccount($request, 'Choose a gender for the character.');
+-        }
+-        if ($filter_sex == 2) {
+-            $filter_sex = 0;
+-        }
+-
+-        $activeVocations = EntityServerConfig::getInfoWebsite()->fetchObject();
+-        if($activeVocations->player_voc == 1){
+-            $filter_vocation = filter_var($character_vocation, FILTER_SANITIZE_SPECIAL_CHARS);
+-            if (empty($filter_vocation)) {
+-                return self::getCreateAccount($request, 'Choose a vocation for the character.');
+-            }
+-
+-            $verifyVocation = EntityCreateAccount::getPlayerSamples([ 'vocation' => $filter_vocation])->fetchObject();
+-            if($verifyVocation == false){
+-                return self::getCreateAccount($request, 'Please select your character vocation!');
+-            }
+-        } else {
+-            $filter_vocation = 0;
+-        }
+-
+-        $filter_world = filter_var($character_world, FILTER_SANITIZE_SPECIAL_CHARS);
+-        $filter_world = str_replace('server_', '', $filter_world);
+-        $selectWorlds = EntityWorlds::getWorlds([ 'name' => $filter_world])->fetchObject();
+-        if($selectWorlds == false){
+-            return self::getCreateAccount($request, 'Select a valid world.');
+-        }
+-
+-        if($account_agreeagreements != 'true'){
+-            return self::getCreateAccount($request, 'You need to read and accept the rules.');
+-        }
+-
+-        $account = [
+-            'name' => $filter_acc_name,
+-            'password' => $convertPassword,
+-            'email' => $filter_email,
+-            'page_access' => '0',
+-            'premdays' => '0',
+-            'type' => '0',
+-            'coins' => '0',
+-            'recruiter' => '0',
+-        ];
+-        $accountId = EntityCreateAccount::createAccount($account);
+-        $playerSample = EntityCreateAccount::getPlayerSamples([ 'vocation' => $filter_vocation])->fetchObject();
+-
+-        $character = [
+-            'name' => $filter_name,
+-            'group_id' => '1',
+-            'account_id' => $accountId,
+-            'main' => '1',
+-            'level' => $playerSample->level,
+-            'vocation' => $playerSample->vocation,
+-            'health' => $playerSample->health,
+-            'healthmax' => $playerSample->healthmax,
+-            'experience' => $playerSample->experience,
+-            'lookbody' => $playerSample->lookbody,
+-            'lookfeet' => $playerSample->lookfeet,
+-            'lookhead' => $playerSample->lookhead,
+-            'looklegs' => $playerSample->looklegs,
+-            'looktype' => $playerSample->looktype,
+-            'lookaddons' => $playerSample->lookaddons,
+-            'maglevel' => $playerSample->maglevel,
+-            'mana' => $playerSample->mana,
+-            'manamax' => $playerSample->manamax,
+-            'manaspent' => $playerSample->manaspent,
+-            'soul' => $playerSample->soul,
+-            'town_id' => $playerSample->town_id,
+-            'world' => $selectWorlds->id,
+-            'posx' => $playerSample->posx,
+-            'posy' => $playerSample->posy,
+-            'posz' => $playerSample->posz,
+-            'cap' => $playerSample->cap,
+-            'sex' => $filter_sex,
+-            'balance' => $playerSample->balance,
+-            'istutorial' => '1',
+-            'conditions' => '',
+-        ];
+-        EntityCreateAccount::createCharacter($character);
+-
+-        $confirmCharacter = [
+-            'name' => $filter_name,
+-            'vocation' => FunctionsPlayer::convertVocation($playerSample->vocation),
+-            'sex' => FunctionsPlayer::convertSex($filter_sex),
+-            'world' => FunctionServer::getWorldById($selectWorlds->id),
+-        ];
+-
++        // WebSecurity boot has already applied body, CSRF and rate checks.
++        try {
++            $input = AccountCreationValidator::validate($request->getPostVars());
++        } catch (\InvalidArgumentException $error) {
++            return self::getCreateAccount($request, 'Please check the account details and accept the rules.');
++        }
++        try {
++            EntityCreateAccount::createAccountWithCharacter(
++                ['name' => $input['accountName'], 'email' => $input['email'], 'password' => Argon::generateArgonPassword($input['password'])],
++                ['name' => $input['characterName'], 'sex' => $input['sex'], 'vocation' => $input['vocation']]
++            );
++        } catch (\Throwable $error) {
++            error_log('CanaryAAC signup failed type=' . get_class($error));
++            return self::getCreateAccount($request, 'Unable to create this account. Please check your details or try again later.');
++        }
++        // Never pass passwords or hashes to a view.
+         $content = View::render('pages/account/createaccount_confirm', [
+-            'account' => $account,
+-            'character' => $confirmCharacter,
++            'account' => ['name' => $input['accountName'], 'email' => $input['email'], 'premdays' => 0, 'coins' => 0],
++            'character' => ['name' => $input['characterName'], 'vocation' => FunctionsPlayer::convertVocation($input['vocation']),
++                'sex' => FunctionsPlayer::convertSex($input['sex']), 'world' => FunctionServer::getWorldById(1)]
+         ]);
+         return parent::getBase('Create Account', $content, 'createaccount');
+     }
+-
+-}
+\ No newline at end of file
++}
+diff --git a/app/Controller/Pages/Account/Login.php b/app/Controller/Pages/Account/Login.php
+index 39e1f67..8357a49 100644
+--- a/app/Controller/Pages/Account/Login.php
++++ b/app/Controller/Pages/Account/Login.php
+@@ -16,8 +16,7 @@ use App\Controller\Pages\Base;
+ use App\Model\Entity\Login as EntityLogin;
+ use App\Session\Admin\Login as SessionAdminLogin;
+ use App\Controller\Admin\Alert;
+-use App\Model\Entity\Account;
+-use PragmaRX\Google2FA\Google2FA;
++use App\Utils\AccountAuthentication;
+ 
+ class Login extends Base{
+ 
+@@ -52,6 +51,8 @@ class Login extends Base{
+         $email = $postVars['loginemail'] ?? '';
+         $pass = $postVars['loginpassword'] ?? '';
+ 
++        if (!is_string($email) || strlen($email) > 254 || !is_string($pass) || strlen($pass) > 512)
++            return self::getLogin($request, 'true');
+         $filter_email = filter_var($email, FILTER_VALIDATE_EMAIL);
+         if(!$filter_email){
+             return self::getLogin($request, 'true');
+@@ -68,19 +69,8 @@ class Login extends Base{
+             return self::getLogin($request, 'true');
+         }
+ 
+-        $authentication = Account::getAuthentication([ 'account_id' => $obAccount->id])->fetchObject();
+-        if (!empty($authentication)) {
+-            if ($authentication->status == 1) {
+-                if (empty($postVars['token'])) {
+-                    return self::getLogin($request, 'true');
+-                }
+-                $google2fa = new Google2FA();
+-                $auth = $google2fa->verifyKey($authentication->secret, $postVars['token']);
+-                if ($auth != 1) {
+-                    return self::getLogin($request, 'true');
+-                }
+-            }
+-        }
++        if (!AccountAuthentication::verify((int) $obAccount->id, $postVars['token'] ?? ''))
++            return self::getLogin($request, 'true');
+         
+         SessionAdminLogin::login($obAccount);
+         return $request->getRouter()->redirect('/account');
+@@ -93,4 +83,4 @@ class Login extends Base{
+         return parent::getBase('Logout Successful', $content, 'account');
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/app/DatabaseManager/Database.php b/app/DatabaseManager/Database.php
+index b906cb2..7cd63ca 100644
+--- a/app/DatabaseManager/Database.php
++++ b/app/DatabaseManager/Database.php
+@@ -55,6 +55,7 @@ class Database
+      * @var PDO
+      */
+     private $connection;
++    private static ?PDO $sharedConnection = null;
+ 
+     /**
+      * Método responsável por configurar a classe
+@@ -66,6 +67,8 @@ class Database
+      */
+     public static function config($host, $name, $user, $pass, $port = 3306)
+     {
++        if (self::$sharedConnection?->inTransaction()) throw new \LogicException('Database configuration during transaction');
++        self::$sharedConnection = null;
+         self::$host = $host;
+         self::$name = $name;
+         self::$user = $user;
+@@ -88,11 +91,24 @@ class Database
+      */
+     private function setConnection()
+     {
++        self::$sharedConnection ??= new PDO('mysql:host=' . self::$host . ';dbname=' . self::$name . ';port=' . self::$port . ';charset=utf8mb4', self::$user, self::$pass,
++            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]);
++        $this->connection = self::$sharedConnection;
++    }
++
++    public static function transaction(callable $operation): mixed
++    {
++        $database = new self();
++        $connection = $database->connection;
++        if ($connection->inTransaction()) throw new \LogicException('Nested transaction is unsupported');
++        $connection->beginTransaction();
+         try {
+-            $this->connection = new PDO('mysql:host=' . self::$host . ';dbname=' . self::$name . ';port=' . self::$port, self::$user, self::$pass);
+-            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+-        } catch (PDOException $e) {
+-            die('ERROR: ' . $e->getMessage());
++            $result = $operation();
++            $connection->commit();
++            return $result;
++        } catch (\Throwable $error) {
++            if ($connection->inTransaction()) $connection->rollBack();
++            throw $error;
+         }
+     }
+ 
+@@ -104,13 +120,9 @@ class Database
+      */
+     public function execute($query, $params = [])
+     {
+-        try {
+-            $statement = $this->connection->prepare($query);
+-            $statement->execute($params);
+-            return $statement;
+-        } catch (PDOException $e) {
+-            die('Error executing query: ' . $e->getMessage());
+-        }
++        $statement = $this->connection->prepare($query);
++        $statement->execute($params);
++        return $statement;
+     }
+ 
+     /**
+diff --git a/app/Model/Entity/CreateAccount.php b/app/Model/Entity/CreateAccount.php
+index ca90d5e..336b56b 100644
+--- a/app/Model/Entity/CreateAccount.php
++++ b/app/Model/Entity/CreateAccount.php
+@@ -12,6 +12,45 @@
+     use App\DatabaseManager\Database;
+ 
+     class CreateAccount{
++        public static function createAccountWithCharacter(array $account, array $character): int
++        {
++            $email = strtolower($account['email']);
++            // Same connection owns the lock, recheck and both inserts. Hold through commit.
++            // accounts.email has no unique index; do not migrate existing core rows.
++            $database = new Database();
++            $lock = 'aac-email:' . substr(hash('sha256', $email), 0, 54);
++            if ((int) $database->execute('SELECT GET_LOCK(?, ?)', [$lock, 5])->fetchColumn() !== 1)
++                throw new \RuntimeException('Account creation unavailable');
++            try {
++                return Database::transaction(static function () use ($account, $character, $email, $database): int {
++                    if (!in_array($character['vocation'] ?? null, [1, 2, 3, 4, 9], true))
++                        throw new \UnexpectedValueException('Invalid character sample');
++                    $sample = self::getPlayerSamples(['vocation' => $character['vocation']], null, 1)->fetch(\PDO::FETCH_ASSOC);
++                    $fields = ['level', 'vocation', 'health', 'healthmax', 'experience', 'lookbody', 'lookfeet', 'lookhead', 'looklegs',
++                        'looktype', 'lookaddons', 'maglevel', 'mana', 'manamax', 'manaspent', 'soul', 'town_id', 'posx', 'posy', 'posz', 'cap', 'balance'];
++                    $player = [];
++                    foreach ($fields as $field) {
++                        $value = $sample[$field] ?? null;
++                        if ((!is_int($value) && (!is_string($value) || !ctype_digit($value))) || $value < 0 || $value > 2147483647)
++                            throw new \UnexpectedValueException('Invalid character sample');
++                        $player[$field] = (int) $value;
++                    }
++                    if ($player['vocation'] !== $character['vocation'] || $player['level'] < 1 || $player['healthmax'] < 1
++                        || $player['posx'] > 65535 || $player['posy'] > 65535 || $player['posz'] > 15)
++                        throw new \UnexpectedValueException('Invalid character sample');
++                    if ($database->execute('SELECT id FROM accounts WHERE name = ? OR LOWER(email) = ? LIMIT 1', [$account['name'], $email])->fetchColumn()
++                        || (new Database('players'))->select(['name' => $character['name']], null, 1, 'id')->fetchColumn())
++                        throw new \DomainException('Account details unavailable');
++                    $id = (int) self::createAccount(['name' => $account['name'], 'email' => $email, 'password' => $account['password'],
++                        'page_access' => 0, 'premdays' => 0, 'type' => 1, 'coins' => 0, 'recruiter' => 0, 'creation' => time()]);
++                    self::createCharacter($player + ['name' => $character['name'], 'sex' => $character['sex'], 'account_id' => $id,
++                        'group_id' => 1, 'main' => 1, 'world' => 1, 'istutorial' => 0, 'conditions' => '']);
++                    return $id;
++                });
++            } finally {
++                $database->execute('SELECT RELEASE_LOCK(?)', [$lock]);
++            }
++        }
+         
+         public static function createAccount($account){
+             $created = (new Database('accounts'))->insert($account);
+@@ -28,4 +67,4 @@
+         public static function getPlayerSamples($where = null, $order = null, $limit = null, $fields = '*'){
+             return (new Database('canary_samples'))->select($where, $order, $limit, $fields);
+         }
+-    }
+\ No newline at end of file
++    }
+diff --git a/app/Utils/AccountAuthentication.php b/app/Utils/AccountAuthentication.php
+new file mode 100644
+index 0000000..51ea896
+--- /dev/null
++++ b/app/Utils/AccountAuthentication.php
+@@ -0,0 +1,28 @@
++<?php
++namespace App\Utils;
++
++use App\Model\Entity\Account;
++use PragmaRX\Google2FA\Google2FA;
++
++final class AccountAuthentication
++{
++    public static function verify(int $accountId, mixed $token): bool
++    {
++        try {
++            $records = Account::getAuthentication(['account_id' => $accountId], null, 2)->fetchAll(\PDO::FETCH_OBJ);
++        } catch (\PDOException $error) {
++            // This optional feature is absent on some core schemas. Every other error fails closed.
++            if (($error->errorInfo[0] ?? null) === '42S02' && ($error->errorInfo[1] ?? null) === 1146) return true;
++            throw $error;
++        }
++        if (count($records) === 0) return true;
++        if (count($records) !== 1) return false;
++        $authentication = $records[0];
++        if (!in_array($authentication->status ?? null, [0, 1, '0', '1'], true)) return false;
++        if ((int) $authentication->status === 0) return true;
++        if (!is_string($token) || !preg_match('/^[0-9]{6}$/D', $token)
++            || !is_string($authentication->secret ?? null) || strlen($authentication->secret) > 128) return false;
++        try { return (new Google2FA())->verifyKey($authentication->secret, $token); }
++        catch (\Throwable $error) { return false; }
++    }
++}
+diff --git a/app/Utils/AccountCreationValidator.php b/app/Utils/AccountCreationValidator.php
+new file mode 100644
+index 0000000..55955a0
+--- /dev/null
++++ b/app/Utils/AccountCreationValidator.php
+@@ -0,0 +1,24 @@
++<?php
++namespace App\Utils;
++
++final class AccountCreationValidator
++{
++    public static function validate(array $input): array
++    {
++        foreach (['accname', 'email', 'password1', 'password2', 'name', 'sex', 'vocation', 'world', 'agreeagreements'] as $field) {
++            if (!isset($input[$field]) || !is_string($input[$field]) || strlen($input[$field]) > 512
++                || !mb_check_encoding($input[$field], 'UTF-8') || str_contains($input[$field], "\0"))
++                throw new \InvalidArgumentException('Invalid account details');
++        }
++        if (!preg_match('/^[A-Za-z0-9]{3,32}$/D', $input['accname'])
++            || strlen($input['email']) > 254 || !filter_var($input['email'], FILTER_VALIDATE_EMAIL)
++            || !preg_match('/^[A-Za-z]+(?: [A-Za-z]+)*$/D', $input['name'])
++            || strlen($input['name']) < 5 || strlen($input['name']) > 29
++            || mb_strlen($input['password1'], 'UTF-8') < 12 || mb_strlen($input['password1'], 'UTF-8') > 128
++            || $input['password1'] !== $input['password2'] || $input['agreeagreements'] !== 'true'
++            || !in_array($input['sex'], ['1', '2'], true) || !in_array($input['vocation'], ['1', '2', '3', '4', '9'], true)
++            || $input['world'] !== '1') throw new \InvalidArgumentException('Invalid account details');
++        return ['accountName' => $input['accname'], 'email' => strtolower($input['email']), 'password' => $input['password1'],
++            'characterName' => $input['name'], 'sex' => $input['sex'] === '2' ? 0 : 1, 'vocation' => (int) $input['vocation']];
++    }
++}
+diff --git a/app/Utils/Argon.php b/app/Utils/Argon.php
+index e4e4e71..d2d5ad4 100644
+--- a/app/Utils/Argon.php
++++ b/app/Utils/Argon.php
+@@ -1,102 +1,47 @@
+ <?php
+-/**
+- * Validator class for hashing and verifying passwords using Argon2Id.
+- *
+- * @package   CanaryAAC
+- * @author    Daniel Henrique <daniel15042015@gmail.com>
+- * @copyright 2023 CanaryAAC
+- */
+-
+ namespace App\Utils;
+ 
+-use App\Model\Entity\Account as Argondb;
++use App\Model\Entity\Account;
+ 
+-class Argon
++final class Argon
+ {
+-    private static $t_cost;
+-    private static $m_cost;
+-    private static $parallelism;
+-
+-    public static function configArgon($m_cost, $t_cost, $parallelism): void
++    public static function configArgon($memory, $time, $threads): void
+     {
+-        self::$m_cost = $m_cost;
+-        self::$t_cost = $t_cost;
+-        self::$parallelism = $parallelism;
++        foreach ([[$memory, 8192, 262144], [$time, 1, 10], [$threads, 1, 8]] as [$value, $min, $max]) {
++            if ((!is_int($value) && (!is_string($value) || !ctype_digit($value))) || $value < $min || $value > $max)
++                throw new \InvalidArgumentException('Invalid password configuration');
++        }
++        // Compact hashes omit costs; all readers must use the fixed server profile.
++        if ((int) $memory !== 65536 || (int) $time !== 2 || (int) $threads !== 2)
++            throw new \InvalidArgumentException('Unsupported compact password profile');
+     }
+ 
+-    /**
+-     * Hashes a password using the Argon2Id algorithm.
+-     *
+-     * @param string $password The plaintext password to hash.
+-     *
+-     * @return string The hashed password.
+-     */
+     public static function generateArgonPassword(string $password): string
+     {
+-        return sha1($password);
++        $hash = password_hash($password, PASSWORD_ARGON2ID, ['memory_cost' => 65536, 'time_cost' => 2, 'threads' => 2]);
++        $parts = explode('$', $hash);
++        return '$' . $parts[4] . '$' . $parts[5];
+     }
+ 
+-    /**
+-     * Hashes a password using Argon2Id and updates it for the specified account.
+-     *
+-     * @param int $account_id The ID of the account to update.
+-     * @param string $password The plaintext password to hash and update.
+-     */
+     public static function updateAccountPassword(int $account_id, string $password): void
+     {
+-        $hashed_password = sha1($password);
+-        Argondb::updateAccount(['id' => $account_id], [
+-            'password' => $hashed_password,
+-        ]);
++        Account::updateAccount(['id' => $account_id], ['password' => self::generateArgonPassword($password)]);
+     }
+ 
+-    /**
+-     * Compares a plaintext password with an Argon2Id hashed password.
+-     *
+-     * @param string $password The plaintext password to compare.
+-     * @param string $hashed_password The Argon2Id hashed password to compare against.
+-     *
+-     * @return bool True if the password matches the hash, false otherwise.
+-     */
+-    public static function compareArgonPassword(string $password, string $hashed_password): bool
++    public static function compareArgonPassword(string $password, string $hash): bool
+     {
+-
+-        $hashtipo = 'argon2id';
+-        $hashver = 'v=19';
+-        eval('$m_cost = ' . self::$m_cost . ';');
+-        $t_cost = self::$t_cost;
+-        $parallelism = self::$parallelism;
+-
+-        $hash = '$' . $hashtipo . '$' . $hashver . '$m=' . $m_cost . ',t=' . $t_cost . ',p=' . $parallelism . $hashed_password;
+-        return password_verify($password, $hash);
++        if (!preg_match('/^\$[A-Za-z0-9+\/]{22}\$[A-Za-z0-9+\/]{43}$/D', $hash)) return false;
++        return password_verify($password, '$argon2id$v=19$m=65536,t=2,p=2' . $hash);
+     }
+ 
+-
+-    public static function checkPassword(string $password, string $hashed_password, int $account_id = -1): bool
++    public static function checkPassword(string $password, string $hash, int $account_id = -1): bool
+     {
+-        if (self::compareSha1Password($password, $hashed_password)) {
+-            return true;
+-        }
+-        if (self::compareArgonPassword($password, $hashed_password)) {
+-            if ($account_id != -1) {
+-                self::updateAccountPassword($account_id, $password);
+-            }
+-            return true;
+-        }
+-        return false;
++        if (strlen($password) > 512 || str_contains($password, "\0") || !mb_check_encoding($password, 'UTF-8')) return false;
++        return self::compareSha1Password($password, $hash) || self::compareArgonPassword($password, $hash);
+     }
+ 
+-
+-    /**
+-     * Compares a plaintext password with an SHA-1 hashed password.
+-     *
+-     * @param string $password The plaintext password to compare.
+-     * @param string $sha1_password The SHA-1 hashed password to compare against.
+-     *
+-     * @return bool True if the password matches the hash, false otherwise.
+-     */
+-    public static function compareSha1Password(string $password, string $sha1_password): bool
++    public static function compareSha1Password(string $password, string $hash): bool
+     {
+-        return sha1($password) === $sha1_password;
++        return preg_match('/^[a-fA-F0-9]{40}$/D', $hash) === 1 && hash_equals(strtolower($hash), sha1($password));
+     }
+ }
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+index 6c12193..6374447 100644
+--- a/app/Utils/WebSecurity.php
++++ b/app/Utils/WebSecurity.php
+@@ -117,6 +117,16 @@ final class WebSecurity
+         $body = $input === false ? false : stream_get_contents($input, 65537);
+         if (is_resource($input)) fclose($input);
+         if ($body === false || strlen($body) > 65536) throw new SecurityFailure(400);
++        // PHP overwrites duplicate fields and normalizes dots/brackets in keys.
++        if (strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0])) !== 'application/x-www-form-urlencoded')
++            throw new SecurityFailure(400);
++        $seen = [];
++        foreach (explode('&', $body) as $field) {
++            if ($field === '') continue;
++            $key = urldecode(explode('=', $field, 2)[0]);
++            if (!preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $key) || isset($seen[$key])) throw new SecurityFailure(400);
++            $seen[$key] = true;
++        }
+         self::requireCsrf($_POST);
+         if ($path === '/createaccount' || $path === '/account/login')
+             self::checkRateLimit($path === '/createaccount' ? 'signup' : 'login', $_SERVER['REMOTE_ADDR'] ?? '');
+diff --git a/resources/javascripts/canary_create_character.js b/resources/javascripts/canary_create_character.js
+index 84e230a..ebd8bf5 100644
+--- a/resources/javascripts/canary_create_character.js
++++ b/resources/javascripts/canary_create_character.js
+@@ -1,189 +1,37 @@
+-let timeout;
+-let password = document.getElementById('password1')
+-let password2 = document.getElementById('password2')
+-let strengthBadge = document.getElementById('StrengthDisp')
+-let PWRule01 = document.getElementById('PWRule01')
+-let PWRule02 = document.getElementById('PWRule02')
+-let PWRule03 = document.getElementById('PWRule03')
+-let PWRule04 = document.getElementById('PWRule04')
+-let PWRule05 = document.getElementById('PWRule05')
+-let PWRule06 = document.getElementById('PWRule06')
+-let PWStrengthIndicator = document.getElementById('PWStrengthIndicator')
+-let password1_indicator = document.getElementById('password1_indicator')
+-let password1_label = document.getElementById('password1_label')
+-let password2_label = document.getElementById('password2_label')
+-let password_errormessage = document.getElementById('password_errormessage')
+-
+-let accname = document.getElementById('accname')
+-let accname_indicator = document.getElementById('accname_indicator')
+-let accname_label = document.getElementById('accname_label')
+-let accname_regex = /^[a-zA-Z0-9_\-@]{5,}$/;
+-let accname_errormessage = document.getElementById('accname_errormessage')
+-
+-let email = document.getElementById('email')
+-let email_indicator = document.getElementById('email_indicator')
+-let email_label = document.getElementById('email_label')
+-let email_regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+-let email_errormessage = document.getElementById('email_errormessage')
+-
+-let passwordConst = document.getElementById('password1')
+-let invalida = /[ \f\n\r\t\v\u00A0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u2028\u2029\u202f\u205f\u3000]/;
+-let especial = /[@!#$%^&*()/\\]/;
+-let minuscula = /[a-z]/;
+-let maiuscula = /[A-Z]/;
+-let numberPassword = /[0-9]/;
+-let indicator = 0;
+-let strongPassword = new RegExp('(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})')
+-let mediumPassword = new RegExp('((?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{6,}))|((?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9])(?=.{8,}))')
+-
+-function StrengthChecker(PasswordParameter) {
+-    if (password.value.length >= 10) {
+-        PWRule01.classList.remove('InputIndicatorNotOK')
+-        PWRule01.classList.add('InputIndicatorOK')
+-        indicator++;
+-    } else {
+-        PWRule01.classList.remove('InputIndicatorOK')
+-        PWRule01.classList.add('InputIndicatorNotOK')
+-    }
+-
+-    if (invalida.test(PasswordParameter)) {
+-        PWRule02.classList.remove('InputIndicatorOK')
+-        PWRule02.classList.add('InputIndicatorNotOK')
+-    } else {
+-        PWRule02.classList.remove('InputIndicatorNotOK')
+-        PWRule02.classList.add('InputIndicatorOK')
+-        indicator++;
+-    }
+-
+-    if (especial.test(PasswordParameter)) {
+-        PWRule03.classList.remove('InputIndicatorNotOK')
+-        PWRule03.classList.add('InputIndicatorOK')
+-        indicator++;
+-    } else {
+-        PWRule03.classList.remove('InputIndicatorOK')
+-        PWRule03.classList.add('InputIndicatorNotOK')
+-    }
+-
+-    if (minuscula.test(PasswordParameter)) {
+-        PWRule04.classList.remove('InputIndicatorNotOK')
+-        PWRule04.classList.add('InputIndicatorOK')
+-        indicator++;
+-    } else {
+-        PWRule04.classList.remove('InputIndicatorOK')
+-        PWRule04.classList.add('InputIndicatorNotOK')
+-    }
+-
+-    if (maiuscula.test(PasswordParameter)) {
+-        PWRule05.classList.remove('InputIndicatorNotOK')
+-        PWRule05.classList.add('InputIndicatorOK')
+-        indicator++;
+-    } else {
+-        PWRule05.classList.remove('InputIndicatorOK')
+-        PWRule05.classList.add('InputIndicatorNotOK')
+-    }
+-
+-    if (numberPassword.test(PasswordParameter)) {
+-        PWRule06.classList.remove('InputIndicatorNotOK')
+-        PWRule06.classList.add('InputIndicatorOK')
+-        indicator++;
+-    } else {
+-        PWRule06.classList.remove('InputIndicatorOK')
+-        PWRule06.classList.add('InputIndicatorNotOK')
+-    }
+-
+-    if (password.value.length > 0) {
+-        PWStrengthIndicator.textContent = 'very weak';
+-        PWStrengthIndicator.classList.remove('PWStrengthLevel0')
+-        PWStrengthIndicator.classList.add('PWStrengthLevel1')
+-    }
+-
+-    if (password.value.length > 5) {
+-        PWStrengthIndicator.textContent = 'weak';
+-        PWStrengthIndicator.classList.remove('PWStrengthLevel1')
+-        PWStrengthIndicator.classList.add('PWStrengthLevel2')
+-    }
+-
+-    if (password.value.length >= 10 && !invalida.test(PasswordParameter) && especial.test(PasswordParameter) && minuscula.test(PasswordParameter) && maiuscula.test(PasswordParameter) && numberPassword.test(PasswordParameter)) {
+-        PWStrengthIndicator.textContent = 'medium';
+-        PWStrengthIndicator.classList.remove('PWStrengthLevel2')
+-        PWStrengthIndicator.classList.add('PWStrengthLevel3')
+-    }
+-
+-    if (password.value.length >= 12 && !invalida.test(PasswordParameter) && especial.test(PasswordParameter) && minuscula.test(PasswordParameter) && maiuscula.test(PasswordParameter) && numberPassword.test(PasswordParameter)) {
+-        PWStrengthIndicator.textContent = 'strong';
+-        PWStrengthIndicator.classList.remove('PWStrengthLevel3')
+-        PWStrengthIndicator.classList.add('PWStrengthLevel4')
+-        password1_indicator.classList.remove('InputIndicatorNotOK')
+-        password1_indicator.classList.add('InputIndicatorOK')
+-        password_errormessage.style.display = 'none'
+-    }
+-}
+-password.addEventListener("input", () => {
+-    password1_indicator.classList.remove('InputIndicatorOK')
+-    password1_indicator.classList.add('InputIndicatorNotOK')
+-    password_errormessage.style.display = 'flex'
+-
+-    strengthBadge.style.display = 'block'
+-    StrengthChecker(password.value)
+-    if (password.value.length !== 0) {
+-        strengthBadge.style.display != 'block'
+-    } else {
+-        strengthBadge.style.display = 'none'
+-    }
+-});
+-
+-function PasswordTwo(one, two) {
+-    if (password2.value == password.value) {
+-        password2_indicator.classList.remove('InputIndicatorNotOK')
+-        password2_indicator.classList.add('InputIndicatorOK')
+-        password2_label.style.color = ''
+-        password_errormessage.style.display = 'none'
+-    }
+-}
+-password2.addEventListener("input", () => {
+-    password2_indicator.classList.remove('InputIndicatorOK')
+-    password2_indicator.classList.add('InputIndicatorNotOK')
+-    password2_label.style.color = 'red'
+-    password_errormessage.style.display = 'flex'
+-    PasswordTwo(password.value, password1.value)
+-});
+-
+-function isEmail(EmailParameter) {
+-    if (email_regex.test(EmailParameter)) {
+-        email_indicator.classList.remove('InputIndicatorNotOK')
+-        email_indicator.classList.add('InputIndicatorOK')
+-        email_label.style.color = ''
+-        email_errormessage.style.display = 'none'
+-    } else {
+-        email_indicator.classList.remove('InputIndicatorOK')
+-        email_indicator.classList.add('InputIndicatorNotOK')
+-        email_label.style.color = 'red'
+-        email_errormessage.style.display = 'flex'
+-    }
+-}
+-
+-function isAccname(AccnameParameter) {
+-    if (accname_regex.test(AccnameParameter)) {
+-        accname_indicator.classList.remove('InputIndicatorNotOK')
+-        accname_indicator.classList.add('InputIndicatorOK')
+-        accname_label.style.color = ''
+-        accname_errormessage.style.display = 'none'
+-    } else {
+-        accname_indicator.classList.remove('InputIndicatorOK')
+-        accname_indicator.classList.add('InputIndicatorNotOK')
+-        accname_label.style.color = 'red'
+-        accname_errormessage.style.display = 'flex'
+-    }
+-}
+-
+-accname.addEventListener("input", () => {
+-    accname_indicator.classList.remove('InputIndicatorOK')
+-    accname_indicator.classList.add('InputIndicatorNotOK')
+-    isAccname(accname.value)
+-});
+-
+-email.addEventListener("input", () => {
+-    email_indicator.classList.remove('InputIndicatorOK')
+-    email_indicator.classList.add('InputIndicatorNotOK')
+-    isEmail(email.value)
+-});
+\ No newline at end of file
++// Browser hints match the server validator. Passwords are never transformed or sent by AJAX.
++(() => {
++    const field = id => document.getElementById(id);
++    const indicate = (id, valid, message) => {
++        const input = field(id);
++        if (!input) return;
++        input.setCustomValidity(valid ? '' : message);
++        const indicator = field(id + '_indicator');
++        if (indicator) {
++            indicator.classList.toggle('InputIndicatorOK', valid);
++            indicator.classList.toggle('InputIndicatorNotOK', !valid);
++        }
++    };
++    const password = field('password1');
++    const confirmation = field('password2');
++    const checkPassword = () => {
++        const length = Array.from(password.value).length;
++        const valid = length >= 12 && length <= 128 && !password.value.includes('\0');
++        indicate('password1', valid, 'Use 12 to 128 characters without NUL.');
++        indicate('password2', valid && confirmation.value === password.value, 'Enter the same password again.');
++        const badge = field('PWStrengthIndicator');
++        if (badge) badge.textContent = valid ? 'password length accepted' : '12 to 128 characters';
++    };
++    if (password && confirmation) {
++        password.addEventListener('input', checkPassword);
++        confirmation.addEventListener('input', checkPassword);
++    }
++    const rules = {
++        accname: value => /^[A-Za-z0-9]{3,32}$/.test(value),
++        email: value => value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
++        charactername: value => value.length >= 5 && value.length <= 29 && /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(value)
++    };
++    for (const [id, valid] of Object.entries(rules)) {
++        const input = field(id);
++        if (input) input.addEventListener('input', () => indicate(id, valid(input.value), 'Please check this field.'));
++    }
++})();
+diff --git a/resources/javascripts/create_character.js b/resources/javascripts/create_character.js
+index 2c96eae..b7e7feb 100644
+--- a/resources/javascripts/create_character.js
++++ b/resources/javascripts/create_character.js
+@@ -66,6 +66,10 @@ function GetFilterOptionId(GroupID, Name) {
+ function GetServerOptionId(WorldName) {
+     return 'server_' + WorldName;
+ }
++function GetServerOptionValue(WorldName) {
++    var world = GetServerByName(WorldName);
++    return world && world[7] ? world[7] : GetServerOptionId(WorldName);
++}
+ function CreateFilterOption(GroupID, Value, Label) {
+     OptionID = GetFilterOptionId(GroupID, Value);
+     OptionData = new Object();
+@@ -185,7 +189,7 @@ function UpdateServerList(a_Caller, PreselectWorld) {
+         WorldsBox.appendChild(TableCell);
+         for (var Row = 0; Row < NumRows; ++Row) {
+             var ServerIndex = Row + Col * NumRows; if (ServerIndex < NumServers) {
+-                var Radio = '<input type="radio" name="world" id="' + GetServerOptionId(MatchedServers[ServerIndex]) + '" value="' + GetServerOptionId(MatchedServers[ServerIndex]) + '" /> '; var Label = '<label for="' + GetServerOptionId(MatchedServers[ServerIndex]) + '" >' + MatchedServers[ServerIndex] + '</label>'; var AdditionalInfo = ''; var Additional = GetServerByName(MatchedServers[ServerIndex]); var l_AdditionalInfoDiv = ''; var l_AdditionalInfoDivBattlEye = ''; if (Additional[3] > 0) { var l_AdditionalInfoImage = '<img style="border:0px;" src="' + JS_DIR_IMAGES + 'global/content/info.gif" alt="special offer" />'; var l_AdditionalInfoHeadline = '<b>Premium game world:</b>'; var l_AdditionalInfoText = ''; l_AdditionalInfoText += '<p>'; l_AdditionalInfoText += 'This game world is for premium players only.'; l_AdditionalInfoText += '</p>'; l_AdditionalInfoDiv = '<span style="position:relative;top:0px;margin-left:5px;" >' + BuildHelperDivLink(GetServerOptionId(MatchedServers[ServerIndex]) + '_helper', l_AdditionalInfoImage, l_AdditionalInfoHeadline, l_AdditionalInfoText, 'premiumserver'); l_AdditionalInfoDiv += '<span id="' + GetServerOptionId(MatchedServers[ServerIndex]) + '_helper" ></span></span>'; }
++                var Radio = '<input type="radio" name="world" id="' + GetServerOptionId(MatchedServers[ServerIndex]) + '" value="' + GetServerOptionValue(MatchedServers[ServerIndex]) + '" /> '; var Label = '<label for="' + GetServerOptionId(MatchedServers[ServerIndex]) + '" >' + MatchedServers[ServerIndex] + '</label>'; var AdditionalInfo = ''; var Additional = GetServerByName(MatchedServers[ServerIndex]); var l_AdditionalInfoDiv = ''; var l_AdditionalInfoDivBattlEye = ''; if (Additional[3] > 0) { var l_AdditionalInfoImage = '<img style="border:0px;" src="' + JS_DIR_IMAGES + 'global/content/info.gif" alt="special offer" />'; var l_AdditionalInfoHeadline = '<b>Premium game world:</b>'; var l_AdditionalInfoText = ''; l_AdditionalInfoText += '<p>'; l_AdditionalInfoText += 'This game world is for premium players only.'; l_AdditionalInfoText += '</p>'; l_AdditionalInfoDiv = '<span style="position:relative;top:0px;margin-left:5px;" >' + BuildHelperDivLink(GetServerOptionId(MatchedServers[ServerIndex]) + '_helper', l_AdditionalInfoImage, l_AdditionalInfoHeadline, l_AdditionalInfoText, 'premiumserver'); l_AdditionalInfoDiv += '<span id="' + GetServerOptionId(MatchedServers[ServerIndex]) + '_helper" ></span></span>'; }
+                 if (Additional[4] > 0) {
+                     var l_AdditionalInfoImage = '<img style="border:0px;" src="' + JS_DIR_IMAGES + 'global/content/info.gif" alt="special offer" />';
+                     var l_AdditionalInfoHeadline = '<b>Experimental game world:</b>';
+diff --git a/resources/view/pages/account/createaccount.html.twig b/resources/view/pages/account/createaccount.html.twig
+index 6654fda..d2eb3d5 100644
+--- a/resources/view/pages/account/createaccount.html.twig
++++ b/resources/view/pages/account/createaccount.html.twig
+@@ -149,7 +149,7 @@ document.getElementById("ActiveSubmenuItemIcon_createaccount").style.visibility
+ document.getElementById("ActiveSubmenuItemLabel_createaccount").style.color = "white";
+ 
+ {% for world in worlds %}
+-ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{{ world.pvp_type_initial }}', '0', '0', '{{ world.creation_int }}', '{{ world.battle_eye_int }}'));
++ServerList.push(new Array('{{ world.name|e('js') }}', '{{ world.location_initial|e('js') }}', '{{ world.pvp_type_initial|e('js') }}', '0', '0', '{{ world.creation_int }}', '{{ world.battle_eye_int }}', '{{ world.id }}'));
+ {% endfor %}
+ </script>
+ 
+@@ -221,7 +221,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																				<td class="LabelV150">
+ 																					<span id="accname_label">Account Name:</span>
+ 																				</td>
+-																				<td><input id="accname" name="accname" class="CreateAccountFormInput" maxlength="50"><div id="accname_indicator" class="InputIndicatorNotOK"></div>
++																				<td><input id="accname" name="accname" class="CreateAccountFormInput" minlength="3" maxlength="32" pattern="[A-Za-z0-9]{3,32}" required><div id="accname_indicator" class="InputIndicatorNotOK"></div>
+ 																				</td>
+ 																			</tr>
+ 																			<tr>
+@@ -232,7 +232,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																				<td class="LabelV150">
+ 																					<span id="email_label">Email Address:</span>
+ 																				</td>
+-																				<td><input id="email" name="email" class="CreateAccountFormInput" maxlength="50"><div id="email_indicator" class="InputIndicatorNotOK"></div>
++																				<td><input id="email" type="email" name="email" class="CreateAccountFormInput" maxlength="254" required><div id="email_indicator" class="InputIndicatorNotOK"></div>
+ 																				</td>
+ 																			</tr>
+ 																			<tr>
+@@ -246,7 +246,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																				</td>
+ 																				<td>
+ 																					<div class="div_password">
+-																						<input type="password" name="password1" id="password1" class="CreateAccountFormInput" maxlength="29">
++																						<input type="password" name="password1" id="password1" class="CreateAccountFormInput" minlength="12" maxlength="256" autocomplete="new-password" required>
+ 																						<div id="password1_indicator" class="InputIndicatorNotOK"></div>
+ 																						<div class="PWStrengthContainer">
+ 																							<div class="PWStrengthToolTip" id="StrengthDisp">
+@@ -254,17 +254,17 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																								<div class="PWRules">
+ 																									<div class="PWStrengthToolTipHeadline">Password Rules</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule01" class="InputIndicator InputIndicatorNotOK"></div>The password must have at least 10 and less than 30 letters!</div>
++																										<div id="PWRule01" class="InputIndicator InputIndicatorNotOK"></div>Use 12 to 128 characters.</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule02" class="InputIndicator InputIndicatorNotOK"></div>The password must not contain invalid letters!</div>
++																										<div id="PWRule02" class="InputIndicator InputIndicatorNotOK"></div>Spaces and Unicode characters are allowed; NUL is not.</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule03" class="InputIndicator InputIndicatorNotOK"></div>The password must contain at least one character other than A-Z or a-z!</div>
++																										<div id="PWRule03" class="InputIndicator InputIndicatorNotOK"></div>Use a unique password for this account.</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule04" class="InputIndicator InputIndicatorNotOK"></div>The password must contain at least one lower case letter a-z!</div>
++																										<div id="PWRule04" class="InputIndicator InputIndicatorNotOK"></div>Long passphrases are welcome.</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule05" class="InputIndicator InputIndicatorNotOK"></div>The password must contain at least one upper case letter A-Z!</div>
++																										<div id="PWRule05" class="InputIndicator InputIndicatorNotOK"></div>Password characters are kept exactly as entered.</div>
+ 																									<div class="PWRule">
+-																										<div id="PWRule06" class="InputIndicator InputIndicatorNotOK"></div>The password must contain at least one number 0-9!</div>
++																										<div id="PWRule06" class="InputIndicator InputIndicatorNotOK"></div>Enter the same password again below.</div>
+ 																								</div>
+ 																							</div>
+ 																							<div class="PWStrengthIndicator PWStrengthLevel0" id="PWStrengthIndicator">password strength</div>
+@@ -277,7 +277,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																				<td class="LabelV150">
+ 																					<span id="password2_label">Password Again:</span>
+ 																				</td>
+-																				<td><input id="password2" type="password" name="password2" class="CreateAccountFormInput" value="" maxlength="29">
++																				<td><input id="password2" type="password" name="password2" class="CreateAccountFormInput" value="" minlength="12" maxlength="256" autocomplete="new-password" required>
+ 																					<div id="password2_indicator" class="InputIndicatorNotOK"></div>
+ 																				</td>
+ 																			</tr>
+@@ -302,7 +302,7 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ 																					<span id="charactername_label">Character Name:</span>
+ 																				</td>
+ 																				<td>
+-																					<input id="charactername" name="name" class="CreateAccountFormInput" value="" maxlength="29">
++																					<input id="charactername" name="name" class="CreateAccountFormInput" value="" minlength="5" maxlength="29" pattern="[A-Za-z]+( [A-Za-z]+)*" required>
+ 																					<div id="charactername_indicator" class="InputIndicatorNotOK"></div>
+ 																				</td>
+ 																			</tr>
+@@ -584,26 +584,3 @@ ServerList.push(new Array('{{ world.name }}', '{{ world.location_initial }}', '{
+ </div>
+ <script type="text/javascript" src="{{JS_PATH}}/canary_create_character.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.js" integrity="sha512-8Z5++K1rB3U+USaLKG6oO8uWWBhdYsM3hmdirnOEWp8h2B1aOikj5zBzlXs8QOrvY9OxEnD2QDkbSKKpfqcIWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+-<script>
+-$(document).ready(function () {
+-    $(document).on('keyup', "#charactername", function (e) {
+-		e.preventDefault();
+-		$.ajax({
+-			url: "{{ URL }}/api/v1/check_charactername",
+-			type: "POST",
+-			data: $("#CreateAccountAndCharacterForm").serialize(),
+-			dataType:"json",
+-			success: function(data){
+-				$("#charactername_indicator").removeClass('InputIndicatorNotOK');
+-				$("#charactername_indicator").addClass('InputIndicatorOK');
+-				$("#charactername_label").css('color', '')
+-			},
+-			error: function(data){
+-				$("#charactername_indicator").removeClass('InputIndicatorOK');
+-				$("#charactername_indicator").addClass('InputIndicatorNotOK');
+-				$("#charactername_label").css('color', 'red')
+-			}
+-		});
+-	});
+-});
+-</script>

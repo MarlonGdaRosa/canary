@@ -1,5 +1,10 @@
 # Canary
 
+Local CanaryAAC remains at http://127.0.0.1:8080. Dedicated AAC lifecycle,
+readiness, source releases and future deployment templates are documented in
+[the operations runbook](docs/operations/canaryaac-production.md).
+Production preparation does not publish the site.
+
 [![Discord](https://img.shields.io/discord/528117503952551936.svg?style=flat-square&logo=discord)](https://discord.gg/gvTj5sh9Mp)
 [![CI](https://github.com/opentibiabr/canary/actions/workflows/ci.yml/badge.svg)](https://github.com/opentibiabr/canary/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opentibiabr_canary&metric=alert_status)](https://sonarcloud.io/dashboard?id=opentibiabr_canary)

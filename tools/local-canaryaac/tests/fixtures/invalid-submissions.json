@@ -1,0 +1,8 @@
+[
+  {"accname":"ab"}, {"accname":"account_name"}, {"accname":"abcdefghijklmnopqrstuvwxyz1234567"},
+  {"email":"not-email"}, {"email":" a@example.invalid"}, {"password1":"short", "password2":"short"},
+  {"password2":"OtherPassword123"}, {"name":"Four"}, {"name":" Alice Knight"}, {"name":"Alice Knight "},
+  {"name":"Alice  Knight"}, {"name":"Alice1"}, {"name":"abcdefghijklmnopqrstuvwxyzabcd"},
+  {"sex":"0"}, {"sex":"3"}, {"vocation":"0"}, {"vocation":"5"}, {"vocation":"9 OR 1=1"},
+  {"world":"2"}, {"world":"1 OR 1=1"}, {"agreeagreements":true}, {"agreeagreements":"false"}
+]
