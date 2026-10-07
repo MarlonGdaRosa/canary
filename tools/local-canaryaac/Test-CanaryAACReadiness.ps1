@@ -38,8 +38,7 @@ function Get-HeaderCheck([uri]$Uri, [string]$Method) {
             Status=[int]$response.StatusCode
             Cookie=($cookie -match '(?i);\s*httponly' -and $cookie -match '(?i);\s*samesite=lax')
             Secure=($cookie -match '(?i);\s*secure')
-            Headers=($response.Headers['X-Content-Type-Options'] -eq 'nosniff' -and $response.Headers['X-Frame-Options'] -eq 'DENY' -and
-                $response.Headers['Referrer-Policy'] -eq 'strict-origin-when-cross-origin' -and $response.Headers['Content-Security-Policy'] -match "object-src 'none'")
+            Headers=(Test-CanaryAACSecurityHeaders $response.Headers)
             Hsts=($response.Headers['Strict-Transport-Security'] -match 'max-age=[1-9][0-9]+')
         }
     } finally { if ($response) { $response.Close() } }

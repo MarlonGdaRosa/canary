@@ -228,7 +228,23 @@ function Test-CanaryAACAudit {
         if ($audit.SchemaVersion -ne 1 -or $age -lt 0 -or $age -gt 168 -or $audit.Composer.ExitCode -ne 0 -or
             $audit.Composer.ValidateExitCode -ne 0 -or $audit.Composer.LockSHA256 -ne (Get-FileHash -LiteralPath (Join-Path $Checkout 'composer.lock') -Algorithm SHA256).Hash) { return $false }
         Assert-CanaryAACPlainPath $audit.Composer.OutputFile
-        return (Get-FileHash -LiteralPath $audit.Composer.OutputFile -Algorithm SHA256).Hash -eq $audit.Composer.OutputSHA256
+        if ((Get-FileHash -LiteralPath $audit.Composer.OutputFile -Algorithm SHA256).Hash -ne $audit.Composer.OutputSHA256) { return $false }
+        # Exit fields alone are an operator claim, not a scanner result. Require
+        # Composer's actual JSON collections and reject ignored advisories too.
+        $result = Get-Content -LiteralPath $audit.Composer.OutputFile -Raw | ConvertFrom-Json
+        foreach ($field in @('advisories','abandoned')) {
+            if (!$result.PSObject.Properties[$field] -or $null -eq $result.$field -or
+                ($result.$field -isnot [array] -and $result.$field -isnot [pscustomobject])) { return $false }
+        }
+        foreach ($field in @('advisories','ignored-advisories')) {
+            if (!$result.PSObject.Properties[$field]) { continue }
+            $entries = $result.$field
+            if ($null -eq $entries) { return $false }
+            if ($entries -is [array]) { if ($entries.Count) { return $false } }
+            elseif ($entries -is [pscustomobject]) { if (@($entries.PSObject.Properties).Count) { return $false } }
+            else { return $false }
+        }
+        return $true
     } catch { return $false }
 }
 
@@ -272,4 +288,23 @@ function Test-CanaryAACLoginEvidence {
     } catch { return $false }
 }
 
-Export-ModuleMember -Function Assert-CanaryAACPlainPath, Get-CanaryAACPhysicalRuntime, Assert-CanaryAACReleaseRoot, Import-CanaryAACSource, Assert-CanaryAACSource, New-CanaryAACSourceRelease, Test-CanaryAACPublicHost, Test-CanaryAACPublicUrl, Test-CanaryAACAudit, Test-CanaryAACLoginEvidence
+function Test-CanaryAACSecurityHeaders {
+    param([Net.WebHeaderCollection]$Headers)
+    $required = @{
+        'X-Content-Type-Options'='nosniff'
+        'X-Frame-Options'='DENY'
+        'Referrer-Policy'='strict-origin-when-cross-origin'
+    }
+    foreach ($name in $required.Keys) {
+        $value = [string]$Headers[$name]
+        if (!$value) { return $false }
+        # Windows joins repeated fields with commas. Identical duplicates from a
+        # preexisting proxy are safe, but empty or conflicting values are not.
+        foreach ($part in $value.Split(',')) {
+            if ($part.Trim() -cne $required[$name]) { return $false }
+        }
+    }
+    return $Headers['Content-Security-Policy'] -match "object-src 'none'"
+}
+
+Export-ModuleMember -Function Assert-CanaryAACPlainPath, Get-CanaryAACPhysicalRuntime, Assert-CanaryAACReleaseRoot, Import-CanaryAACSource, Assert-CanaryAACSource, New-CanaryAACSourceRelease, Test-CanaryAACPublicHost, Test-CanaryAACPublicUrl, Test-CanaryAACAudit, Test-CanaryAACLoginEvidence, Test-CanaryAACSecurityHeaders

@@ -151,7 +151,7 @@ index bf3c162f5..366874c57 100644
  																					{% else %}
  																					<span id="CharacterOptionsOf_{{ count }}">
 -																						<span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ account.player.name }}/edit">Edit</a>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ account.player.name }}/delete">Delete</a>]</span>
-+																						<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ account.player.name }}/delete">Delete</a>]</span>
++																						<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span>
  																					</span>
  																					{% endif %}
  																				</td>
@@ -169,7 +169,7 @@ index bf3c162f5..366874c57 100644
  																						{% else %}
  																						<span id="CharacterOptionsOf_{{ count }}" style="display:none;">
 -																							<span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ player.name }}/edit">Edit</a>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ player.name }}/delete">Delete</a>]</span>
-+																							<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<a href="{{URL}}/account/character/{{ player.name }}/delete">Delete</a>]</span>
++																							<span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span><br><span style="font-weight:normal;">[<span>Feature unavailable in this release.</span>]</span>
  																						</span>
  																						{% endif %}
  																					</td>

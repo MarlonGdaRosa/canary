@@ -146,10 +146,14 @@ function Stop-CanaryAACOwnedProcess {
     }
     # Retain the OS process handle across revalidation, so PID recycling cannot
     # redirect termination to a different process between validation and Kill.
-    $process = [Diagnostics.Process]::GetProcessById($Record.ProcessId)
+    $process = Get-Process -Id $Record.ProcessId -ErrorAction Stop
     try {
         $null = $process.Handle
-        if ($process.StartTime.ToUniversalTime().ToString('o') -cne $Record.CreatedUtc -or
+        # CreationDate is re-read from the same CIM source that created the
+        # record. Native StartTime has finer precision and cannot be compared
+        # as a formatted string. Retained handle + fresh CIM generation guards
+        # the acquisition race without crossing timestamp representations.
+        if ($process.Id -ne $Record.ProcessId -or $process.HasExited -or
             !(Test-CanaryAACOwnedProcess -Record $Record -PhpPath $PhpPath -RouterPath $RouterPath)) {
             throw 'AAC identity changed; nothing stopped.'
         }

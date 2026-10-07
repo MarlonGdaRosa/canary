@@ -64,4 +64,44 @@ Describe 'Production release boundary' {
         [IO.File]::WriteAllText($file, '{"SchemaVersion":1,"CreatedUtc":"2000-01-01T00:00:00Z","Passed":true}')
         Test-CanaryAACAudit -Path $file -Checkout $TestDrive | Should Be $false
     }
+    It 'requires the hashed Composer JSON to actually contain a clean advisory result' {
+        $checkout = Join-Path $TestDrive 'audit-source'
+        New-Item -ItemType Directory $checkout | Out-Null
+        [IO.File]::WriteAllText((Join-Path $checkout 'composer.lock'), '{}')
+        $output = Join-Path $checkout 'composer-audit.json'
+        $record = Join-Path $checkout 'evidence.json'
+        foreach ($case in @(
+            @{Body='{"advisories":[],"abandoned":[]}'; Expected=$true},
+            @{Body='{"advisories":{"vulnerable/pkg":[{"advisoryId":"TEST-1"}]},"abandoned":[]}'; Expected=$false},
+            @{Body='{"advisories":[],"abandoned":[],"ignored-advisories":{"ignored/pkg":[{"advisoryId":"TEST-2"}]}}'; Expected=$false},
+            @{Body='{}'; Expected=$false},
+            @{Body='{"advisories":null,"abandoned":[]}'; Expected=$false},
+            @{Body='{"advisories":"none","abandoned":[]}'; Expected=$false},
+            @{Body='network request failed'; Expected=$false}
+        )) {
+            [IO.File]::WriteAllText($output,$case.Body)
+            $evidence = @{SchemaVersion=1; CreatedUtc=[DateTime]::UtcNow.ToString('o'); Composer=@{
+                ExitCode=0; ValidateExitCode=0; LockSHA256=(Get-FileHash (Join-Path $checkout 'composer.lock')).Hash
+                OutputFile=$output; OutputSHA256=(Get-FileHash $output).Hash
+            }}
+            [IO.File]::WriteAllText($record,($evidence|ConvertTo-Json))
+            Test-CanaryAACAudit -Path $record -Checkout $checkout | Should Be $case.Expected
+        }
+    }
+    It 'accepts identical duplicate security values and rejects conflicting multi-value responses' {
+        $headers = New-Object Net.WebHeaderCollection
+        $headers.Add('X-Content-Type-Options','nosniff')
+        $headers.Add('X-Content-Type-Options','nosniff')
+        $headers.Add('X-Frame-Options','DENY')
+        $headers.Add('X-Frame-Options','DENY')
+        $headers.Add('Referrer-Policy','strict-origin-when-cross-origin')
+        $headers.Add('Referrer-Policy','strict-origin-when-cross-origin')
+        $headers.Add('Content-Security-Policy',"object-src 'none'; frame-ancestors 'none'")
+        $headers['X-Frame-Options'] | Should Be 'DENY,DENY'
+        Test-CanaryAACSecurityHeaders $headers | Should Be $true
+        $headers.Add('X-Frame-Options','SAMEORIGIN')
+        Test-CanaryAACSecurityHeaders $headers | Should Be $false
+        $headers.Remove('X-Frame-Options')
+        Test-CanaryAACSecurityHeaders $headers | Should Be $false
+    }
 }

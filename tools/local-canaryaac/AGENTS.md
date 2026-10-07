@@ -22,3 +22,9 @@ drift/reparse/output boundaries with Production.Tests. Lifecycle termination
 requires executable/router/listener identity, process generation and a retained
 OS handle; a PID alone is never ownership. Test mismatches with Lifecycle.Tests
 without stopping live services.
+
+Compare process generation using the same timestamp API on both reads; CIM
+CreationDate and native Process.StartTime have different precision. Retain the
+handle before revalidating CIM ownership; cover truncation and acquisition races.
+Audit evidence must parse the hashed Composer advisory result, not trust declared
+exit fields alone. Validate clean, vulnerable, ignored and malformed JSON fixtures.

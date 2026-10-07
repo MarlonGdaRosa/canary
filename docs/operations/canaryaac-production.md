@@ -44,6 +44,11 @@ base/patch, complete Go/proto/module inventory, built and installed executable,
 Argon profile, observed pinned scanner and source/test/binary audit output hashes.
 SHA1-only compatibility is insufficient. No readiness check restarts services.
 
+The hashed Composer output must parse as its JSON advisory result, with empty
+advisories and no ignored advisories. An exit-code field or an arbitrary hashed
+file is insufficient. Abandoned packages remain explicitly reported under the
+documented abandoned=report policy. Investigate them before changing that policy.
+
 Copy production/audit-evidence.example.json to the physical
 .tools/canaryaac-audit.json. This is nonsecret operator evidence, not a signature:
 record actual results, UTC timestamp and hashes, never invented success values.
@@ -127,6 +132,10 @@ The php-fpm command varies by distribution. Supervise Nginx/FPM with OS services
 boot start and bounded restart/backoff. OPcache timestamp validation is off:
 reload the pool after an approved release switch. Only public/index.php executes;
 the socket stays private and static files require the directory/extension policy.
+Nginx owns security headers for all response types and hides matching FastCGI
+headers before adding them. Readiness also accepts identical comma-joined values
+from an existing proxy, but rejects empty or conflicting frame/content/referrer
+header values.
 
 Windows: install CGI/FastCGI, URL Rewrite 2, ARR and Dynamic IP Restrictions.
 Site physicalPath MUST be RELEASE\public. Register iis-fastcgi.config at server

@@ -143,3 +143,73 @@ untouched. No private env/credentials/backups were read or ACLs changed. No
 runtime service restart/stop/start, network publication or live DB write occurred.
 Owned files are the tooling/scripts/tests/0005/production templates, runbook,
 README, nearest AGENTS and two batch launcher integrations.
+
+## Review fix round 1 — 2026-10-07
+
+All three Important findings and both additional confirmed observations addressed:
+
+1. Stop no longer compares formatted CIM CreationDate to native StartTime.
+   It obtains the process through Get-Process, retains its OS handle, checks
+   matching PID/not-exited, then revalidates generation and full ownership using
+   the same CIM source as the persisted record. Mocked-handle regression proves
+   CIM .1234560 vs native .1234567 does not block the correct process, while a
+   generation change during handle acquisition refuses Kill and disposes it.
+2. Nginx owns the five security headers. Its FastCGI location hides upstream
+   WebSecurity copies before server add_header applies, preserving headers on
+   static/error responses. Readiness now validates WebHeaderCollection values
+   through a focused helper: exact identical repeated values (e.g. DENY,DENY)
+   pass, but conflicting or absent values fail. No policy relaxation for
+   conflicting frame/content/referrer values.
+3. New Readiness.Tests.ps1 invokes the real CLI/modules in eight child processes
+   against disposable Git/source/audit fixtures. Only CIM/listener queries are
+   faked; source reconstruction, JSON parsing, freshness/config checks, mode
+   requiredness, JSON report and native exit status are real. Cases cover Local
+   success with explicit production blockers; Production HTTP, loopback,
+   placeholder and Builtin failures; valid current evidence versus stale,
+   absent configuration and mismatched site. SkipHttp/login-evidence gaps
+   remain independently required failures even with otherwise valid evidence.
+4. Composer evidence now parses the hash-verified actual audit JSON. It requires
+   advisory/abandoned collections and empty advisories/ignored-advisories,
+   rejecting vulnerabilities, ignored advisories, malformed JSON, null/scalar
+   fields and arbitrary files regardless of claimed zero exit codes. Abandoned
+   packages retain the explicit abandoned=report policy. Runbook clarifies this.
+5. Removed the two remaining account-template Delete anchors (active and other
+   character rows) and refreshed the same ordered 0005 patch. A real Twig render
+   with a synthetic account/characters verifies no edit/delete links are emitted.
+   No database or live account is involved.
+
+RED evidence:
+
+    Invoke-Pester -Script tools/local-canaryaac/tests/Lifecycle.Tests.ps1 -PassThru
+    4 passed, 1 failed: AAC identity changed; nothing stopped.
+    (correct process, CIM microsecond/native 100ns precision difference)
+
+    Invoke-Pester -Script tools/local-canaryaac/tests/Production.Tests.ps1 -PassThru
+    5 passed, 2 failed: vulnerable Composer JSON incorrectly returned True;
+    new multi-value response validator was missing.
+
+    .tools/php/php.exe -c .tools/php/php.ini tools/local-canaryaac/tests/php/ProductionNavigationTest.php
+    RuntimeException: Account renders a disabled character action
+
+The initial Twig fixture needed the application's real ViewFunctions/ViewFilters
+registered before it reached the expected assertion. CLI fixture first exposed
+test-harness issues (Pester 3 Contain is a file assertion, and the wrapper needed
+to propagate nested LASTEXITCODE); corrected before accepting test evidence.
+Neither harness issue changed production semantics.
+
+Final GREEN command:
+
+    Invoke-Pester -Script tools/local-canaryaac/tests/Production.Tests.ps1,tools/local-canaryaac/tests/Lifecycle.Tests.ps1,tools/local-canaryaac/tests/Readiness.Tests.ps1 -PassThru
+
+Output: 15 passed, 0 failed, 0 skipped. Then the full existing PHP *Test.php loop
+passed 9/9 including rendered-account regression; only the preexisting Windows
+symlink-capability SKIP remains. PowerShell AST parsers passed. Updated 0005
+passes git apply --reverse --check against runtime. Scoped git diff --check
+passed (ordinary CRLF checkout warnings only).
+
+This closes the readiness CLI matrix coverage concern from the initial report.
+No live process termination/start/restart, live DB request/write, external
+production endpoint or dependency network update was performed in this round.
+No Nginx runtime is installed: target nginx -t/HTTPS integration remains an
+explicit deployment validation, not claimed by the header-collection test.
+Existing deployment/manual gates remain as previously documented.
