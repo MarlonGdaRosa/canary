@@ -41,6 +41,7 @@ function lionsRockEntrance.onStepIn(creature, item, position, fromPosition)
 		player:getPosition():sendMagicEffect(CONST_ME_THUNDER)
 	else
 		player:getPosition():sendMagicEffect(CONST_ME_ENERGYHIT)
+		player:teleportTo({ x = 33122, y = 32308, z = 8 })
 		player:teleportTo(fromPosition, true)
 		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You have to pass the Lion's Tests to enter the inner sanctum!")
 	end
