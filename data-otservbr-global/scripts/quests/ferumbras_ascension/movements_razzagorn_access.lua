@@ -12,7 +12,7 @@ function razzagornAccess.onStepIn(creature, item, position, fromPosition)
 	else
 		local pos = player:getPosition()
 		pos.x = pos.x + 2
-		player:teleportTo(pos)
+		player:teleportTo(Position(33437, 32443, 15))
 		player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 		player:say("You don't have access to this teleport yet.", TALKTYPE_MONSTER_SAY)
 	end
