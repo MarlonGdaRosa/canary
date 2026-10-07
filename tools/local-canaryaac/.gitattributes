@@ -1,2 +1,3 @@
 # Patch context whitespace is data; preserve it and patch line endings verbatim.
 patches/*.patch text eol=lf -whitespace
+login-server/*.patch text eol=lf -whitespace

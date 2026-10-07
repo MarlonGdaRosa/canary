@@ -6,3 +6,11 @@ asset surface with canonical containment; execute only `public/index.php`.
 Keep the maintained router and installed router identical. Validate changes with
 `tests/php/RouterSecurityTest.php` and `tests/php/WebSecurityTest.php`, including
 HEAD denial of private files and HTTP tests of CSRF/session/limiter behavior.
+
+Signup must validate raw scalar fields before hashing; never HTML-sanitize passwords
+or overwrite hashes during authentication. Account and first character must commit
+on one PDO connection, with the normalized-email advisory lock held through commit
+and a duplicate recheck inside the transaction. Preserve configured 2FA, rejecting
+ambiguous records and storage failures. Validate with the account PHP tests and raw
+duplicate-field HTTP cases. Enable compact Argon signup only after the actual login
+server supports the same fixed profile; build and audit it with the maintained helper.

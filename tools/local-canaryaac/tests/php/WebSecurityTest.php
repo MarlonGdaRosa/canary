@@ -74,10 +74,11 @@ PHP;
     expect($view['escaped'] === '&lt;script&gt;bad&lt;/script&gt;' && $view['debug'] === false, 'Twig false-mode disables escaping or enables debug');
     foreach (json_decode($fixture->request('/?assets=1')['body'], true) as $url)
         expect($url === 'http://127.0.0.1/resources/images/charactertrade/objects/transparent.svg', 'Outfit placeholder still executes PHP');
-    foreach (['', 'csrf_token=invalid', 'csrf_token[]=array'] as $body) {
+    foreach (['', 'csrf_token=invalid'] as $body) {
         $result = $fixture->request('/createaccount', 'POST', $body, $headers);
         expect($result['status'] === 403 && $result['body'] === 'Forbidden', 'Invalid CSRF allowed');
     }
+    expect($fixture->request('/createaccount', 'POST', 'csrf_token[]=array', $headers)['status'] === 400, 'Array form syntax allowed');
     $token = http_build_query(['csrf_token' => $data['token']]);
     expect($fixture->request('/createaccount', 'POST', $token)['status'] === 403, 'Cross-session token allowed');
     expect($fixture->request('/createaccount', 'POST', str_repeat('x', 65537), $headers)['status'] === 400, 'Oversized body allowed');
