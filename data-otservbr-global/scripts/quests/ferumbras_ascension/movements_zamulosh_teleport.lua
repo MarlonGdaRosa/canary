@@ -15,7 +15,7 @@ function zamuloshTeleport.onStepIn(creature, item, position, fromPosition)
 		else
 			local pos = player:getPosition()
 			pos.x = pos.x - 2
-			player:teleportTo(pos)
+			player:teleportTo(Position(33618, 32620, 10))
 			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You don't have access to this teleport yet.")
 			return true
@@ -30,7 +30,7 @@ function zamuloshTeleport.onStepIn(creature, item, position, fromPosition)
 		else
 			local pos = player:getPosition()
 			pos.x = pos.x - 2
-			player:teleportTo(pos)
+			player:teleportTo(Position(33618, 32620, 10))
 			player:getPosition():sendMagicEffect(CONST_ME_TELEPORT)
 			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You don't have access to this teleport yet.")
 			return true

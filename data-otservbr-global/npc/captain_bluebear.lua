@@ -82,9 +82,7 @@ addTravelKeyword("port hope", 160, Position(32527, 32784, 6))
 addTravelKeyword("roshamuul", 210, Position(33494, 32567, 7))
 addTravelKeyword("svargrond", 180, Position(32341, 31108, 6))
 addTravelKeyword("liberty bay", 180, Position(32285, 32892, 6))
-addTravelKeyword("yalahar", 200, Position(32816, 31272, 6), nil, function(player)
-	return player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.Thais) ~= 1 and player:getStorageValue(Storage.Quest.U8_4.InServiceOfYalahar.SearoutesAroundYalahar.TownsCounter) < 5
-end)
+addTravelKeyword("yalahar", 200, Position(32816, 31272, 6))
 addTravelKeyword("oramond", 150, Position(33479, 31985, 7))
 addTravelKeyword("krailos", 230, Position(33492, 31712, 6))
 

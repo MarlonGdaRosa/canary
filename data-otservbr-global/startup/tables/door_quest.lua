@@ -434,6 +434,7 @@ QuestDoorAction = {
 		},
 	},
 	[Storage.Quest.U8_4.InServiceOfYalahar.DoorToReward] = {
+		-- (Ajustar AQUI) Só pode abrir a porta se matar o Azerus (boss)
 		itemId = false,
 		itemPos = {
 			{ x = 32780, y = 31205, z = 7 },

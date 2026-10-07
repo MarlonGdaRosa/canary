@@ -2,21 +2,18 @@ local default = {
 	[1] = {
 		itemPosition = Position(33618, 32546, 13),
 		toPosition = Position(32723, 32270, 8),
-		neededStorage = Storage.Quest.U12_00.TheDreamCourts.HauntedHouse.Questline,
 		value = 2,
 		blockedText = "Connect all three gateways to restore the circle of energy sustaining this nexus.",
 	},
 	[2] = {
 		itemPosition = Position(32720, 32270, 8),
 		toPosition = Position(33618, 32544, 13),
-		neededStorage = Storage.Quest.U12_00.TheDreamCourts.HauntedHouse.Questline,
 		value = 2,
 		blockedText = "Connect all three gateways to restore the circle of energy sustaining this nexus.",
 	},
 	[3] = {
 		itemPosition = Position(33619, 32526, 15),
 		toPosition = Position(33619, 32528, 15),
-		neededStorage = Storage.Quest.U12_00.TheDreamCourts.HauntedHouse.Questline,
 		value = 2,
 		msg = "You traverse the rubble with ease but more of it falls down behind you, essentially blocking your path once again.",
 	},

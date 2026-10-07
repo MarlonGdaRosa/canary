@@ -1,25 +1,21 @@
 local signs = {
 	{
 		pos = { x = 33095, y = 32244, z = 9 },
-		storage = Storage.Quest.U10_70.LionsRock.InnerSanctum.SnakeSign,
 		message1 = "With the aid of the old scroll you translate the inscriptions on the floor: And the mighty lion defeated the jealous snake.",
 		message2 = "As a sign of victory he tooks its eye, yellow as envy and malevolence, and out of a foul creature created a precious treasure.",
 	},
 	{
 		pos = { x = 33128, y = 32300, z = 9 },
-		storage = Storage.Quest.U10_70.LionsRock.InnerSanctum.LizardSign,
 		message1 = "With the aid of the old scroll you translate the inscriptions on the floor: And the mighty lion defeated the lazy lizard.",
 		message2 = "As a sign of victory he tooks its egg, blue as sloth and conceit, and out of a foul creature created a precious treasure.",
 	},
 	{
 		pos = { x = 33109, y = 32329, z = 9 },
-		storage = Storage.Quest.U10_70.LionsRock.InnerSanctum.ScorpionSign,
 		message1 = "With the aid of the old scroll you translate the inscriptions on the golden altar: And the mighty lion defeated the treacherous scorpion.",
 		message2 = "As a sign of victory he tooks its poison, violet as deceit and betrayal, and created a precious treasure.",
 	},
 	{
 		pos = { x = 33127, y = 32340, z = 9 },
-		storage = Storage.Quest.U10_70.LionsRock.InnerSanctum.HyenaSign,
 		message1 = "With the aid of the old scroll you translate the inscriptions on the golden statue: And the mighty lion defeated the greedy hyaena.",
 		message2 = "As a sign of victory he tooks its blood, red as voracity and lust, and created a precious treasure.",
 	},
@@ -41,7 +37,7 @@ function lionsRockEntrance.onStepIn(creature, item, position, fromPosition)
 		player:getPosition():sendMagicEffect(CONST_ME_THUNDER)
 	else
 		player:getPosition():sendMagicEffect(CONST_ME_ENERGYHIT)
-		player:teleportTo(fromPosition, true)
+		player:teleportTo({ x = 33122, y = 32308, z = 8 })
 		player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You have to pass the Lion's Tests to enter the inner sanctum!")
 	end
 	return true
