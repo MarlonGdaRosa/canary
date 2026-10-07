@@ -353,6 +353,7 @@ QuestDoorAction = {
 		},
 	},
 	[Storage.Quest.U8_54.TheNewFrontier.Mission09.RewardDoor] = {
+		-- (Ajustar AQUI) Só pode abrir a porta se matar o Tirecz (boss)
 		itemId = false,
 		itemPos = {
 			{ x = 33061, y = 31025, z = 7 },
@@ -370,6 +371,7 @@ QuestDoorAction = {
 		itemPos = { { x = 32316, y = 32264, z = 8 } },
 	},
 	[Storage.Quest.U8_2.TheInquisitionQuest.RewardDoor] = {
+		-- (Ajustar AQUI) Só pode abrir a porta se matar o Ungreez (boss)
 		itemId = false,
 		itemPos = { { x = 32320, y = 32258, z = 9 } },
 	},
@@ -434,6 +436,7 @@ QuestDoorAction = {
 		},
 	},
 	[Storage.Quest.U8_4.InServiceOfYalahar.DoorToReward] = {
+		-- (Ajustar AQUI) Só pode abrir a porta se matar o Azerus (boss)
 		itemId = false,
 		itemPos = {
 			{ x = 32780, y = 31205, z = 7 },
