@@ -213,3 +213,39 @@ production endpoint or dependency network update was performed in this round.
 No Nginx runtime is installed: target nginx -t/HTTPS integration remains an
 explicit deployment validation, not claimed by the header-collection test.
 Existing deployment/manual gates remain as previously documented.
+
+## Post-merge router line-ending regression — 2026-10-07
+
+Fresh verification on the integrated main workspace exposed a LocalRouter false
+failure: Git materialized the tracked canonical router as CRLF (4758 bytes,
+75 CRLF pairs), while the installed identical source retained LF (4683 bytes).
+Canonical SHA256 149FE79A051731537522843C9FC50DF23B1AA9FC0367661C211D3EEA7ECFB7E0
+and runtime SHA256 F9DAFBC4194E7B7BC8A718DB93CE1D14147A60C949725CB26E121BB573530E7B
+therefore differ despite exact content equality after CRLF-only normalization.
+
+Changed only readiness comparison, its CLI regression cases and this report on
+branch codex/canary-localhost-setup. The check validates plain paths, reads bytes,
+decodes strict UTF-8 without removing BOM, replaces paired CRLF with LF and
+compares ordinally. Missing/unreadable/invalid-UTF8 files fail closed. It does not
+trim whitespace, case-fold source or normalize standalone CR/final newlines.
+The installed router and all services were left unchanged.
+
+RED command:
+
+    Invoke-Pester -Script tools/local-canaryaac/tests/Readiness.Tests.ps1 -PassThru
+    3 passed, 1 failed: Router comparison failed case: CRLF canonical, LF installed
+
+GREEN same command: 4 passed, 0 failed, 0 skipped. The new case runs eight real
+CLI subprocess checks: CRLF/LF equality in both directions; rejection of changed
+code case, trailing whitespace, standalone CR, added BOM, malformed UTF-8 and
+removed final newline. Each asserts LocalRouter requiredness, Ready and exit code.
+
+Fresh live read-only verification:
+
+    powershell -NoProfile -File tools/local-canaryaac/Test-CanaryAACReadiness.ps1 -Mode Local -ReportPath C:/Users/Marlon/Documents/OT/.tools/task3-postmerge-router-readiness.json
+
+Exit 0; Ready=true, LocalRouter=true, 25 required checks passed, none failed.
+ProductionReady remains false with the existing explicit public-launch gates.
+PowerShell parser and scoped git diff --check passed. Runtime router SHA256
+remains F9DAFBC4194E7B7BC8A718DB93CE1D14147A60C949725CB26E121BB573530E7B.
+The user's dirty door_quest.lua remains untouched and unstaged.

@@ -60,6 +60,33 @@ Describe 'Readiness CLI mode and evidence gates' {
             $report.ProductionReady | Should Be $false
         }
     }
+    It 'compares router UTF8 bytes modulo CRLF only and rejects other drift' {
+        $utf8 = [Text.UTF8Encoding]::new($false,$true)
+        $lf = 'fixture router' + [char]10
+        $crlf = 'fixture router' + [char]13 + [char]10
+        $cases = @(
+            @{Name='CRLF canonical, LF installed'; Canonical=$utf8.GetBytes($crlf); Installed=$utf8.GetBytes($lf); Passed=$true},
+            @{Name='LF canonical, CRLF installed'; Canonical=$utf8.GetBytes($lf); Installed=$utf8.GetBytes($crlf); Passed=$true},
+            @{Name='changed code'; Canonical=$utf8.GetBytes($lf); Installed=$utf8.GetBytes(('Fixture router'+[char]10)); Passed=$false},
+            @{Name='trailing whitespace'; Canonical=$utf8.GetBytes($lf); Installed=$utf8.GetBytes(('fixture router '+[char]10)); Passed=$false},
+            @{Name='standalone CR'; Canonical=$utf8.GetBytes($lf); Installed=$utf8.GetBytes(('fixture router'+[char]13)); Passed=$false},
+            @{Name='changed BOM'; Canonical=$utf8.GetBytes($lf); Installed=([byte[]](@(0xef,0xbb,0xbf)+$utf8.GetBytes($lf))); Passed=$false},
+            @{Name='invalid UTF8'; Canonical=$utf8.GetBytes($lf); Installed=([byte[]]@(0x66,0x80)); Passed=$false},
+            @{Name='missing final newline'; Canonical=$utf8.GetBytes($lf); Installed=$utf8.GetBytes('fixture router'); Passed=$false}
+        )
+        foreach ($case in $cases) {
+            [IO.File]::WriteAllBytes((Join-Path $fixtureTool 'config\router.php'),$case.Canonical)
+            [IO.File]::WriteAllBytes((Join-Path $source 'router.php'),$case.Installed)
+            $json = & powershell -NoProfile -File $runner -ReadinessScript $cli -Mode Local -SiteUrl http://127.0.0.1:8080 -GameHost game.tibiarealm.net -Backend Builtin -AuditEvidencePath $auditPath
+            $exitCode = $LASTEXITCODE
+            $report = ($json -join [Environment]::NewLine) | ConvertFrom-Json
+            $gate = @($report.Checks | Where-Object { $_.Name -eq 'LocalRouter' })[0]
+            if ($gate.Passed -ne $case.Passed) { throw ('Router comparison failed case: ' + $case.Name) }
+            $gate.Required | Should Be $true
+            $report.Ready | Should Be $case.Passed
+            $exitCode | Should Be ([int](!$case.Passed))
+        }
+    }
     It 'recognizes valid evidence and refuses stale or missing deployment evidence' {
         foreach ($case in @('valid','stale','missing-config','wrong-site')) {
             $candidate = $evidence | ConvertTo-Json -Depth 6 | ConvertFrom-Json

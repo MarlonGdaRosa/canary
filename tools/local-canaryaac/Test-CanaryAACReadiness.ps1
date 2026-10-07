@@ -53,7 +53,20 @@ try {
 } catch { $sourceOkay = $false }
 Add-Check 'SourceReplay' $sourceOkay $false 'Exact pinned source plus every ordered patch; no unrecorded source drift.'
 $routerOkay = $false
-try { $routerOkay = (Get-FileHash (Join-Path $checkout 'router.php')).Hash -eq (Get-FileHash (Join-Path $PSScriptRoot 'config\router.php')).Hash } catch {}
+try {
+    $installedRouter = Join-Path $checkout 'router.php'
+    $canonicalRouter = Join-Path $PSScriptRoot 'config\router.php'
+    Assert-CanaryAACPlainPath $installedRouter
+    Assert-CanaryAACPlainPath $canonicalRouter
+    # Git may materialize CRLF while the installed router retains LF. Decode
+    # strictly without BOM removal and normalize only paired CRLF, never other
+    # whitespace or standalone CR, so actual source/encoding drift still fails.
+    $utf8 = [Text.UTF8Encoding]::new($false,$true)
+    $crlf = [string][char]13 + [char]10
+    $installed = $utf8.GetString([IO.File]::ReadAllBytes($installedRouter)).Replace($crlf,[string][char]10)
+    $canonical = $utf8.GetString([IO.File]::ReadAllBytes($canonicalRouter)).Replace($crlf,[string][char]10)
+    $routerOkay = [string]::Equals($installed,$canonical,[StringComparison]::Ordinal)
+} catch {}
 Add-Check 'LocalRouter' ($Mode -eq 'Production' -or $routerOkay) $false 'Maintained local router matches runtime.'
 
 $auditOkay = Test-CanaryAACAudit -Path $AuditEvidencePath -Checkout $checkout
