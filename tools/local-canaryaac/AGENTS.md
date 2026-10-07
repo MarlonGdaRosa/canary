@@ -14,3 +14,11 @@ and a duplicate recheck inside the transaction. Preserve configured 2FA, rejecti
 ambiguous records and storage failures. Validate with the account PHP tests and raw
 duplicate-field HTTP cases. Enable compact Argon signup only after the actual login
 server supports the same fixed profile; build and audit it with the maintained helper.
+
+Release identity must be reconstructed from the pinned revision and all ordered
+patches. Never package runtime directories or treat missing audit evidence as
+success. Exclude credentials/generated state/PHP assets from public; validate
+drift/reparse/output boundaries with Production.Tests. Lifecycle termination
+requires executable/router/listener identity, process generation and a retained
+OS handle; a PID alone is never ownership. Test mismatches with Lifecycle.Tests
+without stopping live services.

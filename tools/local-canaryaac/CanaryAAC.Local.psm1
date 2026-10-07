@@ -120,4 +120,42 @@ function Wait-CanaryAACHttp {
     throw "CanaryAAC did not become ready at $Uri within $TimeoutSeconds seconds."
 }
 
-Export-ModuleMember -Function Get-CanaryAACLayout, Assert-FileSha256, Test-CanaryAACProcess, Wait-CanaryAACHttp
+function Get-CanaryAACProcessRecord {
+    param([int]$ProcessId)
+    $process = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop
+    if (!$process -or !$process.CreationDate) { throw 'Process generation unavailable.' }
+    [pscustomobject]@{ProcessId=$ProcessId; CreatedUtc=$process.CreationDate.ToUniversalTime().ToString('o')}
+}
+
+function Test-CanaryAACOwnedProcess {
+    param([object]$Record, [string]$PhpPath, [string]$RouterPath)
+    try {
+        if (!$Record -or $Record.ProcessId -lt 1 -or !$Record.CreatedUtc) { return $false }
+        if (!(Test-CanaryAACProcess -ProcessId $Record.ProcessId -PhpPath $PhpPath -RouterPath $RouterPath)) { return $false }
+        $actual = Get-CanaryAACProcessRecord $Record.ProcessId
+        if ($actual.CreatedUtc -cne $Record.CreatedUtc) { return $false }
+        $listeners = @(Get-NetTCPConnection -State Listen -LocalPort 8080 -ErrorAction Stop)
+        return $listeners.Count -eq 1 -and $listeners[0].OwningProcess -eq $Record.ProcessId -and $listeners[0].LocalAddress -ceq '127.0.0.1'
+    } catch { return $false }
+}
+
+function Stop-CanaryAACOwnedProcess {
+    param([object]$Record, [string]$PhpPath, [string]$RouterPath)
+    if (!(Test-CanaryAACOwnedProcess -Record $Record -PhpPath $PhpPath -RouterPath $RouterPath)) {
+        throw 'AAC process identity, generation or listener mismatch; nothing stopped.'
+    }
+    # Retain the OS process handle across revalidation, so PID recycling cannot
+    # redirect termination to a different process between validation and Kill.
+    $process = [Diagnostics.Process]::GetProcessById($Record.ProcessId)
+    try {
+        $null = $process.Handle
+        if ($process.StartTime.ToUniversalTime().ToString('o') -cne $Record.CreatedUtc -or
+            !(Test-CanaryAACOwnedProcess -Record $Record -PhpPath $PhpPath -RouterPath $RouterPath)) {
+            throw 'AAC identity changed; nothing stopped.'
+        }
+        $process.Kill()
+        if (!$process.WaitForExit(5000)) { throw 'AAC termination timed out; record retained.' }
+    } finally { $process.Dispose() }
+}
+
+Export-ModuleMember -Function Get-CanaryAACLayout, Assert-FileSha256, Test-CanaryAACProcess, Wait-CanaryAACHttp, Get-CanaryAACProcessRecord, Test-CanaryAACOwnedProcess, Stop-CanaryAACOwnedProcess
