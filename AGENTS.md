@@ -8,6 +8,11 @@ The global Git, commit, PR, C++ header, exception, and documentation policies ap
 - Decide whether tooling makes recurrence impossible. If not, add a narrow rule to the nearest `AGENTS.md` that states the unsafe pattern, required alternative, and validation rather than incident history.
 - Prefer enforceable safeguards—types, helpers, static checks, architecture docs, or focused tests—especially for lifetime, arithmetic, identity, ownership, bounds, and cancellation escapes.
 
+## OTBM Audit Bounds and Identity
+
+- Do not rely on collapsed fact or tile limits to bound nested parser frames. Check the configured item depth before reading properties, invoking callbacks, or pushing the frame; test the accepted boundary, overflow, and discarded partial extraction state.
+- Do not treat serialized UID zero as a runtime identity. Keep it in inventory facts, track duplicate UIDs only when positive as in `MapCache`, and validate repeated zero and positive UIDs together.
+
 ## Deferred Callback Lifetime Safety
 
 - Assume scheduled, deferred, timer, and worker callbacks can outlive their source object or state.

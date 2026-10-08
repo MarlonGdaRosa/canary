@@ -1,14 +1,246 @@
 from __future__ import annotations
 
 import tempfile
+import struct
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 from xml.sax import SAXNotSupportedException
 
-from tools.canary_audit.extractors import extract_appearances, extract_lua, extract_xml
+from tools.canary_audit.extractors import (
+	ExtractionLimitError, extract_appearances, extract_file, extract_lua, extract_otbm, extract_xml,
+)
 
 from .helpers import appearances_payload, discovered_file, encode_varint, repository_config
+from .test_otbm import area, item, map_file, tile
+
+
+class OtbmExtractorTests(unittest.TestCase):
+	def setUp(self) -> None:
+		self.config = repository_config()
+		self.temporary = tempfile.TemporaryDirectory()
+		self.addCleanup(self.temporary.cleanup)
+		self.root = Path(self.temporary.name)
+		self.map_path = "data-otservbr-global/world/test.otbm"
+
+	def extract(self, payload: bytes, *, config=None, logical_path=None, dispatch=False):
+		path = discovered_file(self.root, logical_path or self.map_path, payload)
+		return (extract_file if dispatch else extract_otbm)(path, config or self.config)
+
+	def test_collapses_references_with_first_item_location_and_nested_metadata(self) -> None:
+		attrs = b"\x04" + struct.pack("<H", 5000) + b"\x05" + struct.pack("<H", 6000)
+		attrs += b"\x08" + struct.pack("<HHB", 101, 102, 7)
+		inner = item(322, b"\x05" + struct.pack("<H", 6001))
+		outer = item(321, attrs, inner)
+		payload = map_file(area(tile(outer, x=2) + tile(item(321))))
+
+		result = self.extract(payload)
+
+		self.assertFalse(result.diagnostics)
+		self.assertEqual(
+			{(fact.domain, fact.value, dict(fact.attributes)["occurrenceCount"]) for fact in result.facts},
+			{
+				("item.server_id", 321, "2"), ("item.server_id", 322, "1"),
+				("map.action_id", 5000, "1"), ("map.unique_id", 6000, "1"),
+				("map.unique_id", 6001, "1"), ("map.teleport.destination", "101,102,7", "1"),
+			},
+		)
+		first = next(fact for fact in result.facts if fact.domain == "item.server_id" and fact.value == 321)
+		self.assertEqual(first.location.line, 1)
+		self.assertEqual(first.location.column, payload.index(outer) + 1)
+		self.assertGreater(result.facts[0].location.column, 1)
+		self.assertEqual(dict(first.attributes), {"position": "102,102,7", "depth": "0", "occurrenceCount": "2"})
+		nested = next(fact for fact in result.facts if fact.domain == "map.unique_id" and fact.value == 6001)
+		self.assertEqual(dict(nested.attributes)["depth"], "1")
+		self.assertTrue(all(fact.role == "reference" and fact.extractor == "otbm.map" for fact in result.facts))
+		self.assertTrue(all(fact.owner == "OTBM item" and fact.layer == "otservbr-global" for fact in result.facts))
+		self.assertTrue(all(fact.profiles == self.config.profiles_for_layer("otservbr-global") for fact in result.facts))
+
+	def test_map_local_duplicates_and_missing_teleport_target(self) -> None:
+		uid = b"\x05" + struct.pack("<H", 6000)
+		teleport = b"\x08" + struct.pack("<HHB", 999, 999, 7)
+		duplicate = item(322, uid + teleport)
+		second_tile = tile(duplicate)
+		payload = map_file(area(tile(item(321, uid)) + second_tile))
+
+		result = self.extract(payload)
+
+		self.assertEqual({diagnostic.code for diagnostic in result.diagnostics}, {
+			"otbm.duplicate-unique-id", "otbm.duplicate-tile", "otbm.missing-teleport-target",
+		})
+		for diagnostic in result.diagnostics:
+			self.assertIn(self.map_path, diagnostic.identity)
+			self.assertEqual(diagnostic.location.line, 1)
+			self.assertEqual(
+				diagnostic.severity, "warning" if diagnostic.code == "otbm.missing-teleport-target" else "error",
+			)
+			if diagnostic.code == "otbm.duplicate-tile":
+				self.assertIn("101,102,7", diagnostic.identity)
+				self.assertEqual(diagnostic.location.column, payload.index(second_tile) + 1)
+			else:
+				self.assertEqual(diagnostic.location.column, payload.index(duplicate) + 1)
+				self.assertIn("6000" if diagnostic.code == "otbm.duplicate-unique-id" else "999,999,7", diagnostic.identity)
+
+	def test_dispatch_respects_configured_layers(self) -> None:
+		payload = map_file(area(tile(item(321))))
+		inside = self.extract(payload, dispatch=True)
+		outside = self.extract(payload, logical_path="unconfigured/world/test.otbm", dispatch=True)
+		self.assertEqual([(fact.domain, fact.value) for fact in inside.facts], [("item.server_id", 321)])
+		self.assertFalse(outside.facts)
+		self.assertFalse(outside.diagnostics)
+
+	def test_uid_and_tile_uniqueness_are_scoped_to_each_map_path(self) -> None:
+		payload = map_file(area(tile(item(321, b"\x05" + struct.pack("<H", 6000)))))
+		for path in (self.map_path, "data-otservbr-global/world/second.otbm"):
+			with self.subTest(path=path):
+				result = self.extract(payload, logical_path=path)
+				self.assertFalse(result.diagnostics)
+				self.assertEqual({fact.value for fact in result.facts}, {321, 6000})
+
+	def test_absent_selectors_are_not_fabricated_and_zero_values_are_retained(self) -> None:
+		attrs = b"\x04\x00\x00\x05\x00\x00\x08\x00\x00\x00\x00\x00"
+		result = self.extract(map_file(area(tile(item(321) + item(322, attrs), x=0, y=0), x=0, y=0, z=0)))
+		self.assertEqual({(fact.domain, fact.value) for fact in result.facts}, {
+			("item.server_id", 321), ("item.server_id", 322), ("map.action_id", 0),
+			("map.unique_id", 0), ("map.teleport.destination", "0,0,0"),
+		})
+		self.assertFalse(result.diagnostics)
+
+	def test_parse_errors_discard_partial_facts_and_semantic_diagnostics(self) -> None:
+		uid = b"\x05" + struct.pack("<H", 6000)
+		valid_prefix = map_file(area(tile(item(321, uid)) + tile(item(322, uid))))
+		for payload in (b"NOPE", valid_prefix[:-1], map_file(area(tile(item(321, b"\x63"))))):
+			with self.subTest(payload=payload):
+				result = self.extract(payload)
+				self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.otbm-error"])
+				self.assertFalse(result.facts)
+
+	def test_nesting_overflow_discards_partial_facts_and_semantic_diagnostics(self) -> None:
+		uid = b"\x05" + struct.pack("<H", 6000)
+		prefix = tile(item(321, uid)) + tile(item(322, uid))
+		prefix_result = self.extract(map_file(area(prefix)))
+		self.assertTrue(prefix_result.facts)
+		self.assertEqual({entry.code for entry in prefix_result.diagnostics}, {
+			"otbm.duplicate-tile", "otbm.duplicate-unique-id",
+		})
+		child = item(321)
+		for _ in range(1025):
+			child = item(321, children=child)
+		result = self.extract(map_file(area(prefix + tile(child, x=2))), dispatch=True)
+		self.assertFalse(result.facts)
+		self.assertEqual([entry.code for entry in result.diagnostics], ["scan.otbm-error"])
+		self.assertEqual(result.diagnostics[0].severity, "error")
+		self.assertIn("nesting depth exceeds configured limit 1024", result.diagnostics[0].message)
+
+	def test_configured_nesting_limit_is_forwarded_to_reader(self) -> None:
+		config = replace(self.config, max_otbm_nesting_depth=1)
+		child = item(321, children=item(322))
+		exact = self.extract(map_file(area(tile(child))), config=config)
+		self.assertFalse(exact.diagnostics)
+		self.assertEqual({fact.value for fact in exact.facts}, {321, 322})
+		overflow = self.extract(map_file(area(tile(item(320, children=child)))), config=config)
+		self.assertFalse(overflow.facts)
+		self.assertEqual([entry.code for entry in overflow.diagnostics], ["scan.otbm-error"])
+		self.assertIn("nesting depth exceeds configured limit 1", overflow.diagnostics[0].message)
+
+	def test_duplicate_uid_checks_ignore_zero_but_preserve_inventory(self) -> None:
+		zero = item(321, b"\x05\x00\x00")
+		positive = item(322, b"\x05" + struct.pack("<H", 6000))
+		result = self.extract(map_file(area(tile(zero * 2 + positive * 2))))
+		self.assertEqual([entry.code for entry in result.diagnostics], ["otbm.duplicate-unique-id"])
+		self.assertIn("6000", result.diagnostics[0].identity)
+		self.assertEqual({
+			(fact.value, dict(fact.attributes)["occurrenceCount"])
+			for fact in result.facts if fact.domain == "map.unique_id"
+		}, {(0, "2"), (6000, "2")})
+
+	def test_missing_file_and_file_byte_limit_are_operational_errors(self) -> None:
+		payload = map_file(area(tile(item(321))))
+		limited = self.extract(payload, config=replace(self.config, max_otbm_file_bytes=len(payload) - 1))
+		self.assertEqual([diagnostic.code for diagnostic in limited.diagnostics], ["scan.otbm-error"])
+		path = discovered_file(self.root, self.map_path, payload)
+		path.absolute_path.unlink()
+		missing = extract_otbm(path, self.config)
+		self.assertEqual([diagnostic.code for diagnostic in missing.diagnostics], ["scan.otbm-error"])
+		self.assertFalse(missing.facts)
+
+	def test_fact_limit_applies_to_distinct_aggregates_not_repeated_items(self) -> None:
+		config = replace(self.config, max_facts_per_file=1)
+		repeated = self.extract(map_file(area(tile(item(321) * 20))), config=config, dispatch=True)
+		self.assertFalse(repeated.diagnostics)
+		self.assertEqual(dict(repeated.facts[0].attributes)["occurrenceCount"], "20")
+		limited = self.extract(map_file(area(tile(item(321) + item(322)))), config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in limited.diagnostics], ["scan.extraction-limit"])
+		self.assertFalse(limited.facts)
+
+	def test_empty_tiles_do_not_consume_fact_slots(self) -> None:
+		config = replace(self.config, max_facts_per_file=1)
+		payload = map_file(area(tile(item(321)) + tile(x=2) + tile(x=3)))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertFalse(result.diagnostics)
+		self.assertEqual([(fact.domain, fact.value) for fact in result.facts], [("item.server_id", 321)])
+
+	def test_repeated_teleports_do_not_consume_fact_or_diagnostic_slots(self) -> None:
+		config = replace(self.config, max_facts_per_file=2, max_diagnostics_per_file=1)
+		for destination, diagnostic_codes in (((101, 102, 7), []), ((999, 999, 7), ["otbm.missing-teleport-target"])):
+			with self.subTest(destination=destination):
+				teleport = item(321, b"\x08" + struct.pack("<HHB", *destination))
+				payload = map_file(area(tile(teleport * 20)))
+				result = self.extract(payload, config=config, dispatch=True)
+				self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], diagnostic_codes)
+				self.assertEqual(len(result.facts), 2)
+				self.assertTrue(all(dict(fact.attributes)["occurrenceCount"] == "20" for fact in result.facts))
+				if result.diagnostics:
+					self.assertEqual(result.diagnostics[0].location.column, payload.index(teleport) + 1)
+					self.assertEqual(result.diagnostics[0].severity, "warning")
+					self.assertIn("20", result.diagnostics[0].message)
+
+	def test_unique_tile_positions_use_the_dedicated_limit(self) -> None:
+		config = replace(self.config, max_facts_per_file=1, max_otbm_tile_positions=2)
+		exact = self.extract(map_file(area(tile(item(321)) + tile(x=2))), config=config, dispatch=True)
+		self.assertFalse(exact.diagnostics)
+		self.assertEqual(len(exact.facts), 1)
+		limited = self.extract(map_file(area(tile() + tile(x=2) + tile(x=3))), config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in limited.diagnostics], ["scan.extraction-limit"])
+		self.assertIn("OTBM tile positions", limited.diagnostics[0].message)
+		self.assertFalse(limited.facts)
+		duplicates = self.extract(map_file(area(tile() * 3)), config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in duplicates.diagnostics], ["otbm.duplicate-tile"] * 2)
+
+	def test_position_packing_preserves_all_coordinate_fields(self) -> None:
+		positions = ((1, 0, 0), (0, 256, 0), (0, 0, 1), (65535, 65535, 255))
+		payload = map_file(b"".join(
+			area(tile(item(321, b"\x08" + struct.pack("<HHB", *position)), x=0, y=0), *position)
+			for position in positions
+		))
+		result = self.extract(payload)
+		self.assertFalse(result.diagnostics)
+		self.assertEqual({fact.value for fact in result.facts if fact.domain == "map.teleport.destination"}, {
+			"1,0,0", "0,256,0", "0,0,1", "65535,65535,255",
+		})
+
+	def test_distinct_teleports_still_enforce_fact_and_diagnostic_limits(self) -> None:
+		config = replace(self.config, max_facts_per_file=2)
+		teleport = item(321, b"\x08" + struct.pack("<HHB", 101, 102, 7))
+		second = item(321, b"\x08" + struct.pack("<HHB", 999, 999, 7))
+		payload = map_file(area(tile(teleport + second)))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
+		self.assertFalse(result.facts)
+		config = replace(self.config, max_diagnostics_per_file=1)
+		payload = map_file(area(tile(second + item(321, b"\x08" + struct.pack("<HHB", 998, 999, 7)))))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
+		self.assertFalse(result.facts)
+
+	def test_diagnostic_limit_uses_existing_extraction_limit_behavior(self) -> None:
+		config = replace(self.config, max_diagnostics_per_file=1)
+		payload = map_file(area(tile() * 3))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
+		with self.assertRaises(ExtractionLimitError):
+			self.extract(payload, config=config)
 
 
 class LuaExtractorTests(unittest.TestCase):

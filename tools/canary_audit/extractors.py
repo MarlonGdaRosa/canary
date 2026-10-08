@@ -1,4 +1,4 @@
-"""Typed extractors for Canary Lua, XML, and appearances protobuf data."""
+"""Typed extractors for Canary Lua, XML, OTBM, and appearances protobuf data."""
 
 from __future__ import annotations
 
@@ -32,6 +32,7 @@ from .lua_lexer import (
 	tokenize,
 )
 from .models import Diagnostic, Fact, Location
+from .otbm import OtbmError, OtbmItem, OtbmTile, walk_otbm
 from .workspace import DiscoveredFile, WorkspaceError, read_utf8
 
 
@@ -1122,12 +1123,140 @@ def extract_xml(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 	return result
 
 
+def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
+	result = ExtractionResult.bounded(config, path.path)
+	context = _fact_context(config, path.path)
+	if context is None:
+		return result
+	layer, profiles = context
+	seen_tiles: set[int] = set()
+	seen_uids: dict[int, OtbmItem] = {}
+	teleports: dict[int, tuple[OtbmItem, int]] = {}
+	aggregates: dict[tuple[str, int | str], tuple[Fact, int]] = {}
+
+	def position_key(position: tuple[int, int, int]) -> int:
+		# Reader-validated uint16 X/Y and uint8 Z occupy disjoint bits.
+		x, y, z = position
+		return (x << 24) | (y << 8) | z
+
+	def on_tile(tile: OtbmTile) -> None:
+		key = position_key(tile.position)
+		if key in seen_tiles:
+			position = ",".join(str(coordinate) for coordinate in tile.position)
+			result.diagnostics.append(
+				Diagnostic(
+					"otbm.duplicate-tile",
+					f"map {path.path} contains duplicate tile {position}",
+					"error",
+					Location(path.path, 1, tile.offset + 1),
+					identity=f"{path.path}:{position}",
+				)
+			)
+			return
+		if len(seen_tiles) >= config.max_otbm_tile_positions:
+			raise ExtractionLimitError(
+				f"OTBM tile positions for {path.path} exceeded configured limit {config.max_otbm_tile_positions}"
+			)
+		seen_tiles.add(key)
+
+	def aggregate(domain: str, value: int | str, item: OtbmItem) -> None:
+		key = (domain, value)
+		if key in aggregates:
+			first, count = aggregates[key]
+			aggregates[key] = (first, count + 1)
+			return
+		if len(aggregates) >= config.max_facts_per_file:
+			raise ExtractionLimitError(
+				f"facts for {path.path} exceeded configured limit {config.max_facts_per_file}"
+			)
+		position = ",".join(str(coordinate) for coordinate in item.position)
+		aggregates[key] = (
+			Fact(
+				domain=domain,
+				role="reference",
+				value=value,
+				layer=layer,
+				profiles=profiles,
+				location=Location(path.path, 1, item.offset + 1),
+				extractor="otbm.map",
+				owner="OTBM item",
+				attributes=(("position", position), ("depth", str(item.depth))),
+			),
+			1,
+		)
+
+	def on_item(item: OtbmItem) -> None:
+		aggregate("item.server_id", item.item_id, item)
+		if item.action_id is not None:
+			aggregate("map.action_id", item.action_id, item)
+		if item.unique_id is not None:
+			aggregate("map.unique_id", item.unique_id, item)
+		# MapCache registers only positive UIDs; serialized zero is inventory only.
+		if item.unique_id is not None and item.unique_id > 0:
+			if item.unique_id in seen_uids:
+				result.diagnostics.append(
+					Diagnostic(
+						"otbm.duplicate-unique-id",
+						f"map {path.path} contains duplicate unique ID {item.unique_id}",
+						"error",
+						Location(path.path, 1, item.offset + 1),
+						identity=f"{path.path}:{item.unique_id}",
+					)
+				)
+			else:
+				# Each retained UID already has a bounded aggregate entry.
+				seen_uids[item.unique_id] = item
+		if item.teleport_destination is not None:
+			destination = ",".join(str(coordinate) for coordinate in item.teleport_destination)
+			aggregate("map.teleport.destination", destination, item)
+			# Each retained destination already has a bounded aggregate entry.
+			key = position_key(item.teleport_destination)
+			if key in teleports:
+				first, count = teleports[key]
+				teleports[key] = (first, count + 1)
+			else:
+				teleports[key] = (item, 1)
+
+	try:
+		walk_otbm(
+			path.absolute_path, config.max_otbm_file_bytes, on_tile, on_item,
+			max_nesting_depth=config.max_otbm_nesting_depth,
+		)
+	except (OSError, OtbmError) as error:
+		# Callbacks may precede a malformed suffix. Discard incomplete map state.
+		result = ExtractionResult.bounded(config, path.path)
+		result.diagnostics.append(
+			Diagnostic("scan.otbm-error", f"cannot parse {path.path}: {error}", "error", Location(path.path))
+		)
+		return result
+
+	for destination_key, (item, count) in teleports.items():
+		if destination_key not in seen_tiles:
+			destination = ",".join(str(coordinate) for coordinate in item.teleport_destination)
+			result.diagnostics.append(
+				Diagnostic(
+					"otbm.missing-teleport-target",
+					f"teleport destination {destination} has no tile in map {path.path} ({count} occurrences)",
+					"warning",
+					Location(path.path, 1, item.offset + 1),
+					identity=f"{path.path}:{destination}",
+				)
+			)
+	result.facts.extend(
+		replace(first, attributes=(*first.attributes, ("occurrenceCount", str(count))))
+		for first, count in aggregates.values()
+	)
+	return result
+
+
 def extract_file(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 	if config.layer_for_path(path.path) is None:
 		return ExtractionResult()
 	try:
 		if path.path in config.item_catalog_files:
 			return extract_appearances(path, config)
+		if path.extension == ".otbm":
+			return extract_otbm(path, config)
 		if path.extension == ".lua":
 			return extract_lua(path, config)
 		if path.extension == ".xml":

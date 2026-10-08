@@ -149,6 +149,48 @@ class LoadProfileTests(unittest.TestCase):
 	def setUp(self) -> None:
 		self.config = repository_config()
 
+	def test_config_exposes_validated_otbm_byte_limit(self) -> None:
+		config = repository_config()
+		self.assertEqual(config.max_otbm_file_bytes, 268_435_456)
+
+	def test_config_rejects_nonpositive_otbm_byte_limit(self) -> None:
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmFileBytes"] = 0
+		with self.assertRaisesRegex(ConfigError, "scan limits must be positive"):
+			config_from_mapping(data)
+
+	def test_config_exposes_otbm_tile_limit_and_allows_an_override(self) -> None:
+		self.assertEqual(self.config.max_otbm_tile_positions, 20_000_000)
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmTilePositions"] = 10
+		self.assertEqual(config_from_mapping(data).max_otbm_tile_positions, 10)
+		data.pop("maxOtbmTilePositions")
+		self.assertEqual(config_from_mapping(data).max_otbm_tile_positions, 2_500_000)
+
+	def test_config_rejects_nonpositive_otbm_tile_limit(self) -> None:
+		for limit in (0, -1):
+			with self.subTest(limit=limit):
+				data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+				data["maxOtbmTilePositions"] = limit
+				with self.assertRaisesRegex(ConfigError, "scan limits must be positive"):
+					config_from_mapping(data)
+
+	def test_config_exposes_otbm_nesting_limit_and_allows_an_override(self) -> None:
+		self.assertEqual(self.config.max_otbm_nesting_depth, 1024)
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmNestingDepth"] = 10
+		self.assertEqual(config_from_mapping(data).max_otbm_nesting_depth, 10)
+		data.pop("maxOtbmNestingDepth")
+		self.assertEqual(config_from_mapping(data).max_otbm_nesting_depth, 1024)
+
+	def test_config_rejects_nonpositive_otbm_nesting_limit(self) -> None:
+		for limit in (0, -1):
+			with self.subTest(limit=limit):
+				data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+				data["maxOtbmNestingDepth"] = limit
+				with self.assertRaisesRegex(ConfigError, "scan limits must be positive"):
+					config_from_mapping(data)
+
 	def test_config_models_shared_core_and_mutually_exclusive_datapacks(self) -> None:
 		self.assertEqual(self.config.profile_by_name["canary"].layers, ("core", "canary"))
 		self.assertEqual(
