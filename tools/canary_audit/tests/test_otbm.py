@@ -36,8 +36,12 @@ def area(tiles: bytes, x: int = 100, y: int = 100, z: int = 7) -> bytes:
 	return node(4, struct.pack("<HHB", x, y, z), tiles)
 
 
-def tile(items: bytes = b"", attrs: bytes = b"") -> bytes:
-	return node(5, b"\x01\x02" + attrs, items)
+def tile(items: bytes = b"", attrs: bytes = b"", *, x: int = 1, y: int = 2) -> bytes:
+	return node(5, bytes([x, y]) + attrs, items)
+
+
+def item(item_id: int, attrs: bytes = b"", children: bytes = b"") -> bytes:
+	return node(6, struct.pack("<H", item_id) + attrs, children)
 
 
 class OtbmReaderTests(unittest.TestCase):
