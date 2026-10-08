@@ -386,6 +386,7 @@ config_canary.lua
 client_assertions.txt
 .env
 data-otservbr-global/world/otservbr.otbm
+data-otservbr-global/world/otservbr copy.otbm
 
 # Extensions
 *.ini

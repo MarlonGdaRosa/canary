@@ -11284,6 +11284,11 @@
 	<monster centerx="33687" centery="32203" centerz="5" radius="3">
 		<monster name="Arachnophobica" x="-1" y="2" z="5" spawntime="60" />
 	</monster>
+	<monster centerx="32332" centery="32208" centerz="5" radius="1">
+		<monster name="Rat" x="-1" y="0" z="5" spawntime="60" />
+		<monster name="Cave Rat" x="0" y="0" z="5" spawntime="60" />
+		<monster name="Rat" x="1" y="0" z="5" spawntime="60" />
+	</monster>
 	<monster centerx="33680" centery="32210" centerz="5" radius="3">
 		<monster name="Thanatursus" x="-3" y="-3" z="5" spawntime="60" />
 		<monster name="Crazed Summer Rearguard" x="-3" y="3" z="5" spawntime="60" />
