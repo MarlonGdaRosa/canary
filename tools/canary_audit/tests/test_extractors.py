@@ -72,7 +72,9 @@ class OtbmExtractorTests(unittest.TestCase):
 		for diagnostic in result.diagnostics:
 			self.assertIn(self.map_path, diagnostic.identity)
 			self.assertEqual(diagnostic.location.line, 1)
-			self.assertEqual(diagnostic.severity, "error")
+			self.assertEqual(
+				diagnostic.severity, "warning" if diagnostic.code == "otbm.missing-teleport-target" else "error",
+			)
 			if diagnostic.code == "otbm.duplicate-tile":
 				self.assertIn("101,102,7", diagnostic.identity)
 				self.assertEqual(diagnostic.location.column, payload.index(second_tile) + 1)
@@ -133,14 +135,65 @@ class OtbmExtractorTests(unittest.TestCase):
 		self.assertEqual([diagnostic.code for diagnostic in limited.diagnostics], ["scan.extraction-limit"])
 		self.assertFalse(limited.facts)
 
-	def test_tile_and_teleport_retention_are_bounded(self) -> None:
+	def test_empty_tiles_do_not_consume_fact_slots(self) -> None:
+		config = replace(self.config, max_facts_per_file=1)
+		payload = map_file(area(tile(item(321)) + tile(x=2) + tile(x=3)))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertFalse(result.diagnostics)
+		self.assertEqual([(fact.domain, fact.value) for fact in result.facts], [("item.server_id", 321)])
+
+	def test_repeated_teleports_do_not_consume_fact_or_diagnostic_slots(self) -> None:
+		config = replace(self.config, max_facts_per_file=2, max_diagnostics_per_file=1)
+		for destination, diagnostic_codes in (((101, 102, 7), []), ((999, 999, 7), ["otbm.missing-teleport-target"])):
+			with self.subTest(destination=destination):
+				teleport = item(321, b"\x08" + struct.pack("<HHB", *destination))
+				payload = map_file(area(tile(teleport * 20)))
+				result = self.extract(payload, config=config, dispatch=True)
+				self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], diagnostic_codes)
+				self.assertEqual(len(result.facts), 2)
+				self.assertTrue(all(dict(fact.attributes)["occurrenceCount"] == "20" for fact in result.facts))
+				if result.diagnostics:
+					self.assertEqual(result.diagnostics[0].location.column, payload.index(teleport) + 1)
+					self.assertEqual(result.diagnostics[0].severity, "warning")
+					self.assertIn("20", result.diagnostics[0].message)
+
+	def test_unique_tile_positions_use_the_dedicated_limit(self) -> None:
+		config = replace(self.config, max_facts_per_file=1, max_otbm_tile_positions=2)
+		exact = self.extract(map_file(area(tile(item(321)) + tile(x=2))), config=config, dispatch=True)
+		self.assertFalse(exact.diagnostics)
+		self.assertEqual(len(exact.facts), 1)
+		limited = self.extract(map_file(area(tile() + tile(x=2) + tile(x=3))), config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in limited.diagnostics], ["scan.extraction-limit"])
+		self.assertIn("OTBM tile positions", limited.diagnostics[0].message)
+		self.assertFalse(limited.facts)
+		duplicates = self.extract(map_file(area(tile() * 3)), config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in duplicates.diagnostics], ["otbm.duplicate-tile"] * 2)
+
+	def test_position_packing_preserves_all_coordinate_fields(self) -> None:
+		positions = ((1, 0, 0), (0, 256, 0), (0, 0, 1), (65535, 65535, 255))
+		payload = map_file(b"".join(
+			area(tile(item(321, b"\x08" + struct.pack("<HHB", *position)), x=0, y=0), *position)
+			for position in positions
+		))
+		result = self.extract(payload)
+		self.assertFalse(result.diagnostics)
+		self.assertEqual({fact.value for fact in result.facts if fact.domain == "map.teleport.destination"}, {
+			"1,0,0", "0,256,0", "0,0,1", "65535,65535,255",
+		})
+
+	def test_distinct_teleports_still_enforce_fact_and_diagnostic_limits(self) -> None:
 		config = replace(self.config, max_facts_per_file=2)
 		teleport = item(321, b"\x08" + struct.pack("<HHB", 101, 102, 7))
-		for payload in (map_file(area(tile() + tile(x=2) + tile(x=3))), map_file(area(tile(teleport * 3)))):
-			with self.subTest(payload=payload):
-				result = self.extract(payload, config=config, dispatch=True)
-				self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
-				self.assertFalse(result.facts)
+		second = item(321, b"\x08" + struct.pack("<HHB", 999, 999, 7))
+		payload = map_file(area(tile(teleport + second)))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
+		self.assertFalse(result.facts)
+		config = replace(self.config, max_diagnostics_per_file=1)
+		payload = map_file(area(tile(second + item(321, b"\x08" + struct.pack("<HHB", 998, 999, 7)))))
+		result = self.extract(payload, config=config, dispatch=True)
+		self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.extraction-limit"])
+		self.assertFalse(result.facts)
 
 	def test_diagnostic_limit_uses_existing_extraction_limit_behavior(self) -> None:
 		config = replace(self.config, max_diagnostics_per_file=1)

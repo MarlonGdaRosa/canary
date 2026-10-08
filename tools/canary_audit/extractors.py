@@ -1129,14 +1129,20 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 	if context is None:
 		return result
 	layer, profiles = context
-	seen_tiles: dict[tuple[int, int, int], OtbmTile] = {}
+	seen_tiles: set[int] = set()
 	seen_uids: dict[int, OtbmItem] = {}
-	teleports: list[OtbmItem] = BoundedList(config.max_facts_per_file, f"OTBM teleports for {path.path}")
+	teleports: dict[int, tuple[OtbmItem, int]] = {}
 	aggregates: dict[tuple[str, int | str], tuple[Fact, int]] = {}
 
+	def position_key(position: tuple[int, int, int]) -> int:
+		# Reader-validated uint16 X/Y and uint8 Z occupy disjoint bits.
+		x, y, z = position
+		return (x << 24) | (y << 8) | z
+
 	def on_tile(tile: OtbmTile) -> None:
-		position = ",".join(str(coordinate) for coordinate in tile.position)
-		if tile.position in seen_tiles:
+		key = position_key(tile.position)
+		if key in seen_tiles:
+			position = ",".join(str(coordinate) for coordinate in tile.position)
 			result.diagnostics.append(
 				Diagnostic(
 					"otbm.duplicate-tile",
@@ -1147,11 +1153,11 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 				)
 			)
 			return
-		if len(seen_tiles) >= config.max_facts_per_file:
+		if len(seen_tiles) >= config.max_otbm_tile_positions:
 			raise ExtractionLimitError(
-				f"OTBM tiles for {path.path} exceeded configured limit {config.max_facts_per_file}"
+				f"OTBM tile positions for {path.path} exceeded configured limit {config.max_otbm_tile_positions}"
 			)
-		seen_tiles[tile.position] = tile
+		seen_tiles.add(key)
 
 	def aggregate(domain: str, value: int | str, item: OtbmItem) -> None:
 		key = (domain, value)
@@ -1201,7 +1207,13 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 		if item.teleport_destination is not None:
 			destination = ",".join(str(coordinate) for coordinate in item.teleport_destination)
 			aggregate("map.teleport.destination", destination, item)
-			teleports.append(item)
+			# Each retained destination already has a bounded aggregate entry.
+			key = position_key(item.teleport_destination)
+			if key in teleports:
+				first, count = teleports[key]
+				teleports[key] = (first, count + 1)
+			else:
+				teleports[key] = (item, 1)
 
 	try:
 		walk_otbm(path.absolute_path, config.max_otbm_file_bytes, on_tile, on_item)
@@ -1213,14 +1225,14 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 		)
 		return result
 
-	for item in teleports:
-		if item.teleport_destination not in seen_tiles:
+	for destination_key, (item, count) in teleports.items():
+		if destination_key not in seen_tiles:
 			destination = ",".join(str(coordinate) for coordinate in item.teleport_destination)
 			result.diagnostics.append(
 				Diagnostic(
 					"otbm.missing-teleport-target",
-					f"teleport destination {destination} has no tile in map {path.path}",
-					"error",
+					f"teleport destination {destination} has no tile in map {path.path} ({count} occurrences)",
+					"warning",
 					Location(path.path, 1, item.offset + 1),
 					identity=f"{path.path}:{destination}",
 				)

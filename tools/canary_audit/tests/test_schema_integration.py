@@ -43,6 +43,19 @@ class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
 		with self.assertRaises(SchemaError):
 			validate_instance("config.schema.json", data)
 
+	def test_config_schema_requires_a_positive_integer_otbm_tile_limit(self) -> None:
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmTilePositions"] = 2_500_000
+		validate_instance("config.schema.json", data)
+		for limit in (0, -1, 1.5, "2500000", True):
+			with self.subTest(limit=limit):
+				data["maxOtbmTilePositions"] = limit
+				with self.assertRaises(SchemaError):
+					validate_instance("config.schema.json", data)
+		data.pop("maxOtbmTilePositions")
+		with self.assertRaises(SchemaError):
+			validate_instance("config.schema.json", data)
+
 	def test_same_workspace_produces_byte_stable_schema_valid_artifacts(self) -> None:
 		with tempfile.TemporaryDirectory() as temporary:
 			root = Path(temporary)
