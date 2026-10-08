@@ -51,6 +51,7 @@ class AuditConfig:
 	max_text_file_bytes: int
 	max_lua_tokens: int
 	max_xml_file_bytes: int
+	max_otbm_file_bytes: int
 	max_facts_per_file: int
 	max_diagnostics_per_file: int
 	max_total_facts: int
@@ -152,6 +153,7 @@ def config_from_mapping(data: Mapping[str, Any]) -> AuditConfig:
 	max_bytes = int(data.get("maxTextFileBytes", 4_000_000))
 	max_lua_tokens = int(data.get("maxLuaTokens", 250_000))
 	max_xml_bytes = int(data.get("maxXmlFileBytes", 32_000_000))
+	max_otbm_bytes = int(data.get("maxOtbmFileBytes", 268_435_456))
 	max_facts = int(data.get("maxFactsPerFile", 100_000))
 	max_diagnostics = int(data.get("maxDiagnosticsPerFile", 1_000))
 	max_total_facts = int(data.get("maxTotalFacts", 1_000_000))
@@ -163,6 +165,7 @@ def config_from_mapping(data: Mapping[str, Any]) -> AuditConfig:
 			max_bytes,
 			max_lua_tokens,
 			max_xml_bytes,
+			max_otbm_bytes,
 			max_facts,
 			max_diagnostics,
 			max_total_facts,
@@ -184,6 +187,7 @@ def config_from_mapping(data: Mapping[str, Any]) -> AuditConfig:
 		max_text_file_bytes=max_bytes,
 		max_lua_tokens=max_lua_tokens,
 		max_xml_file_bytes=max_xml_bytes,
+		max_otbm_file_bytes=max_otbm_bytes,
 		max_facts_per_file=max_facts,
 		max_diagnostics_per_file=max_diagnostics,
 		max_total_facts=max_total_facts,

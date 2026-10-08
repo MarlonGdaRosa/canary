@@ -149,6 +149,16 @@ class LoadProfileTests(unittest.TestCase):
 	def setUp(self) -> None:
 		self.config = repository_config()
 
+	def test_config_exposes_validated_otbm_byte_limit(self) -> None:
+		config = repository_config()
+		self.assertEqual(config.max_otbm_file_bytes, 268_435_456)
+
+	def test_config_rejects_nonpositive_otbm_byte_limit(self) -> None:
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmFileBytes"] = 0
+		with self.assertRaisesRegex(ConfigError, "scan limits must be positive"):
+			config_from_mapping(data)
+
 	def test_config_models_shared_core_and_mutually_exclusive_datapacks(self) -> None:
 		self.assertEqual(self.config.profile_by_name["canary"].layers, ("core", "canary"))
 		self.assertEqual(

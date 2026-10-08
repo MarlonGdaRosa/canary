@@ -36,6 +36,13 @@ class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
 		with self.assertRaises(SchemaError):
 			validate_instance("config.schema.json", config)
 
+	def test_config_schema_rejects_nonpositive_otbm_byte_limit(self) -> None:
+		data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+		data["maxOtbmFileBytes"] = 0
+
+		with self.assertRaises(SchemaError):
+			validate_instance("config.schema.json", data)
+
 	def test_same_workspace_produces_byte_stable_schema_valid_artifacts(self) -> None:
 		with tempfile.TemporaryDirectory() as temporary:
 			root = Path(temporary)

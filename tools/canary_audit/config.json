@@ -23,6 +23,7 @@
   "maxTextFileBytes": 4194304,
   "maxLuaTokens": 250000,
   "maxXmlFileBytes": 33554432,
+  "maxOtbmFileBytes": 268435456,
   "maxFactsPerFile": 200000,
   "maxDiagnosticsPerFile": 10000,
   "maxTotalFacts": 1000000,
