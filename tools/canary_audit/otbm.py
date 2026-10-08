@@ -259,7 +259,7 @@ def _read_properties(reader: _Reader, frame: _Frame, parent: _Frame,
 	reader.require_property_end()
 
 
-def _walk(data: mmap.mmap, on_tile: Callable[[OtbmTile], None],
+def _walk(data: mmap.mmap, max_nesting_depth: int, on_tile: Callable[[OtbmTile], None],
 		on_item: Callable[[OtbmItem], None]) -> OtbmHeader:
 	if len(data) < 4:
 		raise OtbmError("truncated OTBM identifier at byte offset 0")
@@ -284,6 +284,10 @@ def _walk(data: mmap.mmap, on_tile: Callable[[OtbmTile], None],
 		if value == START:
 			child = reader.start_node()
 			_validate_child(reader, parent, child)
+			if child.kind == OTBM_ITEM and parent.depth + 1 > max_nesting_depth:
+				raise reader.error(
+					f"OTBM nesting depth exceeds configured limit {max_nesting_depth}", child.offset,
+				)
 			_read_properties(reader, child, parent, on_tile, on_item)
 			stack.append(child)
 		elif value == END:
@@ -299,11 +303,13 @@ def _walk(data: mmap.mmap, on_tile: Callable[[OtbmTile], None],
 
 
 def walk_otbm(path: Path, max_file_bytes: int, on_tile: Callable[[OtbmTile], None],
-		on_item: Callable[[OtbmItem], None]) -> OtbmHeader:
+		on_item: Callable[[OtbmItem], None], *, max_nesting_depth: int = 1024) -> OtbmHeader:
 	"""Visit tiles and items without a node tree or an owned copy of the file.
 
 	The byte cap is checked before mapping; the opened file and mapping are also
 	checked in case the path was replaced or grew between those operations.
+	Item depth starts at zero on tiles; deeper nodes are rejected before their
+	properties or callbacks are read and before their frames enter the stack.
 	Invalid binary input raises OtbmError. I/O and callback errors propagate.
 	"""
 	if path.stat().st_size > max_file_bytes:
@@ -317,4 +323,4 @@ def walk_otbm(path: Path, max_file_bytes: int, on_tile: Callable[[OtbmTile], Non
 		with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
 			if len(data) > max_file_bytes:
 				raise OtbmError("OTBM file size exceeds configured limit at byte offset 0")
-			return _walk(data, on_tile, on_item)
+			return _walk(data, max_nesting_depth, on_tile, on_item)

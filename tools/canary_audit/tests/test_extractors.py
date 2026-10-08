@@ -116,6 +116,45 @@ class OtbmExtractorTests(unittest.TestCase):
 				self.assertEqual([diagnostic.code for diagnostic in result.diagnostics], ["scan.otbm-error"])
 				self.assertFalse(result.facts)
 
+	def test_nesting_overflow_discards_partial_facts_and_semantic_diagnostics(self) -> None:
+		uid = b"\x05" + struct.pack("<H", 6000)
+		prefix = tile(item(321, uid)) + tile(item(322, uid))
+		prefix_result = self.extract(map_file(area(prefix)))
+		self.assertTrue(prefix_result.facts)
+		self.assertEqual({entry.code for entry in prefix_result.diagnostics}, {
+			"otbm.duplicate-tile", "otbm.duplicate-unique-id",
+		})
+		child = item(321)
+		for _ in range(1025):
+			child = item(321, children=child)
+		result = self.extract(map_file(area(prefix + tile(child, x=2))), dispatch=True)
+		self.assertFalse(result.facts)
+		self.assertEqual([entry.code for entry in result.diagnostics], ["scan.otbm-error"])
+		self.assertEqual(result.diagnostics[0].severity, "error")
+		self.assertIn("nesting depth exceeds configured limit 1024", result.diagnostics[0].message)
+
+	def test_configured_nesting_limit_is_forwarded_to_reader(self) -> None:
+		config = replace(self.config, max_otbm_nesting_depth=1)
+		child = item(321, children=item(322))
+		exact = self.extract(map_file(area(tile(child))), config=config)
+		self.assertFalse(exact.diagnostics)
+		self.assertEqual({fact.value for fact in exact.facts}, {321, 322})
+		overflow = self.extract(map_file(area(tile(item(320, children=child)))), config=config)
+		self.assertFalse(overflow.facts)
+		self.assertEqual([entry.code for entry in overflow.diagnostics], ["scan.otbm-error"])
+		self.assertIn("nesting depth exceeds configured limit 1", overflow.diagnostics[0].message)
+
+	def test_duplicate_uid_checks_ignore_zero_but_preserve_inventory(self) -> None:
+		zero = item(321, b"\x05\x00\x00")
+		positive = item(322, b"\x05" + struct.pack("<H", 6000))
+		result = self.extract(map_file(area(tile(zero * 2 + positive * 2))))
+		self.assertEqual([entry.code for entry in result.diagnostics], ["otbm.duplicate-unique-id"])
+		self.assertIn("6000", result.diagnostics[0].identity)
+		self.assertEqual({
+			(fact.value, dict(fact.attributes)["occurrenceCount"])
+			for fact in result.facts if fact.domain == "map.unique_id"
+		}, {(0, "2"), (6000, "2")})
+
 	def test_missing_file_and_file_byte_limit_are_operational_errors(self) -> None:
 		payload = map_file(area(tile(item(321))))
 		limited = self.extract(payload, config=replace(self.config, max_otbm_file_bytes=len(payload) - 1))

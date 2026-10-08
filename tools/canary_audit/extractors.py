@@ -1191,6 +1191,8 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 			aggregate("map.action_id", item.action_id, item)
 		if item.unique_id is not None:
 			aggregate("map.unique_id", item.unique_id, item)
+		# MapCache registers only positive UIDs; serialized zero is inventory only.
+		if item.unique_id is not None and item.unique_id > 0:
 			if item.unique_id in seen_uids:
 				result.diagnostics.append(
 					Diagnostic(
@@ -1216,7 +1218,10 @@ def extract_otbm(path: DiscoveredFile, config: AuditConfig) -> ExtractionResult:
 				teleports[key] = (item, 1)
 
 	try:
-		walk_otbm(path.absolute_path, config.max_otbm_file_bytes, on_tile, on_item)
+		walk_otbm(
+			path.absolute_path, config.max_otbm_file_bytes, on_tile, on_item,
+			max_nesting_depth=config.max_otbm_nesting_depth,
+		)
 	except (OSError, OtbmError) as error:
 		# Callbacks may precede a malformed suffix. Discard incomplete map state.
 		result = ExtractionResult.bounded(config, path.path)

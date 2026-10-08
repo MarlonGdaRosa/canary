@@ -52,9 +52,9 @@ class OtbmReaderTests(unittest.TestCase):
 		self.tiles = []
 		self.items = []
 
-	def read(self, payload: bytes, limit: int = 1_000_000):
+	def read(self, payload: bytes, limit: int = 1_000_000, **kwargs):
 		self.path.write_bytes(payload)
-		return walk_otbm(self.path, limit, self.tiles.append, self.items.append)
+		return walk_otbm(self.path, limit, self.tiles.append, self.items.append, **kwargs)
 
 	def reject(self, payload: bytes, phrase: str) -> None:
 		with self.assertRaisesRegex(OtbmError, phrase):
@@ -288,9 +288,35 @@ class OtbmReaderTests(unittest.TestCase):
 		child = node(6, b"\x41\x01")
 		for _ in range(1100):
 			child = node(6, b"\x41\x01", child)
-		self.read(map_file(area(tile(child))))
+		self.read(map_file(area(tile(child))), max_nesting_depth=1100)
 		self.assertEqual(len(self.items), 1101)
 		self.assertEqual(self.items[-1].depth, 1100)
+
+	def test_default_nesting_limit_accepts_boundary_and_rejects_next_item(self) -> None:
+		child = item(321)
+		for _ in range(1024):
+			child = item(321, children=child)
+		self.read(map_file(area(tile(child))))
+		self.assertEqual(len(self.items), 1025)
+		self.assertEqual(self.items[-1].depth, 1024)
+		self.items.clear()
+		with self.assertRaisesRegex(OtbmError, "nesting depth exceeds configured limit 1024.*byte offset"):
+			self.read(map_file(area(tile(item(321, children=child)))))
+		self.assertEqual(len(self.items), 1025)
+		self.assertEqual(self.items[-1].depth, 1024)
+		self.path.unlink()
+		self.assertFalse(self.path.exists())
+
+	def test_configured_nesting_limit_resets_for_sibling_items(self) -> None:
+		child = item(321, children=item(322))
+		self.read(map_file(area(tile(child * 3))), max_nesting_depth=1)
+		self.assertEqual([entry.depth for entry in self.items], [0, 1, 0, 1, 0, 1])
+		self.items.clear()
+		payload = map_file(area(tile(item(320, children=child))))
+		with self.assertRaisesRegex(OtbmError, "nesting depth exceeds configured limit 1") as raised:
+			self.read(payload, max_nesting_depth=1)
+		self.assertIn(f"byte offset {payload.index(item(322))}", str(raised.exception))
+		self.assertEqual([entry.depth for entry in self.items], [0, 1])
 
 	def test_every_truncated_prefix_raises_otbm_error(self) -> None:
 		payload = map_file(area(tile(node(6, b"\x41\x01\x06" + string(b"\xfd\xfe\xff")))))

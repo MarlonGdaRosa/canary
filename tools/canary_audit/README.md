@@ -182,7 +182,9 @@ including parse, input, limit, and workspace failures, cannot be waived.
   destinations are structurally validated. Map item IDs must resolve to the
   authoritative item catalog.
 - `otbm.duplicate-unique-id` and `otbm.duplicate-tile` are errors scoped to a
-  single map file. `otbm.missing-teleport-target` is a warning when the
+  single map file. Only positive UIDs are identities; serialized UID zero stays
+  in the inventory but cannot produce a duplicate-UID finding.
+  `otbm.missing-teleport-target` is a warning when the
   destination has no tile in that file; another fragment may supply the tile.
   The auditor does not infer which discovered maps are loaded together.
 - Lua AID/UID registrations and map instances are indexed, but unmatched
@@ -207,6 +209,13 @@ for `maxOtbmTilePositions` is `2500000` unique positions per map, while this
 repository config explicitly uses `20000000`: the active main map contains
 17,972,761 unique positions. The tile limit bounds the retained set used for
 per-file duplicate and teleport checks; exceeding it makes the scan incomplete.
+
+`maxOtbmNestingDepth` is required by the configuration schema and defaults to
+`1024`. Tile items have depth zero; nested items at the configured depth are
+accepted, and deeper items produce `scan.otbm-error` before their callback or
+stack insertion. This bounds parser state independently of collapsed facts and
+tile positions. Extraction discards all partial facts and semantic diagnostics
+from a map that exceeds this limit and marks the scan incomplete.
 
 OTBM coverage is published in tool version `1.1.0`; the artifact schema version
 remains `1` because the existing fact and finding contracts are unchanged.

@@ -204,12 +204,14 @@ The map diagnostics are:
 
 | Rule | Repository severity | Scope |
 | --- | --- | --- |
-| `otbm.duplicate-unique-id` | `error` | A UID occurs on multiple items in one map file |
+| `otbm.duplicate-unique-id` | `error` | A positive UID occurs on multiple items in one map file |
 | `otbm.duplicate-tile` | `error` | A tile position occurs more than once in one map file |
 | `otbm.missing-teleport-target` | `warning` | A destination has no tile in that map file |
 
 UID and tile uniqueness are checked per file, without combining alternative
-maps or fragments. Teleport checks are local because another loaded fragment
+maps or fragments. Serialized UID zero remains an inventory fact, but is not a
+runtime identity and cannot produce duplicate-UID findings, matching MapCache.
+Teleport checks are local because another loaded fragment
 may supply a destination. Repeated AIDs can be intentional and do not produce
 duplicate-ID findings. Lua AID/UID registrations and map instances are both
 indexed; unmatched handlers remain informational because dynamic registration,
@@ -222,6 +224,11 @@ than a character in a text line. This keeps locations compatible with the
 existing artifact schemas.
 
 `maxOtbmFileBytes` defaults to `268435456`, a 256 MiB limit per map file.
+The required `maxOtbmNestingDepth` setting defaults to `1024` and bounds the
+parser's item stack independently of facts and tile positions. Tile items have
+depth zero; the configured depth is accepted and the next nested item raises
+`scan.otbm-error` before properties, callbacks, or stack insertion. Partial map
+facts and semantic diagnostics are discarded on this error.
 `maxOtbmTilePositions` bounds retained unique positions per map for duplicate
 and teleport checks. The config loader fallback is `2500000`; this repository
 explicitly configures `20000000` because the active main map contains

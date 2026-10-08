@@ -25,6 +25,7 @@
   "maxXmlFileBytes": 33554432,
   "maxOtbmFileBytes": 268435456,
   "maxOtbmTilePositions": 20000000,
+  "maxOtbmNestingDepth": 1024,
   "maxFactsPerFile": 200000,
   "maxDiagnosticsPerFile": 10000,
   "maxTotalFacts": 1000000,
