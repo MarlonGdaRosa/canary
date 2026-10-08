@@ -89,10 +89,26 @@ class OtbmReaderTests(unittest.TestCase):
 				self.assertEqual(self.read(map_file(version=version)).version, version)
 
 	def test_rejects_non_otbm_identifier(self) -> None:
-		self.reject(b"NOPE" + map_file()[4:], "OTBM identifier")
+		for identifier in (b"NOPE", b"OTB\x00", b"\x00\x00\x00\x01", b"\x01\x00\x00\x00"):
+			with self.subTest(identifier=identifier):
+				self.reject(identifier + map_file()[4:], "OTBM identifier")
 
-	def test_rejects_wildcard_identifier(self) -> None:
-		self.reject(b"\x00" * 4 + map_file()[4:], "OTBM identifier")
+	def test_wildcard_identifier_preserves_header_and_callbacks(self) -> None:
+		attrs = b"\x04" + struct.pack("<H", 5000) + b"\x05" + struct.pack("<H", 6000)
+		attrs += b"\x08" + struct.pack("<HHB", 101, 102, 7)
+		item = node(6, struct.pack("<H", 321) + attrs, node(6, struct.pack("<H", 322)))
+		payload = map_file(area(tile(item, attrs=b"\x09" + struct.pack("<H", 100))))
+		otbm_header = self.read(payload)
+		otbm_tiles, otbm_items = self.tiles[:], self.items[:]
+		self.tiles.clear()
+		self.items.clear()
+
+		wildcard_header = self.read(b"\x00" * 4 + payload[4:])
+
+		self.assertEqual(wildcard_header, otbm_header)
+		self.assertEqual(self.tiles, otbm_tiles)
+		self.assertEqual(self.items, otbm_items)
+		self.assertEqual([entry.item_id for entry in self.items], [100, 321, 322])
 
 	def test_rejects_version_six(self) -> None:
 		self.reject(map_file(version=6), "unsupported OTBM version")

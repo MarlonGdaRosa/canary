@@ -262,7 +262,7 @@ def _walk(data: mmap.mmap, on_tile: Callable[[OtbmTile], None],
 		on_item: Callable[[OtbmItem], None]) -> OtbmHeader:
 	if len(data) < 4:
 		raise OtbmError("truncated OTBM identifier at byte offset 0")
-	if data[:4] != b"OTBM":
+	if data[:4] not in (b"OTBM", b"\x00\x00\x00\x00"):
 		raise OtbmError("invalid OTBM identifier at byte offset 0")
 	reader = _Reader(data)
 	root = reader.start_node()
