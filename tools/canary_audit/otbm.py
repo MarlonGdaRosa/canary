@@ -121,16 +121,17 @@ class _Reader:
 	def read_position(self) -> tuple[int, int, int]:
 		return self.read_u16(), self.read_u16(), self.read_u8()
 
-	def start_node(self) -> _Frame:
+	def start_node(self, *, is_root: bool = False) -> _Frame:
 		offset = self.offset
 		if self.peek() != START:
 			raise self.error("expected OTBM node start")
 		self.offset += 1
 		kind = self.peek()
-		if kind in (START, END, ESCAPE):
+		if not is_root and kind in (START, END, ESCAPE):
 			raise self.error("invalid OTBM node type")
 		self.offset += 1
-		return _Frame(kind, offset)
+		# IOMap ignores the root type byte; its context is determined by framing.
+		return _Frame(OTBM_ROOTV1 if is_root else kind, offset)
 
 	def require_property_end(self) -> None:
 		if self.has_properties():
@@ -265,9 +266,7 @@ def _walk(data: mmap.mmap, on_tile: Callable[[OtbmTile], None],
 	if data[:4] not in (b"OTBM", b"\x00\x00\x00\x00"):
 		raise OtbmError("invalid OTBM identifier at byte offset 0")
 	reader = _Reader(data)
-	root = reader.start_node()
-	if root.kind != OTBM_ROOTV1:
-		raise reader.error("expected OTBM root", root.offset)
+	root = reader.start_node(is_root=True)
 	version = reader.read_u32()
 	width = reader.read_u16()
 	height = reader.read_u16()

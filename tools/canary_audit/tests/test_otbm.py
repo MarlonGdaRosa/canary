@@ -156,8 +156,22 @@ class OtbmReaderTests(unittest.TestCase):
 		self.reject(b"OTBM" + node(1, header), "missing OTBM_MAP_DATA")
 		self.reject(map_file(root_children=node(2)), "unexpected child node")
 
-	def test_rejects_wrong_root_type(self) -> None:
-		self.reject(b"OTBM" + node(2), "expected OTBM root")
+	def test_root_type_byte_is_ignored(self) -> None:
+		payload = map_file(area(tile(node(6, b"\x41\x01"))))
+		for root_type in (0, 2, ESCAPE, START, END):
+			with self.subTest(root_type=root_type):
+				self.tiles.clear()
+				self.items.clear()
+				header = self.read(payload[:5] + bytes([root_type]) + payload[6:])
+				self.assertEqual((header.version, header.width, header.height), (4, 18, 18))
+				self.assertEqual([entry.position for entry in self.tiles], [(101, 102, 7)])
+				self.assertEqual([entry.item_id for entry in self.items], [321])
+
+	def test_root_requires_start_framing(self) -> None:
+		payload = map_file()
+		for marker in (0, ESCAPE, END):
+			with self.subTest(marker=marker):
+				self.reject(payload[:4] + bytes([marker]) + payload[5:], "expected OTBM node start")
 
 	def test_rejects_trailing_bytes_and_extra_root(self) -> None:
 		for suffix in (b"\x00", node(1), b"\xff"):
