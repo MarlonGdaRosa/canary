@@ -173,9 +173,24 @@ including parse, input, limit, and workspace failures, cannot be waived.
 - Player and global storage domains are separate.
 - Action, movement, weapon, and spell selectors are typed according to their
   constructor. Repeated references are not treated as duplicate definitions.
-- Binary `.otbm` maps are not parsed. Action-ID and unique-ID selectors are
-  indexed as Lua registrations only, so the auditor does not claim that a map
-  selector exists or is missing.
+- Every discovered `.otbm` map in the configured content layers is parsed,
+  including ignored local OTBM files and map fragments beyond the configured
+  main map. Discovery adds repository-contained maps without following
+  symlinks or entering excluded directories; other file types retain normal
+  Git discovery. OTBM v1-v5 tiles,
+  nested items, server item IDs, action IDs, unique IDs, and local teleport
+  destinations are structurally validated. Map item IDs must resolve to the
+  authoritative item catalog.
+- `otbm.duplicate-unique-id` and `otbm.duplicate-tile` are errors scoped to a
+  single map file. `otbm.missing-teleport-target` is a warning when the
+  destination has no tile in that file; another fragment may supply the tile.
+  The auditor does not infer which discovered maps are loaded together.
+- Lua AID/UID registrations and map instances are indexed, but unmatched
+  handlers remain informational: runtime map selection, dynamic scripts, and
+  intentional unused selectors prevent a static claim of handler completeness.
+- Binary locations use `line: 1` and `column: byte offset + 1` in the original
+  `.otbm` file, rather than a text column. The default map byte limit is
+  256 MiB per file; malformed or over-limit input makes the scan incomplete.
 - Dynamic expressions are recorded with `unresolved` role and dynamic
   confidence. They are coverage information, not fabricated missing-reference
   findings.
@@ -186,6 +201,15 @@ including parse, input, limit, and workspace failures, cannot be waived.
 storage roots, safety limits, severities, the baseline path, and the
 `artifactRoot` output boundary. Its shape is validated by
 `schemas/config.schema.json` before a scan begins.
+
+`maxOtbmFileBytes` defaults to `268435456` (256 MiB). The config loader fallback
+for `maxOtbmTilePositions` is `2500000` unique positions per map, while this
+repository config explicitly uses `20000000`: the active main map contains
+17,972,761 unique positions. The tile limit bounds the retained set used for
+per-file duplicate and teleport checks; exceeding it makes the scan incomplete.
+
+OTBM coverage is published in tool version `1.1.0`; the artifact schema version
+remains `1` because the existing fact and finding contracts are unchanged.
 
 All schemas are strict: unknown object properties are rejected. When changing
 an artifact shape, update its schema, tests, readers, and `schemaVersion`

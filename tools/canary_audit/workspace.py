@@ -113,7 +113,11 @@ def _git_file_names(root: Path) -> list[str] | None:
 		return None
 
 
-def _walk_file_names(root: Path, excluded_directories: frozenset[str]) -> list[str]:
+def _walk_file_names(
+	root: Path,
+	excluded_directories: frozenset[str],
+	file_extensions: frozenset[str] | None = None,
+) -> list[str]:
 	paths: list[str] = []
 
 	def fail_walk(error: OSError) -> None:
@@ -134,6 +138,8 @@ def _walk_file_names(root: Path, excluded_directories: frozenset[str]) -> list[s
 			kept_directories.append(name)
 		directory_names[:] = kept_directories
 		for name in sorted(file_names):
+			if file_extensions is not None and PurePosixPath(name).suffix.lower() not in file_extensions:
+				continue
 			candidate = base / name
 			if candidate.is_symlink():
 				continue
@@ -146,12 +152,16 @@ def discover_files(
 	excluded_directories: frozenset[str],
 	*,
 	prefer_git: bool = True,
+	ignored_extensions: frozenset[str] = frozenset(),
 ) -> tuple[DiscoveredFile, ...]:
 	"""Discover each repository file once without following symlinks."""
 	root = root.resolve(strict=True)
 	names = _git_file_names(root) if prefer_git else None
 	if names is None:
 		names = _walk_file_names(root, excluded_directories)
+	elif ignored_extensions:
+		# Git lists every tracked/non-ignored file; opt in only missing binary inputs.
+		names.extend(_walk_file_names(root, excluded_directories, ignored_extensions))
 
 	result: list[DiscoveredFile] = []
 	seen: set[str] = set()

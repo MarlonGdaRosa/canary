@@ -208,13 +208,13 @@ def _coverage() -> list[dict[str, str]]:
 		},
 		{
 			"domain": "action/movement selectors",
-			"status": "registrations-only",
-			"details": "Lua registrations are indexed; OTBM selector definitions are not parsed",
+			"status": "partial",
+			"details": "Lua registrations and OTBM AID/UID selector instances are indexed; handler completeness is informational",
 		},
 		{
 			"domain": "map.otbm",
-			"status": "unavailable",
-			"details": "binary map validation requires a separate version-aware OTBM extractor",
+			"status": "authoritative",
+			"details": "OTBM v1-v5 tiles, nested items, item IDs, AIDs, UIDs and local teleport destinations are structurally validated per map file",
 		},
 	]
 
@@ -337,7 +337,10 @@ def run_audit(
 		raise ValueError(f"unknown or empty audit profile selection: {sorted(unknown)}")
 	profiles = tuple(sorted(selected))
 	selected_set = frozenset(profiles)
-	files = discover_files(root, config.excluded_directories, prefer_git=prefer_git)
+	files = discover_files(
+		root, config.excluded_directories, prefer_git=prefer_git,
+		ignored_extensions=frozenset({".otbm"}),
+	)
 	diagnostics = _required_input_diagnostics(files, config)
 	stop_scan = False
 	if len(diagnostics) >= config.max_total_diagnostics:

@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 
 SCHEMA_VERSION = 1
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = "1.1.0"
 
 Role = Literal["definition", "reference", "registration", "unresolved"]
 Confidence = Literal["exact", "derived", "dynamic"]

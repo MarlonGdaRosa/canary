@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.canary_audit.cli import _write_artifacts
 from tools.canary_audit.runner import run_audit
@@ -21,6 +23,7 @@ from .helpers import (
 	appearances_payload,
 	repository_config,
 )
+from .test_otbm import area, item, map_file, tile
 
 
 class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
@@ -80,6 +83,11 @@ class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
 			)
 
 		self.assertFalse(first.incomplete)
+		self.assertIn("map.action_id", {fact["domain"] for fact in first.symbol_registry["facts"]})
+		coverage = {entry["domain"]: entry for entry in first.symbol_registry["coverage"]}
+		self.assertEqual(coverage["map.otbm"]["status"], "authoritative")
+		self.assertEqual(coverage["action/movement selectors"]["status"], "partial")
+		self.assertEqual(first.symbol_registry["toolVersion"], "1.1.0")
 		self.assertEqual(stable_json(first.project_index), stable_json(second.project_index))
 		self.assertEqual(stable_json(first.symbol_registry), stable_json(second.symbol_registry))
 		self.assertEqual(stable_json(first.reference_report), stable_json(second.reference_report))
@@ -93,6 +101,79 @@ class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
 
 		self.assertEqual(with_stale_waiver.reference_report["summary"]["staleWaiverCount"], 1)
 
+	def test_unknown_map_item_creates_missing_definition_finding(self) -> None:
+		with tempfile.TemporaryDirectory() as temporary:
+			root = Path(temporary)
+			self._write_minimal_workspace(root)
+			self._write(root, "data-canary/world/test.otbm", map_file(area(tile(item(65530)))))
+
+			result = run_audit(root, repository_config(), selected_profiles=("canary",), prefer_git=False)
+
+		self.assertFalse(result.incomplete)
+		findings = [
+			finding for finding in result.reference_report["findings"]
+			if finding["ruleId"] == "reference.missing-definition" and finding["domain"] == "item.server_id"
+		]
+		self.assertEqual(len(findings), 1)
+		self.assertEqual(findings[0]["value"], 65530)
+		self.assertEqual(findings[0]["severity"], "error")
+		self.assertEqual(findings[0]["locations"][0]["path"], "data-canary/world/test.otbm")
+		validate_instance("reference-report.schema.json", result.reference_report)
+
+	def test_git_discovery_includes_ignored_maps_but_not_ignored_unrelated_content(self) -> None:
+		with tempfile.TemporaryDirectory() as temporary:
+			root = Path(temporary)
+			self._write_minimal_workspace(root)
+			tracked = [path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()]
+			self._write(
+				root, "data-canary/world/ignored.OTBM",
+				map_file(area(tile(item(321, b"\x04" + struct.pack("<H", 6001))))),
+			)
+			self._write(root, "data-canary/ignored.lua", "Game.createItem(65530)")
+			self._write(root, "data-canary/ignored.xml", '<items><item id="65530" /></items>')
+			self._write(root, "artifacts/ignored.otbm", b"invalid excluded map")
+			self._write(root, "unconfigured/ignored.otbm", b"invalid unconfigured map")
+			self._write(root, "data-otservbr-global/world/ignored.otbm", b"invalid unselected map")
+
+			with patch("tools.canary_audit.workspace._git_file_names", return_value=tracked):
+				result = run_audit(root, repository_config(), selected_profiles=("canary",))
+
+		self.assertFalse(result.incomplete)
+		self.assertIn(
+			("map.action_id", 6001, "data-canary/world/ignored.OTBM"),
+			{(fact["domain"], fact["value"], fact["location"]["path"]) for fact in result.symbol_registry["facts"]},
+		)
+		paths = {entry["path"] for entry in result.project_index["files"]}
+		self.assertIn("data-canary/world/test.otbm", paths)
+		self.assertNotIn("data-canary/ignored.lua", paths)
+		self.assertNotIn("data-canary/ignored.xml", paths)
+		self.assertNotIn("artifacts/ignored.otbm", paths)
+		self.assertFalse(result.reference_report["findings"])
+
+	def test_map_semantic_findings_use_repository_gate_severities(self) -> None:
+		with tempfile.TemporaryDirectory() as temporary:
+			root = Path(temporary)
+			self._write_minimal_workspace(root)
+			uid = b"\x05" + struct.pack("<H", 6000)
+			teleport = b"\x08" + struct.pack("<HHB", 999, 999, 7)
+			self._write(
+				root, "data-canary/world/test.otbm",
+				map_file(area(tile(item(321, uid)) + tile(item(321, uid + teleport)))),
+			)
+
+			result = run_audit(root, repository_config(), selected_profiles=("canary",), prefer_git=False)
+
+		self.assertFalse(result.incomplete)
+		self.assertEqual(
+			{finding["ruleId"]: finding["severity"] for finding in result.reference_report["findings"]},
+			{
+				"otbm.duplicate-unique-id": "error",
+				"otbm.duplicate-tile": "error",
+				"otbm.missing-teleport-target": "warning",
+			},
+		)
+		validate_instance("reference-report.schema.json", result.reference_report)
+
 	@staticmethod
 	def _write(root: Path, relative: str, content: str | bytes) -> None:
 		path = root / relative
@@ -104,6 +185,10 @@ class SchemaAndDeterministicIntegrationTests(unittest.TestCase):
 
 	@classmethod
 	def _write_minimal_workspace(cls, root: Path) -> None:
+		cls._write(
+			root, "data-canary/world/test.otbm",
+			map_file(area(tile(item(321, b"\x04" + struct.pack("<H", 5000))))),
+		)
 		cls._write(root, "data/items/appearances.dat", appearances_payload(321))
 		cls._write(root, "data/items/items.xml", '<items><item id="321" name="test item" /></items>')
 		cls._write(

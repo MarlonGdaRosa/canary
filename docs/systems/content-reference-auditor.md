@@ -39,6 +39,11 @@ The scanner performs one deterministic discovery pass. When Git is available,
 it uses tracked files plus non-ignored untracked files. The fallback filesystem
 walk prunes configured directories and does not follow symbolic links.
 
+For `.otbm` inputs only, an additive filesystem walk also includes ignored
+local maps inside the repository, while respecting excluded directories and
+skipping symlinks. Existing path-containment checks and layer/profile filtering
+still apply. Every other extension retains Git-first discovery.
+
 Each path is normalized as a repository-relative POSIX path. Configuration,
 inputs, outputs, and symbolic-link components are checked to prevent workspace
 escape. Output files are replaced atomically.
@@ -180,23 +185,52 @@ multiple map items is commonly intentional.
 The auditor indexes MoveEvent registrations but does not currently assert all
 event-type and slot-specific collision rules.
 
-## OTBM boundary
+## OTBM coverage
 
-Binary `.otbm` maps contain the item instances that produce action IDs and
-unique IDs. The current auditor does not parse OTBM. A correct map extractor
-must be version-aware, understand every loaded map fragment, and model which
-fragments can be active together.
+The auditor structurally validates OTBM v1-v5 maps and visits tiles, inline
+ground items, and nested item instances. Server item IDs become references to
+the authoritative item catalog; action IDs, unique IDs, and teleport
+destinations become map facts. Repeated values are collapsed per file with an
+occurrence count and their first location.
 
-Until such an extractor exists:
+All discovered `.otbm` files within configured content layers are checked,
+including ignored local maps and fragments beyond the configured main map.
+Facts keep the layer's effective profiles, but discovery does not establish
+runtime map selection or the order in which fragments are loaded. Map coverage
+is `authoritative` for the declared structural and per-file checks; action and
+movement selectors have `partial` coverage.
 
-- map coverage is reported as `unavailable`;
-- action and movement selectors are reported as `registrations-only`;
-- the tool does not claim that a Lua AID or UID registration has a matching map
-  item;
-- the tool does not claim that map UIDs are unique.
+The map diagnostics are:
 
-This limitation is a deliberate guard against false missing-reference and
-duplicate-UID reports.
+| Rule | Repository severity | Scope |
+| --- | --- | --- |
+| `otbm.duplicate-unique-id` | `error` | A UID occurs on multiple items in one map file |
+| `otbm.duplicate-tile` | `error` | A tile position occurs more than once in one map file |
+| `otbm.missing-teleport-target` | `warning` | A destination has no tile in that map file |
+
+UID and tile uniqueness are checked per file, without combining alternative
+maps or fragments. Teleport checks are local because another loaded fragment
+may supply a destination. Repeated AIDs can be intentional and do not produce
+duplicate-ID findings. Lua AID/UID registrations and map instances are both
+indexed; unmatched handlers remain informational because dynamic registration,
+runtime map selection, and deliberately unused selectors prevent the auditor
+from proving handler completeness.
+
+Binary locations use `line: 1` and `column: byte offset + 1` in the original
+file. The column identifies the relevant node or inline item property, rather
+than a character in a text line. This keeps locations compatible with the
+existing artifact schemas.
+
+`maxOtbmFileBytes` defaults to `268435456`, a 256 MiB limit per map file.
+`maxOtbmTilePositions` bounds retained unique positions per map for duplicate
+and teleport checks. The config loader fallback is `2500000`; this repository
+explicitly configures `20000000` because the active main map contains
+17,972,761 unique positions. Malformed input, unsupported structures, and
+exceeded limits produce operational `scan.*` errors and make the scan
+incomplete, without exporting partially parsed map facts.
+
+Tool version `1.1.0` publishes this coverage with artifact schema version `1`;
+the existing fact, diagnostic, and finding shapes remain unchanged.
 
 ## Findings and diagnostics
 
@@ -205,9 +239,9 @@ Their severity comes from `severityByRule` in the configuration, with support
 for exact `ruleId:domain`, `ruleId:*`, and global `*` fallbacks.
 
 Operational `scan.*` diagnostics describe incomplete input or execution, such
-as malformed Lua/XML, an unreadable protobuf stream, a missing configured
+as malformed Lua/XML/OTBM, an unreadable protobuf stream, a missing configured
 source, a fact limit, or an unsafe workspace path. Any such error marks the
-report `incomplete` and cannot be waived. Content-level XML and protobuf
+report `incomplete` and cannot be waived. Content-level XML, protobuf, and OTBM
 validation codes are instead converted into semantic findings; those follow
 the configured gate and may receive a narrowly scoped baseline waiver.
 
