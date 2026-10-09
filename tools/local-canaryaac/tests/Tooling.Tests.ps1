@@ -611,6 +611,7 @@ Describe 'CanaryAAC installer safety' {
             $errors | Should Be ''
             $output | Should Match '(?m)^dom\r?$'
             $output | Should Match '(?m)^xml\r?$'
+            $output | Should Match '(?m)^zip\r?$'
         } finally { $process.Dispose() }
     }
 

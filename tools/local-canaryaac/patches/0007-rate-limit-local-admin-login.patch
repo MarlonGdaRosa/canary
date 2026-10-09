@@ -1,0 +1,13 @@
+diff --git a/app/Utils/RateLimiter.php b/app/Utils/RateLimiter.php
+index 53e7059..8b430a1 100644
+--- a/app/Utils/RateLimiter.php
++++ b/app/Utils/RateLimiter.php
+@@ -5,7 +5,7 @@ final class RateLimiter
+ {
+     public static function consume(string $directory, string $action, string $address): void
+     {
+-        $budgets = ['signup' => [5, 600], 'login' => [10, 900]];
++        $budgets = ['signup' => [5, 600], 'login' => [10, 900], 'admin-login' => [10, 900]];
+         if (!isset($budgets[$action]) || filter_var($address, FILTER_VALIDATE_IP) === false) throw new SecurityFailure(503);
+         [$limit, $window] = $budgets[$action];
+         $file = $directory . '/' . hash('sha256', $action . "\0" . $address) . '.json';

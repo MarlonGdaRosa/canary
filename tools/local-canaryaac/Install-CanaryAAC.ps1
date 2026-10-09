@@ -622,7 +622,7 @@ try {
         Assert-FileSha256 -Path $layout.ComposerPath -Expected $lock.composer.sha256
         $modules = @(& $layout.PhpPath -c $phpIni -m)
         if ($LASTEXITCODE -ne 0) { throw 'PHP module validation failed.' }
-        foreach ($module in @('curl', 'dom', 'gd', 'mbstring', 'mysqli', 'openssl', 'pdo_mysql', 'sodium', 'xml')) {
+        foreach ($module in @('curl', 'dom', 'gd', 'mbstring', 'mysqli', 'openssl', 'pdo_mysql', 'sodium', 'xml', 'zip')) {
             if ($module -cnotin $modules) { throw "Required PHP module is missing: $module" }
         }
         Write-Host "PHP $version; approved archive contents and required modules verified."
