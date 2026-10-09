@@ -1,0 +1,11 @@
+diff --git a/resources/view/admin/login.html.twig b/resources/view/admin/login.html.twig
+--- a/resources/view/admin/login.html.twig
++++ b/resources/view/admin/login.html.twig
+@@ -69,6 +69,7 @@
+ 								{{ status|raw }}
+ 
+                                 <form class="auth-login-form mt-2" action="" method="POST">
++                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                     <div class="mb-1">
+                                         <label for="login-email" class="form-label">Email</label>
+                                         <input type="text" class="form-control" id="login-email" name="login-email" placeholder="john@example.com" aria-describedby="login-email" tabindex="1" autofocus />

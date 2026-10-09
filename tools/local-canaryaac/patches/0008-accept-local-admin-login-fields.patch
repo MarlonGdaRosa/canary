@@ -1,0 +1,15 @@
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+index 991ec32..b40f0ac 100644
+--- a/app/Utils/WebSecurity.php
++++ b/app/Utils/WebSecurity.php
+@@ -137,7 +137,8 @@ final class WebSecurity
+         $seen = [];
+         foreach (explode('&', $body) as $field) {
+             if ($field === '') continue;
+             $key = urldecode(explode('=', $field, 2)[0]);
+-            if (!preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $key) || isset($seen[$key])) throw new SecurityFailure(400);
++            $fieldPattern = $path === '/admin/login' ? '/^[A-Za-z][A-Za-z0-9_-]*$/D' : '/^[A-Za-z][A-Za-z0-9_]*$/D';
++            if (!preg_match($fieldPattern, $key) || isset($seen[$key])) throw new SecurityFailure(400);
+             $seen[$key] = true;
+         }
+         self::requireCsrf($_POST);
