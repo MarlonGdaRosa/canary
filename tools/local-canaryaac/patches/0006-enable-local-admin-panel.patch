@@ -1,0 +1,59 @@
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+index a01cc75..991ec32 100644
+--- a/app/Utils/WebSecurity.php
++++ b/app/Utils/WebSecurity.php
+@@ -111,10 +111,11 @@ final class WebSecurity
+         if (!self::$production) $gets[] = '/account/createcharacter';
+         $readOnlyDynamic = preg_match('#^/(?:community/characters/[^/]+|newsarchive/[0-9]+/view)$#D', $path) === 1;
++        $localAdmin = !self::$production && ($path === '/admin' || str_starts_with($path, '/admin/'));
+         if (in_array($method, ['GET', 'HEAD'], true)) {
+-            if (!in_array($path, $gets, true) && !$readOnlyDynamic) throw new SecurityFailure(404);
++            if (!in_array($path, $gets, true) && !$readOnlyDynamic && !$localAdmin) throw new SecurityFailure(404);
+             return;
+         }
+-        if ($method !== 'POST' || !in_array($path, ['/createaccount', '/account/login', '/account/logout'], true)) throw new SecurityFailure(404);
++        if ($method !== 'POST' || (!in_array($path, ['/createaccount', '/account/login', '/account/logout'], true) && !$localAdmin)) throw new SecurityFailure(404);
+         $length = $_SERVER['CONTENT_LENGTH'] ?? '0';
+         if (!ctype_digit((string) $length) || (float) $length > 65536) throw new SecurityFailure(400);
+         // Also bound requests without Content-Length before the application parses them.
+@@ -134,7 +135,9 @@ final class WebSecurity
+         }
+         self::requireCsrf($_POST);
+-        if ($path === '/createaccount' || $path === '/account/login')
+-            self::checkRateLimit($path === '/createaccount' ? 'signup' : 'login', $_SERVER['REMOTE_ADDR'] ?? '');
++        if ($path === '/createaccount' || $path === '/account/login' || $path === '/admin/login') {
++            $action = $path === '/createaccount' ? 'signup' : ($path === '/admin/login' ? 'admin-login' : 'login');
++            self::checkRateLimit($action, $_SERVER['REMOTE_ADDR'] ?? '');
++        }
+     }
+ 
+     public static function csrfToken(): string
+diff --git a/index.php b/index.php
+index 25dc814..d517a12 100644
+--- a/index.php
++++ b/index.php
+@@ -13,7 +13,11 @@ $obRouter = new Router(URL);
+ // Includes page routes
+ include __DIR__.'/routes/pages.php';
+ 
+-// Public admin/API/payment operations remain outside the reviewed launch surface.
++// The complete admin panel is available only to the local development service.
++if (($_ENV['APP_ENV'] ?? 'local') === 'local') {
++    include __DIR__.'/routes/local-admin.php';
++}
++// API and payment operations remain outside the reviewed launch surface.
+ 
+ // Print the route response
+ $obRouter->run()->sendResponse();
+diff --git a/routes/local-admin.php b/routes/local-admin.php
+new file mode 100644
+index 0000000..bd2c100
+--- /dev/null
++++ b/routes/local-admin.php
+@@ -0,0 +1,6 @@
++<?php
++// Local-only admin route registration; production never loads this file.
++if (($_ENV['APP_ENV'] ?? 'local') !== 'local') return;
++
++include __DIR__ . '/admin/login.php';
++include __DIR__ . '/admin/home.php';
