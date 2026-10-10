@@ -1,0 +1,16 @@
+diff --git a/resources/view/admin/modules/client/index.html.twig b/resources/view/admin/modules/client/index.html.twig
+index e34e591..88558e7 100644
+--- a/resources/view/admin/modules/client/index.html.twig
++++ b/resources/view/admin/modules/client/index.html.twig
+@@ -170,10 +170,3 @@
+         </div>
+     </div>
+ </div>
+-<script>
+-CKEDITOR.replace('poll_description', {
+-	height: 200,
+-	baseFloatZIndex: 10005,
+-	removeButtons: 'PasteFromWord',
+-});
+-</script>
+\ No newline at end of file
