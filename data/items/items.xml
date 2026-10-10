@@ -65792,7 +65792,7 @@ former students at the Noodles Academy. Awarded by TibiaLabs.com"/>
 	</item>
 	<item id="35290" article="an" name="lasting exercise wand">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="14400"/>
+		<attribute key="showCharges" value="1"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
