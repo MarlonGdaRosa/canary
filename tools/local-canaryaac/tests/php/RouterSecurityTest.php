@@ -7,8 +7,9 @@ try {
     $fixture->write('public/index.php', '<?php echo "APPLICATION";');
     foreach (['.env', '.git/HEAD', 'composer.lock', 'canaryaac.sql', 'vendor/composer/installed.json',
         'resources/images/evil.php', 'resources/images/evil.php.gif', 'resources/view/private.html.twig',
-        'resources/upload/avatar.png', 'resources/images/.private.png'] as $path) $fixture->write($path, 'FAKE_PRIVATE_SENTINEL');
+        'resources/upload/avatar.png', 'resources/images/.private.png', 'resources/canary/data/private.json'] as $path) $fixture->write($path, 'FAKE_PRIVATE_SENTINEL');
     $fixture->write('resources/styles/site.css', 'body{color:red}');
+    $fixture->write('resources/canary/data/locales/pt.json', '{"language":"pt"}');
     $fixture->write('resources/images/charactertrade/objects/empty.gif', 'GIF89a');
     $fixture->write('outside.png', 'FAKE_PRIVATE_SENTINEL');
     $hasLink = @symlink($fixture->root . '/outside.png', $fixture->root . '/resources/images/escape.png');
@@ -42,7 +43,8 @@ try {
     $denied = ['/.env', '/.git/HEAD', '/composer.lock', '/canaryaac.sql', '/vendor/composer/installed.json',
         '/%2eenv', '/%252eenv', '/.ENV', '/.GIT/HEAD', '/resources/images/../view/private.html.twig',
         '/resources/images/%2e%2e/%2e%2e/.env', '/resources/images/evil.php', '/resources/images/evil.php.gif',
-        '/resources/images/.private.png', '/resources/upload/avatar.png', '/resources/images/%00.png', '/index.php'];
+        '/resources/images/.private.png', '/resources/upload/avatar.png', '/resources/canary/data/private.json',
+        '/resources/images/%00.png', '/index.php'];
     if ($hasLink) $denied[] = '/resources/images/escape.png';
     if ($hasDirectoryLink) $denied[] = '/resources/images/junction/secret.png';
     if ($hasRootLink) $denied[] = '/resources/icons/secret.png';
@@ -55,6 +57,9 @@ try {
     }
     $asset = $fixture->request('/resources/styles/site.css');
     expect($asset['status'] === 200 && $asset['body'] === 'body{color:red}', 'Allowed asset lost');
+    $locale = $fixture->request('/resources/canary/data/locales/pt.json');
+    expect($locale['status'] === 200 && $locale['body'] === '{"language":"pt"}', 'Approved locale asset was blocked');
+    expect(($locale['headers']['content-type'][0] ?? '') === 'application/json', 'Locale asset did not use JSON content type');
     expect(($asset['headers']['x-content-type-options'][0] ?? '') === 'nosniff', 'Static response lacks nosniff');
     expect($fixture->request('/')['body'] === 'APPLICATION', 'Application route lost');
     expect($fixture->request('/resources/images/charactertrade/items/123.gif')['body'] === 'GIF89a', 'Item fallback lost');

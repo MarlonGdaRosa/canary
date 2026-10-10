@@ -1,0 +1,23 @@
+diff --git a/resources/canary/js/core/app.js b/resources/canary/js/core/app.js
+index 50d8de1..d8f1a84 100644
+--- a/resources/canary/js/core/app.js
++++ b/resources/canary/js/core/app.js
+@@ -34,6 +34,6 @@ $(window).on('load', function () {
+   var $html = $('html');
+   var $body = $('body');
+   var $textcolor = '#4e5154';
+-  var assetPath = '../resources/canary/';
++  var assetPath = window.location.origin + '/resources/canary/';
+ 
+   if ($('body').attr('data-framework') === 'laravel') {
+diff --git a/resources/view/admin/base.html.twig b/resources/view/admin/base.html.twig
+index 9e4096f..762fa25 100644
+--- a/resources/view/admin/base.html.twig
++++ b/resources/view/admin/base.html.twig
+@@ -5,5 +5,6 @@
+ 		<meta charset="utf-8">
+ 		<meta name="viewport" content="width=device-width, initial-scale=1">
+ 		<meta name="author" content="Lucas Giovanni">
++		<link rel="icon" href="{{ URL }}/resources/images/global/general/favicon.ico">
+ 
+ 		<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">

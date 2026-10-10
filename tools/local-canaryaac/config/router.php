@@ -26,7 +26,7 @@ if (!$safeSegments($path)) $deny();
 $allowedDirectories = ['base', 'bootstrap', 'canary', 'icons', 'images', 'javascripts', 'styles'];
 $types = ['css' => 'text/css', 'js' => 'text/javascript', 'png' => 'image/png', 'jpg' => 'image/jpeg',
     'jpeg' => 'image/jpeg', 'gif' => 'image/gif', 'svg' => 'image/svg+xml', 'webp' => 'image/webp',
-    'ico' => 'image/x-icon', 'woff' => 'font/woff', 'woff2' => 'font/woff2', 'ttf' => 'font/ttf', 'eot' => 'application/vnd.ms-fontobject'];
+    'ico' => 'image/x-icon', 'woff' => 'font/woff', 'woff2' => 'font/woff2', 'ttf' => 'font/ttf', 'eot' => 'application/vnd.ms-fontobject', 'json' => 'application/json'];
 $within = static function (string $file, string $directory): bool {
     // Case-insensitive Windows filesystem; separator boundary prevents prefix collisions.
     $prefix = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR;
@@ -56,6 +56,7 @@ if (str_starts_with(strtolower($path), '/resources/')) {
     $directory = realpath($root . '/resources/' . $parts[2]);
     $file = realpath($root . $path);
     $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    if ($extension === 'json' && preg_match('#^/resources/canary/data/locales/(?:de|en|fr|pt)\\.json$#D', $path) !== 1) $deny();
     if (!isset($types[$extension]) || !$directory || !$within($directory, $root)) $deny();
     $expectedDirectory = $root . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . $parts[2];
     if ((PHP_OS_FAMILY === 'Windows' ? strcasecmp($directory, $expectedDirectory) : strcmp($directory, $expectedDirectory)) !== 0) $deny();
