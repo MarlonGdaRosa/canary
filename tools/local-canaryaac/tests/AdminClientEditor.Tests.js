@@ -1,8 +1,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
-const runtime = process.env.CANARYAAC_TEST_ROOT || 'C:/Users/Marlon/Documents/OT/.tools/canaryaac';
+const runtime = process.env.CANARYAAC_TEST_ROOT || path.resolve(__dirname, '../../..', '.tools', 'canaryaac');
 const template = fs.readFileSync(runtime + '/resources/view/admin/modules/client/index.html.twig', 'utf8');
 const elements = new Map();
 
