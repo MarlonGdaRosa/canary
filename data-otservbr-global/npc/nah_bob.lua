@@ -62,7 +62,7 @@ local function greetCallback(npc, creature, message)
 		if not MsgContains(message, "djanni'hah") and player:getStorageValue(Storage.Quest.U7_4.DjinnWar.Faction.Greeting) < 0 then
 			npcHandler:say("Whoa! A human! This is no place for you, |PLAYERNAME|. Go and play somewhere else.", npc, creature)
 			endConversationWithDelay(npcHandler, npc, creature)
-			return false
+			return true
 		end
 
 		if player:getStorageValue(Storage.Quest.U7_4.DjinnWar.EfreetFaction.Start) == 1 then
@@ -127,14 +127,14 @@ local function onTradeRequest(npc, creature)
 
 	if player:getStorageValue(Storage.Quest.U7_4.DjinnWar.MaridFaction.Mission03) ~= 3 then
 		npcHandler:say("I'm sorry, human. But you need Gabel's permission to trade with me.", npc, creature)
-		return false
+		return true
 	end
 
 	return true
 end
 
 -- Greeting
-keywordHandler:addCustomGreetKeyword({ "djanni'hah" }, greetCallback, { npcHandler = npcHandler })
+keywordHandler:addCustomGreetKeyword({ "hi" }, greetCallback, { npcHandler = npcHandler })
 
 npcHandler:setMessage(MESSAGE_FAREWELL, "Bye now, Neutrala |PLAYERNAME|. Visit old Bob again one day!")
 npcHandler:setMessage(MESSAGE_WALKAWAY, "Bye then.")

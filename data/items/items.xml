@@ -65762,37 +65762,37 @@ former students at the Noodles Academy. Awarded by TibiaLabs.com"/>
 	</item>
 	<item id="35285" article="an" name="lasting exercise sword">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
 	<item id="35286" article="an" name="lasting exercise axe">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
 	<item id="35287" article="an" name="lasting exercise club">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
 	<item id="35288" article="an" name="lasting exercise bow">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
 	<item id="35289" article="an" name="lasting exercise rod">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>
 	<item id="35290" article="an" name="lasting exercise wand">
 		<attribute key="primarytype" value="exercise weapons"/>
-		<attribute key="showCharges" value="1"/>
+		<attribute key="showCharges" value="14400"/>
 		<attribute key="charges" value="14400"/>
 		<attribute key="weight" value="1000"/>
 	</item>

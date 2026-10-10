@@ -768,8 +768,14 @@
 	<npc centerx="32363" centery="32210" centerz="6" radius="1">
 		<npc name="Todd" x="0" y="0" z="6" spawntime="60" />
 	</npc>
+	<npc centerx="32362" centery="32221" centerz="6" radius="1">
+		<npc name="Yasir" x="0" y="0" z="6" spawntime="60" direction="3" />
+	</npc>
 	<npc centerx="32425" centery="32223" centerz="6" radius="1">
 		<npc name="Tim, The Guard" x="0" y="0" z="6" spawntime="60" />
+	</npc>
+	<npc centerx="32358" centery="32234" centerz="6" radius="1">
+		<npc name="Alesar" x="0" y="0" z="6" spawntime="60" />
 	</npc>
 	<npc centerx="32343" centery="32245" centerz="6" radius="1">
 		<npc name="Galuna" x="0" y="0" z="6" spawntime="60" />
@@ -1740,6 +1746,9 @@
 	<npc centerx="32349" centery="32219" centerz="7" radius="1">
 		<npc name="Benjamin" x="0" y="0" z="7" spawntime="60" />
 	</npc>
+	<npc centerx="32357" centery="32219" centerz="7" radius="1">
+		<npc name="Yaman" x="0" y="0" z="7" spawntime="60" direction="1" />
+	</npc>
 	<npc centerx="32390" centery="32219" centerz="7" radius="1">
 		<npc name="Quero" x="0" y="0" z="7" spawntime="60" />
 	</npc>
@@ -1758,6 +1767,9 @@
 	<npc centerx="32450" centery="32226" centerz="7" radius="1">
 		<npc name="Palomino" x="0" y="0" z="7" spawntime="60" />
 	</npc>
+	<npc centerx="32362" centery="32227" centerz="7" radius="1">
+		<npc name="Rashid" x="0" y="0" z="7" spawntime="60" />
+	</npc>
 	<npc centerx="33492" centery="32227" centerz="7" radius="1">
 		<npc name="Taegen" x="0" y="0" z="7" spawntime="60" />
 	</npc>
@@ -1773,6 +1785,9 @@
 	<npc centerx="32342" centery="32235" centerz="7" radius="1">
 		<npc name="Elane" x="0" y="0" z="7" spawntime="60" />
 	</npc>
+	<npc centerx="32359" centery="32235" centerz="7" radius="1">
+		<npc name="Nah'Bob" x="0" y="0" z="7" spawntime="60" />
+	</npc>
 	<npc centerx="33485" centery="32236" centerz="7" radius="1">
 		<npc name="Maelyrra" x="0" y="0" z="7" spawntime="60" />
 	</npc>
@@ -1781,6 +1796,9 @@
 	</npc>
 	<npc centerx="33530" centery="32238" centerz="7" radius="1">
 		<npc name="Peaceful Pooka" x="0" y="0" z="7" spawntime="60" />
+	</npc>
+	<npc centerx="32358" centery="32239" centerz="7" radius="1">
+		<npc name="Imbuement Assistant" x="0" y="0" z="7" spawntime="60" />
 	</npc>
 	<npc centerx="32368" centery="32240" centerz="7" radius="1">
 		<npc name="Quentin" x="0" y="0" z="7" spawntime="60" />

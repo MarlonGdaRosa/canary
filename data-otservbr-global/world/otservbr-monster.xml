@@ -11308,8 +11308,9 @@
 		<monster name="Swamp Troll" x="3" y="-2" z="5" spawntime="90" />
 		<monster name="Swamp Troll" x="1" y="3" z="5" spawntime="90" />
 	</monster>
-	<monster centerx="32344" centery="32218" centerz="5" radius="1">
-		<monster name="Angry Sugar Fairy" x="0" y="0" z="5" spawntime="60" direction="2" />
+	<monster centerx="32345" centery="32218" centerz="5" radius="1">
+		<monster name="Angry Sugar Fairy" x="-1" y="0" z="5" spawntime="60" direction="2" />
+		<monster name="Dragolisk" x="1" y="0" z="5" spawntime="60" direction="2" />
 	</monster>
 	<monster centerx="33244" centery="32266" centerz="5" radius="1">
 		<monster name="Wyrm" x="0" y="1" z="5" spawntime="90" />

@@ -249,7 +249,7 @@ local function creatureMoveCallback(npc, player, fromPosition, toPosition)
 	return true
 end
 
-npcHandler:setMessage(MESSAGE_GREET, "Welcome to the Cassino! Here we play with: \n [PAYOUT 180%] {HIGH / LOW}: High for 4, 5, 6 and Low for 1, 2, and 3 - {ODD / EVEN }: Odd for 1, 3, 5 and Even for 2, 4 and 6 \n [PAYOUT 500%] {NUMBERS}: You choose the number, and if you get it right ... {$$$$$}")
+npcHandler:setMessage(MESSAGE_GREET, "Welcome to the Cassino! Here we play with: \n [PAYOUT 180%] {HIGH}: High for 4, 5, 6 and {LOW}: Low for 1, 2, and 3 - {ODD}: Odd for 1, 3, 5 and {EVEN}: Even for 2, 4 and 6 \n [PAYOUT 500%] {NUMBERS}: You choose the number, and if you get it right ... {$$$$$}")
 npcHandler:setMessage(MESSAGE_FAREWELL, "Good bye.")
 npcHandler:setMessage(MESSAGE_WALKAWAY, "Good bye.")
 
