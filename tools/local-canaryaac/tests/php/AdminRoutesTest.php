@@ -104,7 +104,26 @@ require RUNTIME . '/app/Utils/View.php';
     'SECURITY_STATE_DIR' => __DIR__ . '/state',
 ]);
 define('SITE_NAME', 'CanaryFixture');
+$_ENV['DEV_MODE'] = 'true';
 \App\Utils\View::init(['URL' => 'http://127.0.0.1']);
+if (isset($_GET['account'])) {
+    echo \App\Utils\View::render('admin/modules/accounts/view', [
+        'status' => '',
+        'account_id' => 1,
+        'account' => ['email' => 'player@example.invalid', 'page_access' => 0, 'type' => 0, 'premdays' => 0, 'coins' => 0],
+        'characters' => [],
+    ]);
+    exit;
+}
+if (isset($_GET['items'])) {
+    echo \App\Utils\View::render('admin/modules/items/index', [
+        'items_path' => 'canary/data/items/items.xml',
+        'total_items' => 0,
+        'success_message' => '',
+        'items' => [],
+    ]);
+    exit;
+}
 echo \App\Utils\View::render('admin/login', ['title' => 'Login', 'status' => '']);
 PHP;
     $renderFixture->write('entry.php', str_replace('RUNTIME', var_export($root, true), $renderSource));
@@ -115,6 +134,14 @@ PHP;
         'Admin login form did not render a CSRF token');
     expect(str_contains($rendered['body'], 'name="login-email"'), 'Admin login email field changed unexpectedly');
     expect(str_contains($rendered['body'], 'name="login-password"'), 'Admin login password field changed unexpectedly');
+    $accountForm = $renderFixture->request('/admin/login?account=1');
+    expect($accountForm['status'] === 200, 'Admin account form did not render');
+    expect(preg_match('#<form\b(?=[^>]*action="http://127\.0\.0\.1/admin/accounts/1/view")(?=[^>]*method="post")[^>]*>.*?<input[^>]+name="csrf_token"[^>]+value="[a-f0-9]{64}"#is', $accountForm['body']) === 1,
+        'Admin account update form did not render a CSRF token');
+    $itemsForm = $renderFixture->request('/admin/login?items=1');
+    expect($itemsForm['status'] === 200, 'Admin items forms did not render');
+    expect(preg_match_all('#<form\b(?=[^>]*action="http://127\.0\.0\.1/admin/items/(?:import|deleteItems)")(?=[^>]*method="post")[^>]*>.*?<input[^>]+name="csrf_token"[^>]+value="[a-f0-9]{64}"#is', $itemsForm['body']) === 2,
+        'Admin item mutation forms did not render CSRF tokens');
     echo "PASS AdminRoutesTest (rendered admin login CSRF form)\n";
 } finally {
     $renderFixture->close();

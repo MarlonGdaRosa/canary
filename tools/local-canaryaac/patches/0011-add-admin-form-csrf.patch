@@ -1,0 +1,341 @@
+diff --git a/resources/view/admin/modules/accounts/view.html.twig b/resources/view/admin/modules/accounts/view.html.twig
+index 5f8d120..d35b621 100644
+--- a/resources/view/admin/modules/accounts/view.html.twig
++++ b/resources/view/admin/modules/accounts/view.html.twig
+@@ -112,6 +112,7 @@
+ 									<h4 class="card-title">Account Info</h4>
+ 								</div>
+ 								<form action="{{URL}}/admin/accounts/{{ account_id }}/view" method="post" class="form form-vertical">
++									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<div class="row">
+ 										<div class="col-12">
+ 											<div class="mb-1">
+diff --git a/resources/view/admin/modules/achievements/index.html.twig b/resources/view/admin/modules/achievements/index.html.twig
+index 99e0dc8..38cc4b6 100644
+--- a/resources/view/admin/modules/achievements/index.html.twig
++++ b/resources/view/admin/modules/achievements/index.html.twig
+@@ -30,6 +30,7 @@
+ 							<h4 class="card-title">Create Achievement</h4>
+ 						</div>
+ 						<form action="{{URL}}/admin/achievements" method="post" class="form form-vertical">
++							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 						<div class="row">
+ 							<div class="col-md-12 col-lg-5">
+ 								<label class="form-label" for="achievements_name">Name</label>
+@@ -104,6 +105,7 @@
+ 										<td>{{ achievement.description }}</td>
+ 										<td>
+ 											<form action="{{URL}}/admin/achievements/delete" method="post" class="form form-vertical">
++												<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 												<button type="submit" class="btn btn-icon btn-primary waves-effect waves-float waves-light">
+ 													Delete
+ 												</button>
+diff --git a/resources/view/admin/modules/compendium/new.html.twig b/resources/view/admin/modules/compendium/new.html.twig
+index b686ed8..bd43792 100644
+--- a/resources/view/admin/modules/compendium/new.html.twig
++++ b/resources/view/admin/modules/compendium/new.html.twig
+@@ -31,6 +31,7 @@
+ 							<h4 class="card-title" data-i18n="Publish News">Publish News</h4>
+ 						</div>
+ 						<form action="{{URL}}/admin/compendium/new" method="post" class="form form-vertical">
++							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 							<div class="row">
+ 								<div class="col-md-12 col-lg-6">
+ 									<label class="form-label" for="compendium_headline" data-i18n="Title">Title</label>
+@@ -67,4 +68,4 @@ CKEDITOR.replace('compendium_message', {
+ 	baseFloatZIndex: 10005,
+ 	removeButtons: 'PasteFromWord'
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/compendium/view.html.twig b/resources/view/admin/modules/compendium/view.html.twig
+index aad15c2..8998afd 100644
+--- a/resources/view/admin/modules/compendium/view.html.twig
++++ b/resources/view/admin/modules/compendium/view.html.twig
+@@ -31,6 +31,7 @@
+ 							<h4 class="card-title" data-i18n="Publish News">Publish News</h4>
+ 						</div>
+ 						<form action="{{URL}}/admin/compendium/{{ news.id }}/view" method="post" class="form form-vertical">
++							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 							<div class="row">
+ 								<div class="col-md-12 col-lg-4">
+ 									<label class="form-label" for="compendium_headline" data-i18n="Title">Title</label>
+@@ -72,4 +73,4 @@ CKEDITOR.replace('compendium_message', {
+ 	baseFloatZIndex: 10005,
+ 	removeButtons: 'PasteFromWord'
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/creatures/index.html.twig b/resources/view/admin/modules/creatures/index.html.twig
+index 8aee773..f24cffc 100644
+--- a/resources/view/admin/modules/creatures/index.html.twig
++++ b/resources/view/admin/modules/creatures/index.html.twig
+@@ -26,6 +26,7 @@
+ 						<div class="card-body">
+ 							<h4 class="card-title">Add Creature</h4>
+ 							<form method="post" action="{{URL}}/admin/creatures">
++								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<div class="row">
+ 									<div class="col-md-12 col-lg-6">
+ 										<label class="form-label" for="creature_name">Name</label>
+@@ -115,6 +116,7 @@
+ 												<td>{{ creature.tag }}</td>
+ 												<td>
+ 													<form action="{{URL}}/admin/creatures/delete" method="post" class="form form-vertical">
++														<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 														<input type="hidden" name="creature_id" value="{{ creature.id }}">
+                                                         <input type="hidden" name="creature_type" value="creature">
+ 														<button type="submit" class="btn btn-icon btn-primary waves-effect waves-float waves-light">Delete</button>
+@@ -154,6 +156,7 @@
+ 												<td>{{ boss.tag }}</td>
+ 												<td>
+ 													<form action="{{URL}}/admin/creatures/delete" method="post" class="form form-vertical">
++														<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 														<input type="hidden" name="creature_id" value="{{ boss.id }}">
+                                                         <input type="hidden" name="creature_type" value="boss">
+ 														<button type="submit" class="btn btn-icon btn-primary waves-effect waves-float waves-light">Delete</button>
+diff --git a/resources/view/admin/modules/donates/index.html.twig b/resources/view/admin/modules/donates/index.html.twig
+index bb814f9..91536a8 100644
+--- a/resources/view/admin/modules/donates/index.html.twig
++++ b/resources/view/admin/modules/donates/index.html.twig
+@@ -101,6 +101,7 @@
+             </div>
+             <div class="col-xl-3 col-md-6 col-12">
+                 <form action="{{ URL }}/admin/donates" method="post">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                     <div class="card">
+                         <div class="card-body">
+                             <div class="row">
+@@ -206,6 +207,7 @@
+                 </form>
+                 <div class="card mt-1">
+                     <form action="{{ URL }}/admin/donates" method="post">
++                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                         <div class="col-md-12 col-lg-12">
+                             <div class="table-responsive">
+                                 <table class="table table-striped">
+@@ -241,4 +243,4 @@
+ 		</div>
+ 	</div>
+ </div>
+-{{ status|raw }}
+\ No newline at end of file
++{{ status|raw }}
+diff --git a/resources/view/admin/modules/groups/index.html.twig b/resources/view/admin/modules/groups/index.html.twig
+index 7dfa3d5..b6a4ba6 100644
+--- a/resources/view/admin/modules/groups/index.html.twig
++++ b/resources/view/admin/modules/groups/index.html.twig
+@@ -32,6 +32,7 @@
+ 						<div class="row">
+ 							<div class="col-12">
+ 								<form action="{{URL}}/admin/groups/import" method="post" class="form form-vertical">
++									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<input type="text" name="localxml" class="form-control mb-1" placeholder="canary/data/XML/groups.xml">
+ 									<button type="submit" class="btn btn-primary me-1 waves-effect waves-float waves-light">Import</button>
+ 								</form>
+@@ -68,6 +69,7 @@
+ 										<td>{{ group.name }}</td>
+ 										<td>
+ 											<form action="{{URL}}/admin/groups/delete" method="post" class="form form-vertical">
++												<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 												<input type="hidden" name="groupid" value="{{ group.id }}">
+ 												<button type="submit" class="btn btn-icon btn-primary waves-effect waves-float waves-light">
+ 													Delete
+diff --git a/resources/view/admin/modules/guilds/view.html.twig b/resources/view/admin/modules/guilds/view.html.twig
+index 5c6c699..0fc7417 100644
+--- a/resources/view/admin/modules/guilds/view.html.twig
++++ b/resources/view/admin/modules/guilds/view.html.twig
+@@ -31,6 +31,7 @@
+ 								<h4 class="card-title"><img src="{{IMAGE_PATH}}/guildlogos/{{ guild.logo_name }}.gif" alt="Avatar" height="55" width="55"> {{ guild.name }}</h4>
+ 							</div>
+ 							<form class="form form-vertical" action="{{URL}}/admin/guilds/edit/" method="post">
++								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<div class="row">
+ 									<div class="col-6 row">
+ 										<div class="col-12">
+diff --git a/resources/view/admin/modules/houses/index.html.twig b/resources/view/admin/modules/houses/index.html.twig
+index e46908e..cea0704 100644
+--- a/resources/view/admin/modules/houses/index.html.twig
++++ b/resources/view/admin/modules/houses/index.html.twig
+@@ -42,6 +42,7 @@
+ 						</div>
+ 						<div class="row">
+ 							<form action="{{URL}}/admin/houses/import" method="post" class="form form-vertical">
++								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<div class="col-12">
+ 									<input type="text" name="localxml" class="form-control mb-1" placeholder="server/data/world/house.xml">
+ 								</div>
+@@ -150,6 +151,7 @@
+ 												<td>{{ house.beds }}</td>
+ 												<td>
+ 													<form action="{{URL}}/admin/houses/delete" method="post" class="form form-vertical">
++														<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 														<input type="hidden" name="houseid" value="{{ house.id }}">
+ 														<button type="submit" class="btn btn-icon btn-primary waves-effect waves-float waves-light">
+ 															Delete
+diff --git a/resources/view/admin/modules/players/view.html.twig b/resources/view/admin/modules/players/view.html.twig
+index 3d370cf..eefaa32 100644
+--- a/resources/view/admin/modules/players/view.html.twig
++++ b/resources/view/admin/modules/players/view.html.twig
+@@ -214,6 +214,7 @@
+                 <h1 class="text-center mb-1" id="editSkillsTitle">Edit Info</h1>
+ 
+                 <form action="{{ URL }}/admin/players/{{ player_id }}/view" method="post" id="addNewCardValidation" class="row gy-1 gx-2 mt-75">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 
+                     <div class="col-6 col-md-6">
+                         <label class="form-label" for="char_name">Name</label>
+@@ -318,6 +319,7 @@
+                 <h1 class="text-center mb-1" id="editLevelTitle">Edit Skills</h1>
+ 
+                 <form action="{{ URL }}/admin/players/{{ player_id }}/view" method="post" class="row gy-1 gx-2 mt-75">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 
+                     <div class="col-6 col-md-3">
+                         <label class="form-label" for="char_magic">Magic Level</label>
+diff --git a/resources/view/admin/modules/polls/new.html.twig b/resources/view/admin/modules/polls/new.html.twig
+index 69f1349..109fb48 100644
+--- a/resources/view/admin/modules/polls/new.html.twig
++++ b/resources/view/admin/modules/polls/new.html.twig
+@@ -26,6 +26,7 @@
+         <div class="content-body">
+ 			<section id="polls">
+                 <form action="{{URL}}/admin/polls/new" method="post">
++                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                     <div class="row match-height">
+                         <div class="col-md-12 col-lg-6">
+                             <div class="card">
+@@ -116,4 +117,4 @@ CKEDITOR.replace('poll_description', {
+ 	baseFloatZIndex: 10005,
+ 	removeButtons: 'PasteFromWord',
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/publications/featuredarticle.html.twig b/resources/view/admin/modules/publications/featuredarticle.html.twig
+index b383b5c..0fada9b 100644
+--- a/resources/view/admin/modules/publications/featuredarticle.html.twig
++++ b/resources/view/admin/modules/publications/featuredarticle.html.twig
+@@ -35,6 +35,7 @@
+ 							</div>
+ 							<div class="card-body">
+                                 <form action="{{URL}}/admin/publications/featuredarticle" method="post">
++                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<div class="row">
+ 									<div class="col-md-12 col-lg-6 mb-1">
+ 										<label class="form-label" for="featuredarticle_title" data-i18n="Title">Title</label>
+@@ -95,4 +96,4 @@ CKEDITOR.replace('featuredarticle_body', {
+ 	baseFloatZIndex: 10005,
+ 	removeButtons: 'PasteFromWord'
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/publications/news.html.twig b/resources/view/admin/modules/publications/news.html.twig
+index ca18d1d..cbb1a31 100644
+--- a/resources/view/admin/modules/publications/news.html.twig
++++ b/resources/view/admin/modules/publications/news.html.twig
+@@ -35,6 +35,7 @@
+ 							</div>
+ 							<div class="card-body">
+                                 <form action="{{URL}}/admin/publications/news" method="post">
++                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<div class="row">
+ 									<div class="col-md-12 col-lg-6 mb-1">
+ 										<label class="form-label" for="news_title" data-i18n="Title">Title</label>
+diff --git a/resources/view/admin/modules/publications/newsticker.html.twig b/resources/view/admin/modules/publications/newsticker.html.twig
+index a00a74e..dc7cd03 100644
+--- a/resources/view/admin/modules/publications/newsticker.html.twig
++++ b/resources/view/admin/modules/publications/newsticker.html.twig
+@@ -34,6 +34,7 @@
+                         </div>
+                         <div class="card-body">
+                             <form action="{{URL}}/admin/publications/newsticker" method="post">
++                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                             <div class="row">
+                                 <div class="col-md-12 col-lg-6 mb-1">
+                                     <label class="form-label" for="newsticker_title" data-i18n="Title">Title</label>
+@@ -81,4 +82,4 @@ CKEDITOR.replace('newsticker_body', {
+ 	baseFloatZIndex: 10005,
+ 	removeButtons: 'PasteFromWord'
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/samples/edit.html.twig b/resources/view/admin/modules/samples/edit.html.twig
+index b0b4a75..f148543 100644
+--- a/resources/view/admin/modules/samples/edit.html.twig
++++ b/resources/view/admin/modules/samples/edit.html.twig
+@@ -35,6 +35,7 @@
+                         </div>
+                         <div class="card-body">
+                             <form action="{{URL}}/admin/samples/{{ sample.id }}/edit" method="post" name="sample_form" id="sample_form">
++                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                             <div class="row">
+                                 <div class="col-md-12 col-lg-2 mb-1">
+                                     <label class="form-label" for="editsampler_vocation">Vocation ID</label>
+@@ -141,4 +142,4 @@ $(document).ready(function () {
+ 		});
+ 	});
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/samples/index.html.twig b/resources/view/admin/modules/samples/index.html.twig
+index 28aec10..9c38e7c 100644
+--- a/resources/view/admin/modules/samples/index.html.twig
++++ b/resources/view/admin/modules/samples/index.html.twig
+@@ -32,6 +32,7 @@
+                         </div>
+                         <div class="card-body">
+                             <form action="{{URL}}/admin/samples" method="post" name="sample_form" id="sample_form">
++                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                             <div class="row">
+                                 <div class="col-md-12 col-lg-2 mb-1">
+                                     <label class="form-label" for="newsampler_vocation">Vocation ID</label>
+@@ -173,4 +174,4 @@ $(document).ready(function () {
+ 		});
+ 	});
+ });
+-</script>
+\ No newline at end of file
++</script>
+diff --git a/resources/view/admin/modules/settings/index.html.twig b/resources/view/admin/modules/settings/index.html.twig
+index fedadc0..fdd5df8 100644
+--- a/resources/view/admin/modules/settings/index.html.twig
++++ b/resources/view/admin/modules/settings/index.html.twig
+@@ -29,6 +29,7 @@
+ 						<div class="card">
+ 							<div class="card-body">
+ 								<form action="{{URL}}/admin/settings" method="post">
++									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<div class="row">
+ 										<div class="col-md-12 col-lg-6">
+ 											<label class="form-label" for="website_title">Title</label>
+diff --git a/resources/view/admin/modules/worlds/edit.html.twig b/resources/view/admin/modules/worlds/edit.html.twig
+index 55bbfdd..a93df8a 100644
+--- a/resources/view/admin/modules/worlds/edit.html.twig
++++ b/resources/view/admin/modules/worlds/edit.html.twig
+@@ -33,6 +33,7 @@
+ 						<div class="card">
+ 							<div class="card-body">
+ 								<form action="{{URL}}/admin/worlds/{{ world.id }}/edit" method="post">
++									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<div class="row">
+ 										<div class="col-md-12 col-lg-4">
+ 											<label class="form-label" for="editworld_name">Name</label>
+diff --git a/resources/view/admin/modules/worlds/index.html.twig b/resources/view/admin/modules/worlds/index.html.twig
+index 6575430..aa665fe 100644
+--- a/resources/view/admin/modules/worlds/index.html.twig
++++ b/resources/view/admin/modules/worlds/index.html.twig
+@@ -30,6 +30,7 @@
+ 						<div class="card">
+ 							<div class="card-body">
+ 								<form action="{{URL}}/admin/worlds" method="post">
++									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 									<div class="row">
+ 										<div class="col-md-12 col-lg-4">
+ 											<label class="form-label" for="world_name">Name</label>
+

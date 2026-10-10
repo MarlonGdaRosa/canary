@@ -1,0 +1,21 @@
+diff --git a/resources/view/admin/modules/items/index.html.twig b/resources/view/admin/modules/items/index.html.twig
+index 9de0195..ecc66fa 100644
+--- a/resources/view/admin/modules/items/index.html.twig
++++ b/resources/view/admin/modules/items/index.html.twig
+@@ -48,6 +48,7 @@
+ 						</div>
+ 						<div class="row">
+ 							<form action="{{URL}}/admin/items/import" method="post" class="form form-vertical">
++								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 								<p class="badge badge-primary">{{ items_path }}</p>
+ 								<label>Set server location in .env file</label>
+ 								<div class="col-12">
+@@ -61,6 +62,7 @@
+ 			<div class="col-lg-3 col-sm-6">
+ 				<div class="card">
+ 					<form action="{{URL}}/admin/items/deleteItems" method="post">
++						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+ 						<div class="card-body d-flex align-items-center justify-content-between">
+ 							<div>
+ 								<h3 class="fw-bolder mb-75">{{ total_items }}</h3>
+
