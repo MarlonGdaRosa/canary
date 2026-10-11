@@ -99,10 +99,10 @@ local function greetCallback(npc, creature, message)
 
 	--Checks if the player has completed the quest
 	if player:getStorageValue(Storage.Quest.U7_4.DjinnWar.EfreetFaction.Mission03) ~= 3 then
-		if not MsgContains(message, "djanni'hah") and player:getStorageValue(Storage.Quest.U7_4.DjinnWar.Faction.Greeting) < 0 then
+		if not MsgContains(message, "hi") and player:getStorageValue(Storage.Quest.U7_4.DjinnWar.Faction.Greeting) < 0 then
 			npcHandler:say("Shove off, little one! Humans are not welcome here, |PLAYERNAME|!", npc, creature)
 			endConversationWithDelay(npcHandler, npc, creature)
-			return false
+			return true
 		end
 
 		if player:getStorageValue(Storage.Quest.U7_4.DjinnWar.MaridFaction.Start) == 1 then
@@ -111,7 +111,7 @@ local function greetCallback(npc, creature, message)
 				"|PLAYERNAME|, that almost sounded like the word of greeting. Humans - cute they are!",
 			}, npc, creature)
 			endConversationWithDelay(npcHandler, npc, creature)
-			return false
+			return true
 		end
 	end
 
@@ -197,13 +197,13 @@ local function onTradeRequest(npc, creature)
 
 	if player:getStorageValue(Storage.Quest.U7_4.DjinnWar.EfreetFaction.Mission03) ~= 3 then
 		npcHandler:say("I'm sorry, but you don't have Malor's permission to trade with me.", npc, creature)
-		return false
+		return true
 	end
 
 	return true
 end
 
-keywordHandler:addCustomGreetKeyword({ "djanni'hah" }, greetCallback, { npcHandler = npcHandler })
+keywordHandler:addCustomGreetKeyword({ "hi" }, greetCallback, { npcHandler = npcHandler })
 
 npcHandler:setMessage(MESSAGE_FAREWELL, "Finally.")
 npcHandler:setMessage(MESSAGE_WALKAWAY, "Finally.")
