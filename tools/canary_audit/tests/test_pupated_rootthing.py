@@ -14,6 +14,8 @@ PUPATED = ROOT / "data-otservbr-global" / "monster" / "plants" / "pupated_rootth
 
 class PupatedRootthingIntegrationTest(unittest.TestCase):
     def test_catalog_appearance_is_the_server_appearance(self) -> None:
+        if not CATALOG.is_file():
+            self.skipTest("local OTClient 15.25 assets are not available in this checkout")
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
         entry = next(value for value in catalog if value["type"] == "appearances")
         client_appearance = THINGS / entry["file"]
