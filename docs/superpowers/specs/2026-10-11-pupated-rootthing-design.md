@@ -29,7 +29,8 @@ Ela contém doze frames de 64 x 64 pixels, organizados em quatro direções e tr
 fases de caminhada. A aparência será um outfit/criatura separado no client
 moderno 15.25:
 
-- reservar um look type livre, sem reutilizar `1759` do Quara Raider;
+- reservar o look type `1863`, verificado livre no protobuf original; preservar
+  `1841` e `1759` sem reutilizá-los;
 - importar a folha como objeto 2 x 2 sprites, quatro direções, uma camada e
   três fases de animação;
 - compilar os assets em
@@ -37,8 +38,8 @@ moderno 15.25:
 - sincronizar a aparência protobuf que o servidor consulta em
   `data/items/appearances.dat`.
 
-O look type efetivo será anotado na definição Lua somente depois de ser alocado
-pela ferramenta, para evitar colisão com uma aparência existente.
+O look type efetivo é `1863`: o protobuf anterior à importação contém `1841`,
+mas não contém `1863`. A definição Lua deve usar `1863` após a compilação.
 
 ## Dados e fluxo
 
