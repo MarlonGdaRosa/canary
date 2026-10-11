@@ -87,7 +87,13 @@ PHP;
     expect($limit['status'] === 429 && (int) ($limit['headers']['retry-after'][0] ?? 0) > 0, 'Persistent signup limit not enforced');
     for ($i = 0; $i < 10; ++$i) expect($fixture->request('/account/login', 'POST', $token, $headers)['status'] === 200, 'Login budget is not separate');
     expect($fixture->request('/account/login', 'POST', $token, $headers)['status'] === 429, 'Login limit absent');
-    foreach (['/admin', '/api/login', '/account/changepassword', '/account/createcharacter', '/account/lostaccount', '/payment', '/account/logout'] as $path)
+    expect($fixture->request('/account/createcharacter', 'POST', $token, $headers)['status'] === 200,
+        'Local character creation was rejected before its controller');
+    expect($fixture->request('/account/createcharacter?production=1')['status'] === 200,
+        'Production character-creation form was rejected before its controller');
+    expect($fixture->request('/account/createcharacter?production=1', 'POST', $token, $headers)['status'] === 200,
+        'Production character creation was rejected before its controller');
+    foreach (['/admin', '/api/login', '/account/changepassword', '/account/lostaccount', '/payment', '/account/logout'] as $path)
         expect($fixture->request($path . '?production=1')['status'] === 404, 'Unreviewed production route enabled: ' . $path);
     expect($fixture->request('/?production=1&url=http://canary.test')['status'] === 503, 'Production HTTP URL accepted');
     expect($fixture->request('/?production=1&insecure=1')['status'] === 503, 'Production HTTP request accepted');

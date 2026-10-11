@@ -1,0 +1,13 @@
+diff --git a/app/Utils/WebSecurity.php b/app/Utils/WebSecurity.php
+--- a/app/Utils/WebSecurity.php
++++ b/app/Utils/WebSecurity.php
+@@ -118,7 +118,7 @@ final class WebSecurity
+             '/library/achievements', '/library/experiencetable'];
+         $posts = ['/createaccount', '/account/login', '/account/logout'];
+-        if (!self::$production) $gets[] = '/account/createcharacter';
+-        if (!self::$production) $posts[] = '/account/createcharacter';
++        $gets[] = '/account/createcharacter';
++        $posts[] = '/account/createcharacter';
+         $readOnlyDynamic = preg_match('#^/(?:community/characters/[^/]+|newsarchive/[0-9]+/view)$#D', $path) === 1;
+         $localAdmin = !self::$production && ($path === '/admin' || str_starts_with($path, '/admin/'));
+         if (in_array($method, ['GET', 'HEAD'], true)) {
