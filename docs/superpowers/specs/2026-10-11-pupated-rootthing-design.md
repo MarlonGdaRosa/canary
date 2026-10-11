@@ -15,6 +15,8 @@ e a classificação Bestiary:
 
 - `class = "Plant"`
 - `race = BESTY_RACE_PLANT`
+- `raceId = 2544`, verified free after the Quara IDs 2541–2543
+- `Occurrence = 0` and `Locations = "Manual spawn only."`
 
 O arquivo de definição ficará em
 `data-otservbr-global/monster/plants/pupated_rootthing.lua`. A pasta já é

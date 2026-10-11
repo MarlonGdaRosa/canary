@@ -16,7 +16,7 @@
 - Use artifacts/generated-sprites/pupated-rootthing-walksheet-3x4-64px.png unchanged.
 - Reserve look type 1863, the lowest unused outfit ID greater than 1841 in the pre-import protobuf; configure it as 2 x 2 sprites, four directions, one layer, three phases. Preserve outfit 1841.
 - Retain all Quara Raider combat, loot, corpse, voices, flags, elements, immunities, and monster.race.
-- Use Bestiary Plant / BESTY_RACE_PLANT, raceId 2542, Occurrence 0, and Locations Manual spawn only.
+- Use Bestiary Plant / BESTY_RACE_PLANT, unique raceId 2544 (2541–2543 are occupied), Occurrence 0, and Locations Manual spawn only.
 - The catalog-selected appearance and data/items/appearances.dat must be byte-identical.
 
 ---
@@ -92,7 +92,7 @@ class PupatedRootthingIntegrationTest(unittest.TestCase):
             "lookType = 1863",
             'class = "Plant"',
             "race = BESTY_RACE_PLANT",
-            "monster.raceId = 2542",
+            "monster.raceId = 2544",
             "Occurrence = 0",
             'Locations = "Manual spawn only."',
         ):
@@ -215,7 +215,7 @@ monster.outfit = {
 ~~~
 
 ~~~lua
-monster.raceId = 2542
+monster.raceId = 2544
 monster.Bestiary = {
 	class = "Plant",
 	race = BESTY_RACE_PLANT,
