@@ -4,7 +4,7 @@
 
 **Goal:** Register a manually spawned Pupated Rootthing with Quara Raider gameplay and a dedicated modern-client plant appearance.
 
-**Architecture:** Compile look type 1841 in the 15.25 asset catalog, synchronize its selected protobuf to data/items/appearances.dat, and add a Lua monster definition that references it. There is no map spawn.
+**Architecture:** Compile the verified free look type 1863 in the 15.25 asset catalog, synchronize its selected protobuf to data/items/appearances.dat, and add a Lua monster definition that references it. The pre-import outfit 1841 remains intact. There is no map spawn.
 
 **Tech Stack:** Lua; Tibia 15.25 protobuf/LZMA assets; OTS Creator; Python unittest; OTClient Redemption.
 
@@ -14,9 +14,9 @@
 
 - Do not change an OTBM map or spawn XML; runtime validation is /m Pupated Rootthing.
 - Use artifacts/generated-sprites/pupated-rootthing-walksheet-3x4-64px.png unchanged.
-- Reserve look type 1841; configure it as 2 x 2 sprites, four directions, one layer, three phases.
+- Reserve look type 1863, the lowest unused outfit ID greater than 1841 in the pre-import protobuf; configure it as 2 x 2 sprites, four directions, one layer, three phases. Preserve outfit 1841.
 - Retain all Quara Raider combat, loot, corpse, voices, flags, elements, immunities, and monster.race.
-- Use Bestiary Plant / BESTY_RACE_PLANT, raceId 2542, Occurrence 0, and Locations Manual spawn only.
+- Use Bestiary Plant / BESTY_RACE_PLANT, unique raceId 2544 (2541–2543 are occupied), Occurrence 0, and Locations Manual spawn only.
 - The catalog-selected appearance and data/items/appearances.dat must be byte-identical.
 
 ---
@@ -89,10 +89,10 @@ class PupatedRootthingIntegrationTest(unittest.TestCase):
         for expected in (
             'Game.createMonsterType("Pupated Rootthing")',
             'monster.description = "a pupated rootthing"',
-            "lookType = 1841",
+            "lookType = 1863",
             'class = "Plant"',
             "race = BESTY_RACE_PLANT",
-            "monster.raceId = 2542",
+            "monster.raceId = 2544",
             "Occurrence = 0",
             'Locations = "Manual spawn only."',
         ):
@@ -128,7 +128,7 @@ git commit -m "test: cover Pupated Rootthing integration"
 - Test: tools/canary_audit/tests/test_pupated_rootthing.py
 
 **Interfaces:**
-- Consumes the 192 x 256 transparent sheet and look type 1841.
+- Consumes the 192 x 256 transparent sheet and look type 1863.
 - Produces the catalog-selected protobuf and a byte-identical server copy.
 
 - [ ] **Step 1: Create a recoverable backup**
@@ -142,7 +142,7 @@ Copy-Item -LiteralPath $source -Destination $backup -Recurse -ErrorAction Stop
 
 - [ ] **Step 2: Import the creature in OTS Creator**
 
-Start C:\Users\Marlon\Downloads\otscreator-windows-amd64.exe. Open .tools\otclient-redemption\data\things\1525\catalog-content.json. In Outfits, create ID 1841 called Pupated Rootthing. Drop artifacts\generated-sprites\pupated-rootthing-walksheet-3x4-64px.png onto it and configure:
+Start C:\Users\Marlon\Downloads\otscreator-windows-amd64.exe. Open .tools\otclient-redemption\data\things\1525\catalog-content.json. In Outfits, create ID 1863 called Pupated Rootthing. The raw 192 x 256 sheet is not recognized by OTS Creator's direct sprite-sheet importer, so losslessly transpose its 64 x 64 frames into the documented ObjectBuilder layout, package the idle and walking sheets in a native `.otobj`, and import that package through OTS Creator. Configure:
 
 ~~~text
 width = 2 sprites
@@ -191,7 +191,7 @@ git commit -m "feat: add Pupated Rootthing client appearance"
 - Test: tools/canary_audit/tests/test_pupated_rootthing.py
 
 **Interfaces:**
-- Consumes look type 1841 and Quara Raider gameplay data.
+- Consumes look type 1863 and Quara Raider gameplay data.
 - Produces the exact GM lookup name Pupated Rootthing.
 
 - [ ] **Step 1: Copy the gameplay template**
@@ -211,11 +211,11 @@ local monster = {}
 monster.description = "a pupated rootthing"
 monster.experience = 8150
 monster.outfit = {
-	lookType = 1841,
+	lookType = 1863,
 ~~~
 
 ~~~lua
-monster.raceId = 2542
+monster.raceId = 2544
 monster.Bestiary = {
 	class = "Plant",
 	race = BESTY_RACE_PLANT,
@@ -278,7 +278,7 @@ Inspect all directions and confirm three walking phases. Spawn a Quara Raider in
 ~~~powershell
 $catalog = Get-Content '.tools\otclient-redemption\data\things\1525\catalog-content.json' -Raw | ConvertFrom-Json
 $entry = $catalog | Where-Object type -eq 'appearances' | Select-Object -Single
-"lookType=1841 appearance=$($entry.file)"
+"lookType=1863 appearance=$($entry.file)"
 git status --short
 ~~~
 
