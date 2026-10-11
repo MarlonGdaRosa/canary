@@ -95,7 +95,7 @@ class PupatedRootthingIntegrationTest(unittest.TestCase):
         for expected in (
             'Game.createMonsterType("Pupated Rootthing")',
             'monster.description = "a pupated rootthing"',
-            "lookType = 1863",
+            "lookType = 1768",
             'class = "Plant"',
             "race = BESTY_RACE_PLANT",
             "monster.raceId = 2544",
