@@ -15,6 +15,8 @@
 #include "utils/utils_definitions.hpp"
 #include "enums/item_attribute.hpp"
 
+#include <unordered_map>
+
 struct Abilities {
 	std::array<ConditionType_t, ConditionType_t::CONDITION_COUNT> conditionImmunities = {};
 	std::array<ConditionType_t, ConditionType_t::CONDITION_COUNT> conditionSuppressions = {};
@@ -433,6 +435,7 @@ public:
 	}
 
 	NameMap nameToItems;
+	NameMap xmlNameToItems;
 
 	void addLadderId(uint16_t newId) {
 		ladders.push_back(newId);

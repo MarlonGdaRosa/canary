@@ -28,6 +28,7 @@ void Items::clear() {
 	ladders.clear();
 	dummys.clear();
 	nameToItems.clear();
+	xmlNameToItems.clear();
 	g_moveEvents().clear();
 	g_weapons().clear(true);
 }
@@ -343,19 +344,23 @@ void Items::parseItemNode(const pugi::xml_node &itemNode, uint16_t id) {
 		return;
 	}
 
-	if (const std::string xmlName = itemNode.attribute("name").as_string();
-	    !xmlName.empty() && itemType.name != xmlName) {
-		if (!itemType.name.empty()) {
-			if (const auto it = std::ranges::find_if(nameToItems, [id](const auto nameMapIt) {
-					return nameMapIt.second == id;
-				});
-			    it != nameToItems.end()) {
-				nameToItems.erase(it);
-			}
-		}
+	if (const std::string xmlName = itemNode.attribute("name").as_string(); !xmlName.empty()) {
+		const auto normalizedXmlName = asLowerCaseString(xmlName);
+		xmlNameToItems.emplace(normalizedXmlName, id);
 
-		itemType.name = xmlName;
-		nameToItems.insert({ asLowerCaseString(itemType.name), id });
+		if (itemType.name != xmlName) {
+			if (!itemType.name.empty()) {
+				if (const auto it = std::ranges::find_if(nameToItems, [id](const auto nameMapIt) {
+						return nameMapIt.second == id;
+					});
+				    it != nameToItems.end()) {
+					nameToItems.erase(it);
+				}
+			}
+
+			itemType.name = xmlName;
+			nameToItems.emplace(normalizedXmlName, id);
+		}
 	}
 
 	itemType.loaded = true;
@@ -410,7 +415,17 @@ const ItemType &Items::getItemType(size_t id) const {
 }
 
 uint16_t Items::getItemIdByName(const std::string &name) {
-	const auto result = nameToItems.find(asLowerCaseString(name));
+	const auto normalizedName = asLowerCaseString(name);
+	const auto [xmlNameIt, xmlNameEnd] = xmlNameToItems.equal_range(normalizedName);
+	if (xmlNameIt != xmlNameEnd) {
+		auto nextXmlNameIt = xmlNameIt;
+		++nextXmlNameIt;
+		if (nextXmlNameIt == xmlNameEnd) {
+			return xmlNameIt->second;
+		}
+	}
+
+	const auto result = nameToItems.find(normalizedName);
 
 	if (result == nameToItems.end()) {
 		return 0;
